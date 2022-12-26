@@ -7,6 +7,6 @@ This library is optimized to be as efficient as possible, including text mode do
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
 
-# v2012.12.26.00
+## v2012.12.26.00
 
 This update includes http get features and requires the most recent Internet Adapter from https://nabu.ca. Now NABU HomeBrew applications can query data on the internet and the Internet Adapter will cache it. When the NABU application needs the data, it can request it from the Internet Adapter. Up to 256 queries per application can be stored in the IA for each NABU HomeBrew program. This can include additional code, music, images, etc.. Essentially, this gives a NABU a practically unlimited amount of storage space because it can use the cloud for obtaining resources. 
