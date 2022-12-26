@@ -6,6 +6,8 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2012.12.26.01
+Added a new function for keyboard input called readLine(). Also added an example on how to use it (Example - User Input and Print)
 
 ## v2012.12.26.00
 
