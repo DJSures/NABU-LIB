@@ -3,7 +3,7 @@
 // DJ Sures (c) 2022
 // https://nabu.ca
 // 
-// Last updated on December 26, 2022 (v2022.12.26.00)
+// Last updated on December 26, 2022 (v2022.12.26.01)
 // 
 // This is a z88dk C library for the NABU Personal Computer. This is a large library
 // with many functions for the VDP, Sound, HCCA, and Keyboard. The functions are split
@@ -472,10 +472,21 @@ uint8_t LastKeyPressed = 0x00;
 uint8_t isKeyPressed();
 
 /// <summary>
-/// Pauses and waits for a key, returns that key value
+/// Blocks and waits for a key, returns that key value
 /// </summary>
 uint8_t getChar();
 
+/// <summary>
+/// Read a line of text inputed by the keyboard. This does not null terminate the
+/// user input. If you need the input null terminated, make the maxInputLen one byte
+/// less than the buffer size, and manually set the 0x00 yourself after the return.
+/// 
+/// - buffer is the pointer to store the text input
+/// - maxInputLen is the max length of data you want to retrieve (no larger than the buffer!)
+/// 
+/// Returns the length of data entered by the user. 
+/// </summary>
+uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
 
 
 

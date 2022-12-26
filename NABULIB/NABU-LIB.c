@@ -183,6 +183,36 @@ uint8_t getChar() {
   return retVal;
 }
 
+uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) {
+
+  uint8_t i;
+
+  while (true) {
+
+    uint8_t c = getChar();
+
+    if (c == 13) {
+
+      break;
+    } else if (i < maxInputLen && c >= 0x20 && c <= 126) {
+
+      buffer[i] = c;
+
+      vdp_write(c, true);
+
+      i++;
+    } else if (c == 127 && i > 0) {
+
+      i--;
+
+      vdp_cursor.x--;
+
+      vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
+    }
+  }
+
+  return i;
+}
 
 
 
