@@ -65,7 +65,7 @@ __sfr __at 0x91 IO_KEYBOARD_STATUS;
 /// <summary>
 /// HCCA RX Input buffer (256 bytes)
 /// </summary>
-volatile uint8_t _rxBuffer[256];
+uint8_t _rxBuffer[256];
 
 /// <summary>
 /// HCCA RX read position
@@ -75,7 +75,7 @@ uint8_t _rxReadPos = 0;
 /// <summary>
 /// HCCA RX write position (used in interrupt)
 /// </summary>
-volatile uint8_t _rxWritePos = 0;
+uint8_t _rxWritePos = 0;
 
 
 // **************************************************************************
@@ -201,6 +201,16 @@ typedef struct {
 
 
 
+// **************************************************************************
+// Generics
+// --------
+//
+// Here are some helper functions that are useful when 
+//
+// **************************************************************************
+
+#define Max(x,y) (((x) >= (y)) ? (x) : (y))
+#define Min(x,y) (((x) <= (y)) ? (x) : (y))
 
 // **************************************************************************
 // Audio Notes
@@ -469,6 +479,63 @@ uint8_t getChar();
 
 
 
+// **************************************************************************
+// RetroNET
+// ------------
+// 
+// These are methods specific to RetroNet and therefore require the IA 
+// (internet adapter) to be connected to the NABU.
+// 
+// The Internet Adapter will hold the data and the NABU can request it. The
+// data is stored in the IA under specified Request Store IDs. That way, a
+// program can have many requests stored in the IA as resources. The program
+// can store items from the web on the IA, such as images, music arrangements,
+// or even code. Code can be copied from the IA request store and written
+// to RAM to be executed.
+// 
+// This allows a NABU program the ability to have a practically unlimited 
+// amount of RAM or storage by using the cloud and Internet Adapter.
+// 
+// **************************************************************************
+
+/// <summary>
+/// Popopulate the request store index with the http get response of the
+/// URL. The response is stored in the IA (internet adapter) and can be
+/// queried using the rn_requestStoreGetSize() and rn_requestStoreGetData().
+/// 
+/// - requestStoreIndex is the ID on the IA (Internet Adapter) that will store the response
+/// - url is a null terminated string of the URL to be requested
+/// 
+/// Returns the status, true if successful, or false if not.
+/// </summary>
+bool rn_requestStoreHttpGet(uint8_t requestStoreIndex, uint8_t* url);
+
+/// <summary>
+/// Returns the size of the value stored in the requestStore ID. 
+/// You must first use rn_requestStoreHttpGet() to
+/// populate http response data in the request store index.
+/// 
+/// 
+/// </summary>
+int16_t rn_requestStoreGetSize(uint8_t requestStoreIndex);
+
+/// <summary>
+/// Get data from the request store into "buffer". You must first populate
+/// the request store with data using a function like rn_requestStoreHttpGet().
+/// You can also get the size of the data in the request store with rn_requestStoreGetSize().
+/// 
+/// - requestStoreIndex is the request store index that contains the data.
+/// - buffer is a pointer to a buffer that the data will be written to.
+/// - bufferOffset is the offset within the buffer where the data will be written. Use 0 if you're
+///   writing to the beginning of the buffer, for example.
+/// - readOffset is the offset on the stored data in the IA that you will be reading from. 
+/// - readLength is the amount of data that you will be reading.
+/// 
+/// Returns the number of bytes read, which is always the readLength
+/// </summary>
+uint16_t rn_requestStoreGetData(uint8_t requestStoreIndex, uint8_t* buffer, uint16_t bufferOffset, uint16_t readOffset, uint16_t readLength);
+
+
 
 // **************************************************************************
 // HCCA Receive
@@ -494,6 +561,17 @@ void hcca_enableReceiveBufferInterrupt();
 /// Returns TRUE if there is data to be read from the hcca rx buffer (256 bytes)
 /// </summary>
 bool hcca_isRxBufferAvailable();
+
+/// <summary>
+/// Returns how much data is currently in the RX buffer
+/// </summary>
+uint8_t hcca_getSizeOfDataInBuffer();
+
+/// <summary>
+/// Block until a character is available in the buffer, and finally return
+/// the first character.
+/// </summary>
+uint8_t hcca_readFromBufferBlocking();
 
 /// <summary>
 /// Read a character from the buffer (256 bytes). 
@@ -531,9 +609,21 @@ uint8_t hcca_readByte();
 // **************************************************************************
 
 /// <summary>
-/// Write to the HCCA
+/// Write a byte to the HCCA
 /// </summary>
 void hcca_writeByte(uint8_t c);
+
+/// <summary>
+/// Write the unsigned 16-bit integer to the HCCA.
+/// This is LSB First
+/// </summary>
+void hcca_writeUInt16(uint16_t val);
+
+/// <summary>
+/// Write the signed 16-bit integer to the HCCA.
+/// This is LSB First
+/// </summary>
+void hcca_writeInt16(int16_t val);
 
 /// <summary>
 /// Write null terminated string to the HCCA
@@ -641,7 +731,7 @@ void vdp_plotHires(uint8_t x, uint8_t y, uint8_t color1, uint8_t color2);
 void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color);
 
 /// <summary>
-///  Print string at current cursor position. These Escape sequences are supported:
+/// Print null terminated string at current cursor position. These Escape sequences are supported:
 /// 
 /// Graphic Mode 2 only: \\033[<fg>;[<bg>]m sets the colors and optionally the background of the subsequent characters 
 /// 
@@ -650,6 +740,11 @@ void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color);
 /// - text Text to print
 /// </summary>
 void vdp_print(uint8_t* text);
+
+/// <summary>
+/// Print the specified portion of the string. No escape sequences are supported.
+/// </summary>
+void vdp_printPart(uint8_t* text, uint16_t offset, uint16_t length);
 
 ///////
 ///  Set backdrop color

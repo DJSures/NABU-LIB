@@ -42,6 +42,49 @@ inline void NABU_EnableInterrupts() {
 
 
 
+// **************************************************************************
+// RetroNET
+// ------------
+// **************************************************************************
+bool rn_requestStoreHttpGet(uint8_t requestStoreIndex, uint8_t* url) {
+
+  hcca_writeByte(0xa3);
+
+  hcca_writeByte(requestStoreIndex);
+
+  hcca_writeByte(strlen(url));
+
+  hcca_writeString(url);
+
+  return (bool)hcca_readFromBufferBlocking();
+}
+
+int16_t rn_requestStoreGetSize(uint8_t requestStoreIndex) {
+
+  hcca_writeByte(0xa4);
+
+  hcca_writeByte(requestStoreIndex);
+
+  return hcca_readFromBufferBlocking() + (hcca_readFromBufferBlocking() << 8);
+}
+
+uint16_t rn_requestStoreGetData(uint8_t requestStoreIndex, uint8_t* buffer, uint16_t bufferOffset, uint16_t readOffset, uint16_t readLength) {
+
+  hcca_writeByte(0xa5);
+
+  hcca_writeByte(requestStoreIndex);
+
+  hcca_writeUInt16(readOffset);
+
+  hcca_writeUInt16(readLength);
+
+  for (uint16_t i = 0; i < readLength; i++)
+    buffer[bufferOffset + i] = hcca_readFromBufferBlocking();
+
+  return readLength;
+}
+
+
 
 
 // **************************************************************************
@@ -152,12 +195,9 @@ uint8_t getChar() {
 
 IM2_DEFINE_ISR(isr) {
 
-  if (hcca_isDataAvailable()) {
+  _rxBuffer[_rxWritePos] = IO_HCCA;
 
-    _rxBuffer[_rxWritePos] = hcca_readByte();
-
-    _rxWritePos++;
-  }
+  _rxWritePos++;
 }
 
 void hcca_enableReceiveBufferInterrupt() {
@@ -177,6 +217,21 @@ void hcca_enableReceiveBufferInterrupt() {
 bool hcca_isRxBufferAvailable() {
 
   return _rxWritePos != _rxReadPos;
+}
+
+uint8_t hcca_getSizeOfDataInBuffer() {
+
+  if (_rxReadPos > _rxWritePos)
+    return (255 - _rxReadPos) + _rxWritePos;
+
+  return _rxWritePos - _rxReadPos;
+}
+
+uint8_t hcca_readFromBufferBlocking() {
+
+  while (!hcca_isRxBufferAvailable());
+
+  return hcca_readFromBuffer();
 }
 
 uint8_t hcca_readFromBuffer() {
@@ -242,6 +297,60 @@ inline void hcca_writeByte(uint8_t c) {
   nop();
   nop();
   nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
+  nop();
 
   //IO_AYLATCH = IOPORTB;
   //while ((IO_AYDATA & 0b00000100) == 0x04);
@@ -250,6 +359,18 @@ inline void hcca_writeByte(uint8_t c) {
   //ayWrite(IOPORTA, 0b10000000);
 
   //NABU_EnableInterrupts();
+}
+
+void hcca_writeUInt16(uint16_t val) {
+
+  hcca_writeByte(val & 0xff);
+  hcca_writeByte((val >> 8) & 0xff);
+}
+
+void hcca_writeInt16(int16_t val) {
+
+  hcca_writeByte(val & 0xff);
+  hcca_writeByte((val >> 8) & 0xff);
 }
 
 void hcca_writeString(uint8_t* str) {
@@ -612,6 +733,12 @@ void vdp_printG2(uint8_t* text) {
 
   for (uint16_t i = 0; text[i] != 0x00; i++)
     vdp_writeG2(text[i], true);
+}
+
+void vdp_printPart(uint8_t* text, uint16_t offset, uint16_t length) {
+
+  for (uint16_t i = 0; i < length; i++)
+    vdp_write(text[offset + i], true);
 }
 
 void vdp_newLine() {
