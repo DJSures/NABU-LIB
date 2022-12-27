@@ -185,7 +185,7 @@ uint8_t getChar() {
 
 uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) {
 
-  uint8_t i;
+  uint8_t i = 0;
 
   while (true) {
 
