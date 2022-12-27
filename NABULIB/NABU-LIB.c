@@ -519,7 +519,7 @@ int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify) {
     // Initialize pattern table with ASCII patterns
     vdp_setWriteAddress(_vdp_pattern_table + 0x100);
 
-    for (uint16_t i = 0; i < 23 * 40; i++)
+    for (uint16_t i = 0; i < 24 * 40; i++)
       _vdp_textBuffer[i] = 0x20;
 
     for (uint16_t i = 0; i < 768; i++)
