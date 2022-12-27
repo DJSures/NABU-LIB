@@ -202,7 +202,7 @@ void main2() {
   vdp_initTextMode(0xf, 0x0);
 
   vdp_setCursor2(0, 0);
-  vdp_print("RetroNet Telnet Client (0.4b)");
+  vdp_print("RetroNet Telnet Client (0.5b)");
   vdp_setCursor2(0, 1);
   vdp_print("by DJ Sures (c)2022");
 
