@@ -369,12 +369,16 @@ STATE(_st_esc_sq_bracket, term, ev, arg) {
 
       case 'L': // insert lines (args[0] = number of lines)
       case 'M': // delete lines (args[0] = number of lines)
+
+        if (term->args[0] > 0)
+          vdp_clearRows(vdp_cursor.y, vdp_cursor.y + term->args[0]);
+
         term->state = _st_idle;
         break;
       case 'P':
       {
         // delete characters args[0] or 1 in front of cursor
-        // TODO: this needs to correctly delete n chars
+
         int n = ((term->narg > 0) ? term->args[0] : 1);
 
         _vt100_move(term, -n, 0);
@@ -875,10 +879,8 @@ STATE(_st_idle, term, ev, arg) {
       break;
     case '\b':
       // backspace 0x08
-      _vt100_move(term, -1, 0);
-      // backspace does not delete the character! Only moves cursor!
-      //ili9340_drawChar(vdp_cursor.x * term->char_width,
-      //	vdp_cursor.y * term->char_height, ' ');
+      //_vt100_move(term, -1, 0);
+      // Backspace is handled in main.c
       break;
     case KEY_DEL:
       // del - delete character under cursor
