@@ -128,7 +128,7 @@ const uint8_t  _vdp_crsr_max_y = 23;      // max number of rows
 uint8_t        _vdp_mode;
 uint8_t        _vdp_fgcolor;
 uint8_t        _vdp_bgcolor;
-
+bool           _autoScroll;
 
 /// <summary>
 /// Colors for the VDP fgColor or bgColor settings
@@ -511,41 +511,217 @@ uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
 // **************************************************************************
 
 /// <summary>
-/// Popopulate the request store index with the http get response of the
-/// URL. The response is stored in the IA (internet adapter) and can be
-/// queried using the rn_requestStoreGetSize() and rn_requestStoreGetData().
-/// 
-/// - requestStoreIndex is the ID on the IA (Internet Adapter) that will store the response
-/// - url is a null terminated string of the URL to be requested
-/// 
-/// Returns the status, true if successful, or false if not.
+/// These are options for the rn_requestStoreOpenFile() fileFlag function
 /// </summary>
-bool rn_requestStoreHttpGet(uint8_t requestStoreIndex, uint8_t* url);
+#define OPEN_FILE_FLAG_READONLY 0
+#define OPEN_FILE_FLAG_READWRITE 1
 
 /// <summary>
-/// Returns the size of the value stored in the requestStore ID. 
-/// You must first use rn_requestStoreHttpGet() to
-/// populate http response data in the request store index.
-/// 
-/// 
+/// These are options for the rn_FileHandleCopy() and rn_FileHandleMove()
 /// </summary>
-int16_t rn_requestStoreGetSize(uint8_t requestStoreIndex);
+#define COPY_MOVE_FLAG_NO_REPLACE 0
+#define COPY_MOVE_FLAG_YES_REPLACE 1
 
 /// <summary>
-/// Get data from the request store into "buffer". You must first populate
-/// the request store with data using a function like rn_requestStoreHttpGet().
-/// You can also get the size of the data in the request store with rn_requestStoreGetSize().
+/// Opens the file and returns a file handle that will be used for all file functions.
+/// Files are stored in the RetroNET Storage folder that is defined in the Internet Adapter settings. 
 /// 
-/// - requestStoreIndex is the request store index that contains the data.
+/// The fileFlag is managed on the IA and if set for readonly, any write commands will
+/// be ignored. This ensures the nabulib has not been tampered with to accidentally
+/// overwrite readonly files.
+/// 
+/// *Note: that FTP, HTTP, and HTTPS write functions are not persistent. If a WRITE function is 
+/// called on a file handle of one of these file types, the file will be altered, but the changes
+/// will not be persistent the next time the URL is requested. This because we cannot change files
+/// on remote servers - they won't give us the key to unlock the universe, yet.
+/// 
+/// Multiple file types are available...
+/// 
+/// - FTP:   ftp://<host>/<path>/<file>
+///          (i.e. ftp://ftp.cdrom.com/pub/filelist.txt)
+/// 
+/// - HTTP:  http://<host>/<path>/<file>?<url parameters>
+///          (Example: http://cloud.nabu.ca/httpGetQueryResponse.txt?someparam=somevalue)
+/// 
+/// - HTTPS: https://<host>/<path>/<file>
+///          (Example: https://cloud.nabu.ca/httpGetQueryResponse.txt)
+/// 
+/// - File:
+///          The "File" type has many options. Directory seperator is backslash (\)
+/// 
+/// 1) Specify a filename with no drive or directory. For example...
+///    uint8_t fileHandle = rn_requestStoreOpenFile(10, "myFile.txt", OPEN_FILE_FLAG_READWRITE, 0xff);
+///   
+/// 2) Specify a filename with drive or directory. For example...
+///    uint8_t fileHandle = rn_requestStoreOpenFile(22, "a:\\personal\\myFile.txt", OPEN_FILE_FLAG_READWRITE, 0xff);
+/// 
+/// 3) Specify a filename with directory. For example...
+///    uint8_t fileHandle = rn_requestStoreOpenFile(20, "personal\\myFile.txt", OPEN_FILE_FLAG_READWRITE, 0xff);
+/// 
+/// *Note: If the file does not exist, it is created with 0 bytes.
+/// 
+/// When you are done with the file, you must Close the file to release the handle with with rn_requestStoreCloseFile();
+/// If the NABU is reset and the program therefore cannot close the file, the Internet Adapter will close all files
+/// when an INIT command is received.
+/// 
+/// - filenameLen is the length of the filename to open
+/// - filename is a pointer to the filename
+/// - fileFlag is one of #define OPEN_FILE_FLAG_* types
+/// - fileHandle can be a file handle that you specify or 0xff (255) for the
+///   server to assign one for you
+/// 
+/// Returns a handle to the file for other file functions. If fileHandle is 255 (0xff), a file handle is
+/// automatically returned to you. Otherwise, this function will return the fileHandle parameter that you
+/// passed to it. If the fileHandle that you passed is already in use, a new file handle will be assigned
+/// to you and returned. 
+/// </summary>
+uint8_t rn_fileOpen(uint8_t filenameLen, uint8_t* filename, uint16_t fileFlag, uint8_t fileHandle);
+
+/// <summary>
+/// Closes and releases the file with the specified fileHandle. The handle can be used again for another
+/// file once it has been released.
+/// 
+/// When you are done with the file, you must Close the file to release the handle with with rn_requestStoreCloseFile();
+/// If the NABU is reset and the program therefore cannot close the file, the Internet Adapter will close all files
+/// when an INIT command is received.
+/// </summary>
+void rn_fileHandleClose(uint8_t fileHandle);
+
+/// <summary>
+/// Get the file size of the specified file, or returns -1 if file does not exist.
+/// This is different than using rn_fileHandleSize() because that will create an empty file when
+/// a file handle is assigned. If you want to see if a file exists without creating it first, this
+/// is the function you would use. 
+/// </summary>
+int32_t rn_fileSize(uint8_t filenameLen, uint8_t* filename);
+
+/// <summary>
+/// Get the file size of the specified file handle.
+/// A file (not url) that is opened with rn_FileOpen() will always have 0 length because the file is
+/// created with 0 bytes when rn_fileOpen() is called. To check if a file exists, use the rn_fileSize()
+/// function, as it expects a filename (not a file handle) and therefore does not create the file.
+/// 
+/// If a URL is used and the URL was not downloaded, the file size will be -1. You will only ever get
+/// a -1 from a URL, not a file.
+/// </summary>
+int32_t rn_fileHandleSize(uint8_t fileHandle);
+
+/// <summary>
+/// Read data from the specified filename.
+/// 
+/// - fileHandle is the obtained by rn_fileOpen()
 /// - buffer is a pointer to a buffer that the data will be written to.
 /// - bufferOffset is the offset within the buffer where the data will be written. Use 0 if you're
 ///   writing to the beginning of the buffer, for example.
-/// - readOffset is the offset on the stored data in the IA that you will be reading from. 
+/// - readOffset is the offset of the file that you will be reading from. 
 /// - readLength is the amount of data that you will be reading.
 /// 
-/// Returns the number of bytes read, which is always the readLength
+/// Returns the number of bytes read (which is always the readLength)
 /// </summary>
-uint16_t rn_requestStoreGetData(uint8_t requestStoreIndex, uint8_t* buffer, uint16_t bufferOffset, uint16_t readOffset, uint16_t readLength);
+uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferOffset, uint32_t readOffset, uint16_t readLength);
+
+/// <summary>
+/// Append data to the end of the specified file in the filestore. If the file does not exist, 
+/// the file is created. Files are stored in the RetroNET Storage folder that is defined in 
+/// the Internet Adapter settings. 
+/// 
+/// - fileHandle is the obtained by rn_fileOpen()
+/// - dataOffset is the offset of the data that will be written
+/// - dataLen is the length of data that will be written 
+/// - data is a pointer to the data
+/// </summary>
+void rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen, int8_t* data);
+
+/// <summary>
+/// Insert data in the file at the specified offset. This function will shift all data following the
+/// fileOffset to insert the data.
+/// 
+/// - fileHandle is the obtained by rn_fileOpen()
+/// - fileOffset is the offset of the file where the data will be inserted
+/// - dataOffset is the offset of the data that will be written
+/// - dataLen is the length of data that will be written 
+/// - data is a pointer to the data
+/// </summary>
+void rn_fileHandleInsert(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data);
+
+/// <summary>
+/// Delete range of bytes from within file handle
+/// 
+/// - fileHandle is the obtained by rn_fileOpen()
+/// - fileOffset is the offset of the file where the data will be removed
+/// - deleteLen is the length of data that will be removed
+/// </summary>
+void rn_fileHandleDeleteRange(uint8_t fileHandle, uint32_t fileOffset, uint16_t deleteLen);
+
+/// <summary>
+/// Delete all the content of the file and leave the file as a 0 byte length
+/// 
+/// - fileHandle is the obtained by rn_fileOpen()
+/// </summary>
+void rn_fileHandleEmptyFile(uint8_t fileHandle);
+
+/// <summary>
+/// Replace data in a file by overwriting bytes with the data
+/// Files are stored in the RetroNET Storage folder that is defined in the Internet Adapter settings. 
+/// The file can contain slashes (\) or (/) to specify directory and drive (i.e. A:)
+/// 
+/// - fileHandle is the obtained by rn_fileOpen()
+/// - fileOffset is the offset of the file where the data will be overwritten
+/// - dataOffset is the offset of the data that will be written
+/// - dataLen is the length of data that will be written 
+/// - data is a pointer to the data
+/// </summary>
+void rn_fileHandleReplace(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data);
+
+/// <summary>
+/// Delete the physical file from the store. If the file has a handle, it is closed
+/// 
+/// - filenameLen is the length of the filename
+/// - filename is the filename string
+/// </summary>
+void rn_fileDelete(uint8_t filenameLen, uint8_t* filename);
+
+/// <summary>
+/// Copy the src file to the dest file. The source file can be of any type (http, ftp, file) but the
+/// dest file must be a regular file. This allows copying files from the cloud to the local
+/// file store.
+/// 
+/// - srcFilenameLen is the length of the source file to copy
+/// - srcFilename is a pointer to the filename of the source file
+/// - destFilenameLen is the length of the destination filename
+/// - destFilename is a pointer to the filename of the destionation file
+/// - copyMoveFlag is one of #define COPY_MOVE_FLAG_* 
+/// </summary>
+void rn_fileHandleCopy(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t destFilenameLen, uint8_t* destFilename, uint8_t copyMoveFlag);
+
+/// <summary>
+/// Move the src file to the dest file.
+/// 
+/// *Note: if the source file has an open file handle, it is not closed and will continue
+///        working with the old filename. It's expected that a friendly
+///        programmer would close the file first before moving/renaming it. 
+/// 
+/// - srcFilenameLen is the length of the source file to move
+/// - srcFilename is a pointer to the filename of the source file
+/// - destFilenameLen is the length of the destination filename
+/// - destFilename is a pointer to the filename of the destionation file
+/// - copyMoveFlag is one of #define COPY_MOVE_FLAG_* 
+/// </summary>
+void rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t destFilenameLen, uint8_t* destFilename, uint8_t copyMoveFlag);
+
+/// <summary>
+/// Returns the number of files within the searchDir, including wildcards.
+/// Use rn_requestStoreGetDirectoryItemByIndex() to get each individual item
+/// 
+/// Examples
+/// - uint16_t fileCnt =  rn_requestStoreGetDirectoryItemCount(12, "c:\myApp\*.*");
+/// - uint16_t fileCnt =  rn_requestStoreGetDirectoryItemCount(14, "a:\cpm\zo*.cmd");
+/// 
+/// </summary>
+// TODO: uint16_t rn_getDirectoryItemCount(uint8_t searchDirLen, uint8_t* searchDir);
+
+
+
 
 
 
@@ -609,6 +785,30 @@ bool hcca_isDataAvailable();
 /// </summary>
 uint8_t hcca_readByte();
 
+/// <summary>
+/// Read an unsigned 16-bit integer from the HCCA
+/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+/// </summary>
+uint16_t hcca_readUInt16();
+
+/// <summary>
+/// Read an signed 16-bit integer from the HCCA
+/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+/// </summary>
+int16_t hcca_readInt16();
+
+/// <summary>
+/// Read an unsigned 32-bit integer from the HCCA
+/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+/// </summary>
+uint32_t hcca_readUInt32();
+
+/// <summary>
+/// Read an signed 32-bit integer from the HCCA
+/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+/// </summary>
+int32_t hcca_readInt32();
+
 
 
 
@@ -624,6 +824,18 @@ uint8_t hcca_readByte();
 /// Write a byte to the HCCA
 /// </summary>
 void hcca_writeByte(uint8_t c);
+
+/// <summary>
+/// Write the unsigned 32-bit integer to the HCCA.
+/// This is LSB First
+/// </summary>
+void hcca_writeUInt32(uint32_t val);
+
+/// <summary>
+/// Write the signed 32-bit integer to the HCCA.
+/// This is LSB First
+/// </summary>
+void hcca_writeInt32(int32_t val);
 
 /// <summary>
 /// Write the unsigned 16-bit integer to the HCCA.
@@ -645,7 +857,7 @@ void hcca_writeString(uint8_t* str);
 /// <summary>
 /// Write to the HCCA
 /// </summary>
-void hcca_writeBytes(uint8_t* str, uint8_t len);
+void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes);
 
 
 
@@ -671,7 +883,7 @@ void hcca_writeBytes(uint8_t* str, uint8_t len);
 /// - big_sprites true: Use 16x16 sprites false : use 8x8 sprites
 /// - magnify true: Scale sprites up by 2
 /// </summary>
-int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify);
+int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll);
 
 
 /// <summary>
@@ -682,7 +894,7 @@ int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify);
 /// 
 /// returns VDP_ERROR | VDP_SUCCESS
 /// </summary>
-int vdp_initTextMode(uint8_t fgcolor, uint8_t);
+int vdp_initTextMode(uint8_t fgcolor, uint8_t, bool autoScroll);
 
 /// <summary>
 /// Initializes the VDP in Graphic Mode 1. Not really useful if more than 4k Video ram is available
@@ -885,19 +1097,29 @@ void vdp_dumpFontToScreen();
 void vdp_writeUInt8(uint8_t v) __z88dk_fastcall;
 
 /// <summary>
+/// Display the numeric value of the variable
+/// </summary>
+void vdp_writeInt8(int8_t v) __z88dk_fastcall;
+
+/// <summary>
 /// Display the numer value of the variable
-/// </summary>/// <param name="v"></param>
+/// </summary>
 void vdp_writeUInt16(uint16_t v) __z88dk_fastcall;
 
 /// <summary>
 /// Display the numer value of the variable
-/// </summary>/// <param name="v"></param>
+/// </summary
 void vdp_writeInt16(int16_t v) __z88dk_fastcall;
 
 /// <summary>
-/// Display the numeric value of the variable
+/// Display the numer value of the variable
 /// </summary>
-void vdp_writeInt8(int8_t v) __z88dk_fastcall;
+void vdp_writeUInt32(uint32_t v) __z88dk_fastcall;
+
+/// <summary>
+/// Display the numer value of the variable
+/// </summary>
+void vdp_writeInt32(int32_t v) __z88dk_fastcall;
 
 /// <summary>
 /// Display the binary value of the variable

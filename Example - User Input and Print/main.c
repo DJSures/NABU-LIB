@@ -19,7 +19,7 @@ void main() {
 void main2() {
 
   // Set the text mode to foreground color white, bg black
-  vdp_initTextMode(0xf, 0x0);
+  vdp_initTextMode(0xf, 0x0, true);
 
   // init the audio because we'll play some funky music!
   initAudio();

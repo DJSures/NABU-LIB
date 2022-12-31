@@ -18,7 +18,7 @@ void main() {
 
 void main2() {
 
-  vdp_initTextMode(0x1, 0x3);
+  vdp_initTextMode(0x1, 0x3, false);
 
   hcca_receiveModeStart();
 
@@ -36,18 +36,18 @@ void main2() {
 
   const uint8_t song[] = { 200, 100, 50, 100, 150, 200, 100, 50, 230, 90 };
 
-  //for (uint8_t i = 0; i < sizeof(song); i++) {
+  for (uint8_t i = 0; i < sizeof(song); i++) {
 
-  //  ayWrite(0, song[i]);
-  //  ayWrite(1, 1);
+    ayWrite(0, song[i]);
+    ayWrite(1, 1);
 
-  //  z80_delay_ms(50);
-  //}
+    z80_delay_ms(50);
+  }
 
-  //ayWrite(0, 0);
-  //ayWrite(1, 0);
+  ayWrite(0, 0);
+  ayWrite(1, 0);
 
-  //z80_delay_ms(1500);
+  z80_delay_ms(1500);
 
   for (uint8_t i = 0; i < 31; i++) {
 
@@ -76,7 +76,6 @@ void main2() {
     vdp_setCursor2(0, 0);
     uint8_t key = IO_KEYBOARD;
     vdp_print("Key/joy (90h): ");
-    vdp_newLine();
     vdp_writeUInt8(key);
     vdp_print("   ");
 
@@ -101,12 +100,14 @@ void main2() {
       vdp_write(' ', true);
       vdp_writeUInt8ToBinary(status);
       vdp_newLine();
-      vdp_print("                               ");
 
-      listLine++;
+      if (listLine == 22) {
 
-      if (listLine == 22)
-        listLine = 5;
+        vdp_scrollTextUp(5, 22);
+      } else {
+
+        listLine++;
+      }
 
       lastStatus = status;
     }

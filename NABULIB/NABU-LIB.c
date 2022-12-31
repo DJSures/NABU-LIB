@@ -46,43 +46,187 @@ inline void NABU_EnableInterrupts() {
 // RetroNET
 // ------------
 // **************************************************************************
-bool rn_requestStoreHttpGet(uint8_t requestStoreIndex, uint8_t* url) {
+
+uint8_t rn_fileOpen(uint8_t filenameLen, uint8_t* filename, uint16_t fileFlag, uint8_t fileHandle) {
+
+  //0xa3
 
   hcca_writeByte(0xa3);
 
-  hcca_writeByte(requestStoreIndex);
+  hcca_writeByte(filenameLen);
 
-  hcca_writeByte(strlen(url));
+  hcca_writeBytes(0, filenameLen, filename);
 
-  hcca_writeString(url);
+  hcca_writeUInt16(fileFlag);
 
-  return (bool)hcca_readFromBufferBlocking();
+  hcca_writeByte(fileHandle);
+
+  return hcca_readFromBuffer();
 }
 
-int16_t rn_requestStoreGetSize(uint8_t requestStoreIndex) {
+void rn_fileHandleClose(uint8_t fileHandle) {
+
+  //0xa7
+
+  hcca_writeByte(0xa7);
+
+  hcca_writeByte(fileHandle);
+}
+
+int32_t rn_fileSize(uint8_t filenameLen, uint8_t* filename) {
+
+  //0xa8
+
+  hcca_writeByte(0xa8);
+
+  hcca_writeByte(filenameLen);
+
+  hcca_writeBytes(0, filenameLen, filename);
+
+  return hcca_readInt32();
+}
+
+int32_t rn_fileHandleSize(uint8_t fileHandle) {
+
+  //0xa4
 
   hcca_writeByte(0xa4);
 
-  hcca_writeByte(requestStoreIndex);
+  hcca_writeByte(fileHandle);
 
-  return hcca_readFromBufferBlocking() + (hcca_readFromBufferBlocking() << 8);
+  return hcca_readInt32();
 }
 
-uint16_t rn_requestStoreGetData(uint8_t requestStoreIndex, uint8_t* buffer, uint16_t bufferOffset, uint16_t readOffset, uint16_t readLength) {
+uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferOffset, uint32_t readOffset, uint16_t readLength) {
+
+  //0xa5
 
   hcca_writeByte(0xa5);
 
-  hcca_writeByte(requestStoreIndex);
+  hcca_writeByte(fileHandle);
 
-  hcca_writeUInt16(readOffset);
+  hcca_writeUInt32(readOffset);
 
   hcca_writeUInt16(readLength);
 
   for (uint16_t i = 0; i < readLength; i++)
-    buffer[bufferOffset + i] = hcca_readFromBufferBlocking();
+    buffer[i + bufferOffset] = hcca_readFromBuffer();
 
   return readLength;
 }
+
+void rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen, int8_t* data) {
+
+  //0xa9
+
+  hcca_writeByte(0xa9);
+
+  hcca_writeByte(fileHandle);
+
+  hcca_writeUInt16(dataLen);
+
+  hcca_writeBytes(dataOffset, dataLen, data);
+}
+
+void rn_fileHandleInsert(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data) {
+
+  //0xaa
+
+  hcca_writeByte(0xaa);
+
+  hcca_writeByte(fileHandle);
+
+  hcca_writeUInt32(fileOffset);
+
+  hcca_writeUInt16(dataLen);
+
+  hcca_writeBytes(dataOffset, dataLen, data);
+}
+
+void rn_fileHandleDeleteRange(uint8_t fileHandle, uint32_t fileOffset, uint16_t deleteLen) {
+
+  // 0xab
+
+  hcca_writeByte(0xab);
+
+  hcca_writeByte(fileHandle);
+
+  hcca_writeUInt32(fileOffset);
+
+  hcca_writeUInt16(deleteLen);
+}
+
+void rn_fileHandleEmptyFile(uint8_t fileHandle) {
+
+  // 0xb0
+
+  hcca_writeByte(0xb0);
+
+  hcca_writeByte(fileHandle);
+}
+
+void rn_fileHandleReplace(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data) {
+
+  // 0xac
+
+  hcca_writeByte(0xac);
+
+  hcca_writeByte(fileHandle);
+
+  hcca_writeUInt32(fileOffset);
+
+  hcca_writeUInt16(dataLen);
+
+  hcca_writeBytes(dataOffset, dataLen, data);
+}
+
+void rn_fileDelete(uint8_t filenameLen, uint8_t* filename) {
+
+  // 0xad
+
+  hcca_writeByte(0xad);
+
+  hcca_writeByte(filenameLen);
+
+  hcca_writeBytes(0, filenameLen, filename);
+}
+
+void rn_fileHandleCopy(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t destFilenameLen, uint8_t* destFilename, uint8_t copyMoveFlag) {
+
+  // 0xae
+
+  hcca_writeByte(0xae);
+
+  hcca_writeByte(srcFilenameLen);
+
+  hcca_writeBytes(0, srcFilenameLen, srcFilename);
+
+  hcca_writeByte(destFilenameLen);
+
+  hcca_writeBytes(0, destFilenameLen, destFilename);
+
+  hcca_writeByte(copyMoveFlag);
+}
+
+void rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t destFilenameLen, uint8_t* destFilename, uint8_t copyMoveFlag) {
+
+  // 0xaf
+
+  hcca_writeByte(0xaf);
+
+  hcca_writeByte(srcFilenameLen);
+
+  hcca_writeBytes(0, srcFilenameLen, srcFilename);
+
+  hcca_writeByte(destFilenameLen);
+
+  hcca_writeBytes(0, destFilenameLen, destFilename);
+
+  hcca_writeByte(copyMoveFlag);
+}
+
+
+
 
 
 
@@ -244,7 +388,7 @@ void hcca_enableReceiveBufferInterrupt() {
   NABU_EnableInterrupts();
 }
 
-bool hcca_isRxBufferAvailable() {
+inline bool hcca_isRxBufferAvailable() {
 
   return _rxWritePos != _rxReadPos;
 }
@@ -257,14 +401,9 @@ uint8_t hcca_getSizeOfDataInBuffer() {
   return _rxWritePos - _rxReadPos;
 }
 
-uint8_t hcca_readFromBufferBlocking() {
+uint8_t hcca_readFromBuffer() {
 
   while (!hcca_isRxBufferAvailable());
-
-  return hcca_readFromBuffer();
-}
-
-uint8_t hcca_readFromBuffer() {
 
   uint8_t ret = _rxBuffer[_rxReadPos];
 
@@ -288,7 +427,33 @@ inline uint8_t hcca_readByte() {
   return IO_HCCA;
 }
 
+inline uint16_t hcca_readUInt16() {
 
+  return (uint16_t)hcca_readFromBuffer() +
+    ((uint16_t)hcca_readFromBuffer() << 8);
+}
+
+inline int16_t hcca_readInt16() {
+
+  return (int16_t)hcca_readFromBuffer() +
+    ((int16_t)hcca_readFromBuffer() << 8);
+}
+
+inline uint32_t hcca_readUInt32() {
+
+  return (uint32_t)hcca_readFromBuffer() +
+    ((uint32_t)hcca_readFromBuffer() << 8) +
+    ((uint32_t)hcca_readFromBuffer() << 16) +
+    ((uint32_t)hcca_readFromBuffer() << 24);
+}
+
+inline int32_t hcca_readInt32() {
+
+  return (int32_t)hcca_readFromBuffer() +
+    ((int32_t)hcca_readFromBuffer() << 8) +
+    ((int32_t)hcca_readFromBuffer() << 16) +
+    ((int32_t)hcca_readFromBuffer() << 24);
+}
 
 
 
@@ -306,6 +471,7 @@ inline void hcca_writeByte(uint8_t c) {
   //ayWrite(IOPORTA, 0b01000000);
 
   IO_HCCA = c;
+
   nop();
   nop();
   nop();
@@ -391,6 +557,22 @@ inline void hcca_writeByte(uint8_t c) {
   //NABU_EnableInterrupts();
 }
 
+void hcca_writeUInt32(uint32_t val) {
+
+  hcca_writeByte(val & 0xff);
+  hcca_writeByte((val >> 8) & 0xff);
+  hcca_writeByte((val >> 16) & 0xff);
+  hcca_writeByte((val >> 24) & 0xff);
+}
+
+void hcca_writeInt32(int32_t val) {
+
+  hcca_writeByte(val & 0xff);
+  hcca_writeByte((val >> 8) & 0xff);
+  hcca_writeByte((val >> 16) & 0xff);
+  hcca_writeByte((val >> 24) & 0xff);
+}
+
 void hcca_writeUInt16(uint16_t val) {
 
   hcca_writeByte(val & 0xff);
@@ -405,14 +587,14 @@ void hcca_writeInt16(int16_t val) {
 
 void hcca_writeString(uint8_t* str) {
 
-  for (int i = 0; str[i] != 0x00; i++)
+  for (unsigned int i = 0; str[i] != 0x00; i++)
     hcca_writeByte(str[i]);
 }
 
-void hcca_writeBytes(uint8_t* str, uint8_t len) {
+void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes) {
 
-  for (int i = 0; i < len; i++)
-    hcca_writeByte(str[i]);
+  for (uint16_t i = 0; i < length; i++)
+    hcca_writeByte(bytes[offset + i]);
 }
 
 
@@ -445,11 +627,13 @@ inline void vdp_setReadAddress(unsigned int address) {
   IO_VDPLATCH = (address >> 8) & 0x3f;
 }
 
-int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify) {
+int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll) {
 
   _vdp_mode = mode;
 
   _vdp_sprite_size_sel = big_sprites;
+
+  _autoScroll = autoScroll;
 
   // Clear Ram
   vdp_setWriteAddress(0x0);
@@ -773,7 +957,15 @@ void vdp_printPart(uint8_t* text, uint16_t offset, uint16_t length) {
 
 void vdp_newLine() {
 
-  vdp_setCursor2(0, ++vdp_cursor.y);
+  if (vdp_cursor.y == 23) {
+
+    vdp_scrollTextUp(0, 23);
+
+    vdp_cursor.x = 0;
+  } else {
+
+    vdp_setCursor2(0, ++vdp_cursor.y);
+  }
 }
 
 void vdp_setBackDropColor(uint8_t color) {
@@ -853,8 +1045,15 @@ void vdp_write(uint8_t chr, bool advanceNextChar) {
 
   _vdp_textBuffer[vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x] = chr;
 
-  if (advanceNextChar)
+  if (vdp_cursor.x == 39 && vdp_cursor.y == 23) {
+
+    vdp_scrollTextUp(0, 23);
+
+    vdp_cursor.x = 0;
+  } else if (advanceNextChar) {
+
     vdp_setCursor(VDP_CURSOR_RIGHT);
+  }
 }
 
 void vdp_writeG2(uint8_t chr, bool advanceNextChar) {
@@ -948,6 +1147,26 @@ void vdp_clearRows(uint8_t topRow, uint8_t bottomRow) {
     }
 }
 
+void vdp_writeUInt32(uint32_t v) __z88dk_fastcall {
+
+  // 4294967295
+  uint8_t tb[11];
+
+  itoa(v, tb, 10);
+
+  vdp_print(tb);
+}
+
+void vdp_writeInt32(int32_t v) __z88dk_fastcall {
+
+  // -2147483648
+  uint8_t tb[12];
+
+  itoa(v, tb, 10);
+
+  vdp_print(tb);
+}
+
 void vdp_writeUInt16(uint16_t v) __z88dk_fastcall {
 
   uint8_t tb[6];
@@ -1014,22 +1233,22 @@ void vdp_writeUInt16ToBinary(uint16_t v) __z88dk_fastcall {
   vdp_print(str);
 }
 
-int vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor) {
+int vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll) {
 
-  return vdp_init(VDP_MODE_TEXT, (fgcolor << 4) | (bgcolor & 0x0f), 0, 0);
+  return vdp_init(VDP_MODE_TEXT, (fgcolor << 4) | (bgcolor & 0x0f), 0, 0, autoScroll);
 }
 
 int vdp_initG1Mode(uint8_t fgcolor, uint8_t bgcolor) {
 
-  return vdp_init(VDP_MODE_G1, (fgcolor << 4) | (bgcolor & 0x0f), 0, 0);
+  return vdp_init(VDP_MODE_G1, (fgcolor << 4) | (bgcolor & 0x0f), 0, 0, false);
 }
 
 int vdp_initG2Mode(bool big_sprites, bool scale_sprites) {
 
-  return vdp_init(VDP_MODE_G2, 0x0, big_sprites, scale_sprites);
+  return vdp_init(VDP_MODE_G2, 0x0, big_sprites, scale_sprites, false);
 }
 
 int vdp_initMultiColorMode() {
 
-  return vdp_init(VDP_MODE_MULTICOLOR, 0, 0, 0);
+  return vdp_init(VDP_MODE_MULTICOLOR, 0, 0, 0, false);
 }

@@ -18,7 +18,7 @@ void main() {
 
 void main2() {
 
-  vdp_initTextMode(0xf, 0x0);
+  vdp_initTextMode(0xf, 0x0, false);
 
   z80_delay_ms(1000);
 

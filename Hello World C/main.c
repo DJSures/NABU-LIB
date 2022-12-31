@@ -19,7 +19,7 @@ void main() {
 void main2() {
 
   // Put the graphics into text mode with the text color 0x01 and background color 0x03
-  vdp_initTextMode(0x01, 0x03);
+  vdp_initTextMode(0x01, 0x03, false);
 
   // Enable only the Tone Generator on Channel A
   ayWrite(0x7, 0b00111110);

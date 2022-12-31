@@ -111,7 +111,7 @@ void telnet32() {
   sendOption(OPT_WILL, 32);
 
   const uint8_t tmpBuff1[] = { 255, 250, 32, 0, '2', '4', '0', '0', ',', '2', '4', '0', '0', 255, 240 };
-  hcca_writeBytes(tmpBuff1, 15);
+  hcca_writeBytes(0, 15, tmpBuff1);
 }
 
 // X Display
@@ -132,7 +132,7 @@ void telnet31() {
   sendOption(OPT_WILL, 31);
 
   const uint8_t tmpBuff1[] = { 255, 250, 31, 0, 40, 0, 24, 255, 240 };
-  hcca_writeBytes(tmpBuff1, 9);
+  hcca_writeBytes(0, 9, tmpBuff1);
 }
 
 // Terminal Type
@@ -141,7 +141,7 @@ void telnet24() {
   sendOption(OPT_WILL, 24);
 
   const uint8_t tmpBuff1[] = { 255, 250, 24, 0, 'V', 'T', '1', '0', '0', 255, 240 };
-  hcca_writeBytes(tmpBuff1, 11);
+  hcca_writeBytes(0, 11, tmpBuff1);
 
   // no extended ascii
   sendOption(OPT_DONT, 17);
@@ -202,7 +202,7 @@ void doHCCAInput() {
 
 void main2() {
 
-  vdp_initTextMode(0xf, 0x0);
+  vdp_initTextMode(0xf, 0x0, false);
 
   vdp_setCursor2(0, 0);
   vdp_print("RetroNet Telnet Client (0.6b)");
