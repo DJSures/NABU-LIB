@@ -3,7 +3,9 @@
 // DJ Sures (c) 2022
 // https://nabu.ca
 // 
-// Last updated on December 26, 2022 (v2022.12.26.01)
+// Last updated on December 31, 2022 (v2022.12.31.00)
+// 
+// Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
 // This is a z88dk C library for the NABU Personal Computer. This is a large library
 // with many functions for the VDP, Sound, HCCA, and Keyboard. The functions are split
