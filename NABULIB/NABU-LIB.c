@@ -347,9 +347,16 @@ uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) {
       i++;
     } else if (c == 127 && i > 0) {
 
-      i--;
+      if (vdp_cursor.x == 0) {
 
-      vdp_cursor.x--;
+        vdp_cursor.x = 39;
+        vdp_cursor.y--;
+      } else {
+
+        vdp_cursor.x--;
+      }
+
+      i--;
 
       vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
     }

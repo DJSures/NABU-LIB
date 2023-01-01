@@ -52,7 +52,6 @@
 __sfr __at 0xA0 IO_VDPDATA;
 __sfr __at 0xA1 IO_VDPLATCH;
 
-__sfr __banked __at 0x0040 IO_AYDATA16;
 __sfr __at 0x40 IO_AYDATA;
 __sfr __at 0x41 IO_AYLATCH;
 
