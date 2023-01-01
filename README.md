@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2023.01.01.00
+Happy New Year! The update to nabu-lib includes a much faster interrupt for handling RX buffer. There is also a larger RX buffer, which the size can be changed if you don't need it. With this RX interrupt change, the real NABU PC can receice data at full 111kb/s speed. That means the Internet Adapter no longer has a TX delay value for Serial connections. However, MAME still requires a TX delay because it will miss characters if they are transmitted too quickly. 
+
 ## v2022.12.31.00
 Added support for Internet Adapter (2022.12.31.00) remote file storage functions. This allows HomeBrew apps to read/write files from the Internet Adapter. It includes HTTP, FTP, HTTPS, and any file name with drives/directories. Check the NABU-LIB.h file for details about each function. There is also an example project named "HTTP Get" that you can try out. It demonstrates HTTP get, clearing file contents, writing files, inserting into files, replacing contents in a file, and more. 
 
