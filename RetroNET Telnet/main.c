@@ -205,9 +205,9 @@ void main2() {
   vdp_initTextMode(0xf, 0x0, false);
 
   vdp_setCursor2(0, 0);
-  vdp_print("RetroNet Telnet Client (0.6b)");
+  vdp_print("RetroNet Telnet Client (0.7b)");
   vdp_setCursor2(0, 1);
-  vdp_print("by DJ Sures (c)2022");
+  vdp_print("by DJ Sures (c)2023");
 
   hcca_enableReceiveBufferInterrupt();
 

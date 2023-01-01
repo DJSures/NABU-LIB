@@ -1,9 +1,9 @@
 // ****************************************************************************************
 // NABU-LIB C Library
-// DJ Sures (c) 2022
+// DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on December 31, 2022 (v2022.12.31.00)
+// Last updated on January 1st, 2023 (v2023.01.01.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -52,6 +52,7 @@
 __sfr __at 0xA0 IO_VDPDATA;
 __sfr __at 0xA1 IO_VDPLATCH;
 
+__sfr __banked __at 0x0040 IO_AYDATA16;
 __sfr __at 0x40 IO_AYDATA;
 __sfr __at 0x41 IO_AYLATCH;
 
@@ -65,19 +66,20 @@ __sfr __at 0x91 IO_KEYBOARD_STATUS;
 
 
 /// <summary>
-/// HCCA RX Input buffer (256 bytes)
+/// HCCA RX Input buffer
 /// </summary>
-uint8_t _rxBuffer[256];
+#define RX_BUFFER_SIZE 2048
+uint8_t _rxBuffer[RX_BUFFER_SIZE];
 
 /// <summary>
 /// HCCA RX read position
 /// </summary>
-uint8_t _rxReadPos = 0;
+uint16_t _rxBufferReadPos = 0;
 
 /// <summary>
 /// HCCA RX write position (used in interrupt)
 /// </summary>
-uint8_t _rxWritePos = 0;
+uint16_t _rxBufferWritePos = 0;
 
 
 // **************************************************************************

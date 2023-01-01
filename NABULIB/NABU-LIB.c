@@ -1,6 +1,6 @@
 // ****************************************************************************************
 // NABU-LIB C Library
-// DJ Sures (c) 2022
+// DJ Sures (c) 2023
 // https://nabu.ca
 // 
 // Read the NABU-LIB.h file for details of each function in this file.
@@ -367,11 +367,31 @@ uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) {
 // ------------
 // **************************************************************************
 
-IM2_DEFINE_ISR(isr) {
+//IM2_DEFINE_ISR(isr) {
+void isr() {
 
-  _rxBuffer[_rxWritePos] = IO_HCCA;
+  __asm
+  push af;
+  push bc;
+  push de;
+  push hl;
+  __endasm;
 
-  _rxWritePos++;
+  _rxBuffer[_rxBufferWritePos] = IO_HCCA;
+
+  _rxBufferWritePos++;
+
+  if (_rxBufferWritePos == RX_BUFFER_SIZE)
+    _rxBufferWritePos = 0;
+
+  __asm
+  pop hl;
+  pop de;
+  pop bc;
+  pop af;
+  ei;
+  reti;
+  __endasm;
 }
 
 void hcca_enableReceiveBufferInterrupt() {
@@ -380,34 +400,37 @@ void hcca_enableReceiveBufferInterrupt() {
 
   ayWrite(IOPORTA, 0b10000000);          // Enable the interrupts that we want to raise (HCCA RX) 
 
-  im2_init((void*)0xe300);               // init the IM2 to point to the start of the table at 0xd300
-  memset((void*)0xe300, 0xe4, 257);      // init the table at 0xd300 to point to 0xd4d4 (table contains 127 16-bit addresses)
-  z80_bpoke(0xe4e4, 195);                // at 0xd4d4, put a JP
-  z80_wpoke(0xe4e5, (unsigned int)isr);  // at 0xd4d5, put the address to JP to
+  im2_init((void*)0xe300);               // init the IM2 to point to the start of the table at 0xe300
+  memset((void*)0xe300, 0xe4, 257);      // init the table at 0xe300 to point to 0xe4e4 (table contains 127 16-bit addresses)
+  z80_bpoke(0xe4e4, 195);                // at 0xe4e4, put a JP
+  z80_wpoke(0xe4e5, (unsigned int)isr);  // at 0xe4e5, put the address to JP to, which is our ISR function
 
   NABU_EnableInterrupts();
 }
 
 inline bool hcca_isRxBufferAvailable() {
 
-  return _rxWritePos != _rxReadPos;
+  return _rxBufferWritePos != _rxBufferReadPos;
 }
 
 uint8_t hcca_getSizeOfDataInBuffer() {
 
-  if (_rxReadPos > _rxWritePos)
-    return (255 - _rxReadPos) + _rxWritePos;
+  if (_rxBufferReadPos > _rxBufferWritePos)
+    return (RX_BUFFER_SIZE - _rxBufferReadPos) + _rxBufferWritePos;
 
-  return _rxWritePos - _rxReadPos;
+  return _rxBufferWritePos - _rxBufferReadPos;
 }
 
 uint8_t hcca_readFromBuffer() {
 
   while (!hcca_isRxBufferAvailable());
 
-  uint8_t ret = _rxBuffer[_rxReadPos];
+  uint8_t ret = _rxBuffer[_rxBufferReadPos];
 
-  _rxReadPos++;
+  _rxBufferReadPos++;
+
+  if (_rxBufferReadPos == RX_BUFFER_SIZE)
+    _rxBufferReadPos = 0;
 
   return ret;
 }
