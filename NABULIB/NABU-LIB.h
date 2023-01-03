@@ -514,16 +514,51 @@ uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
 // **************************************************************************
 
 /// <summary>
-/// These are options for the rn_requestStoreOpenFile() fileFlag function
+/// These are options for the rn_fileOpen() fileFlag function
 /// </summary>
-#define OPEN_FILE_FLAG_READONLY 0
-#define OPEN_FILE_FLAG_READWRITE 1
+#define OPEN_FILE_FLAG_READONLY 0b00000000
+#define OPEN_FILE_FLAG_READWRITE 0b00000001
 
 /// <summary>
-/// These are options for the rn_FileHandleCopy() and rn_FileHandleMove()
+/// These are options for the rn_fileHandleCopy() and rn_fileHandleMove()
 /// </summary>
-#define COPY_MOVE_FLAG_NO_REPLACE 0
-#define COPY_MOVE_FLAG_YES_REPLACE 1
+#define COPY_MOVE_FLAG_NO_REPLACE 0b00000000
+#define COPY_MOVE_FLAG_YES_REPLACE 0b00000001
+
+/// <summary>
+/// These are options for the rn_fileList()
+/// </summary>
+#define FILE_LIST_FLAG_INCLUDE_FILES 0b00000001 
+#define FILE_LIST_FLAG_INCLUDE_DIRECTORIES 0b00000010 
+
+/// <summary>
+/// The details of each file
+/// </summary>
+typedef struct {
+
+  int32_t FileSize;
+
+  uint16_t CreatedYear;
+  uint8_t CreatedMonth;
+  uint8_t CreatedDay;
+  uint8_t CreatedHour;
+  uint8_t CreatedMinute;
+  uint8_t CreatedSecond;
+
+  uint16_t ModifiedYear;
+  uint8_t ModifiedMonth;
+  uint8_t ModifiedDay;
+  uint8_t ModifiedHour;
+  uint8_t ModifiedMinute;
+  uint8_t ModifiedSecond;
+
+  uint8_t FilenameLen;
+  uint8_t Filename[64];
+
+  bool IsFile;
+  bool Exists;
+
+} FileDetailsStruct;
 
 /// <summary>
 /// Opens the file and returns a file handle that will be used for all file functions.
@@ -608,6 +643,22 @@ int32_t rn_fileSize(uint8_t filenameLen, uint8_t* filename);
 /// a -1 from a URL, not a file.
 /// </summary>
 int32_t rn_fileHandleSize(uint8_t fileHandle);
+
+/// <summary>
+/// Get the file details by filename.
+/// 
+/// The FileDetailStruct is populated with details about the file. If the file does not exist,
+/// the FileDetailStruct->Exists will reflect that.
+/// </summary>
+void rn_fileDetails(uint8_t filenameLen, uint8_t* filename, FileDetailsStruct* s);
+
+/// <summary>
+/// Get the file details by file handle.
+/// 
+/// The FileDetailStruct is populated with details about the file. If the file does not exist,
+/// the FileDetailStruct->Exists will reflect that.
+/// </summary>
+void rn_fileHandleDetails(int8_t fileHandle, FileDetailsStruct* s);
 
 /// <summary>
 /// Read data from the specified filename.
@@ -713,20 +764,36 @@ void rn_fileHandleCopy(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t des
 void rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t destFilenameLen, uint8_t* destFilename, uint8_t copyMoveFlag);
 
 /// <summary>
-/// Returns the number of files within the searchDir, including wildcards.
-/// Use rn_requestStoreGetDirectoryItemByIndex() to get each individual item
+/// Returns the number of files within the path, including wildcards.
+/// 
+/// To get the details of a file, you must do this...
+/// 
+/// 1) rn_fileList() will give you the number of files that matches the search criteria. 
+///  
+/// 2) Finally, call rn_fileListItem() to get the details of the file 
+///    (including size, created, modified, and filename)
 /// 
 /// Examples
-/// - uint16_t fileCnt =  rn_requestStoreGetDirectoryItemCount(12, "c:\myApp\*.*");
-/// - uint16_t fileCnt =  rn_requestStoreGetDirectoryItemCount(14, "a:\cpm\zo*.cmd");
+/// - uint16_t fileCnt =  rn_fileList(1, "\\",  1, "*", FILE_LIST_FLAG_INCLUDE_FILES | FILE_LIST_FLAG_INCLUDE_DIRECTORIES);
+/// - uint16_t fileCnt =  rn_fileList(1, "\\", 3, "*.*");
+/// - uint16_t fileCnt =  rn_fileList(8, "c:\\myApp", 3, "*.*");
+/// - uint16_t fileCnt =  rn_fileList(6, "a:\\cpm", 7, "zo*.cmd");
 /// 
+/// - pathLen is the length of the path string
+/// - path is a pointer to the path string
+/// - wildcardLen is the length of the wildcard string
+/// - wildcard is a pointer to the wildcard string
+/// - fileListFlags is one or many values of #define FILE_LIST_FLAG_*
+/// 
+/// Returns the number of matching files. Call rn_fileListItem() from 0 to N
 /// </summary>
-// TODO: uint16_t rn_getDirectoryItemCount(uint8_t searchDirLen, uint8_t* searchDir);
+uint16_t rn_fileList(uint8_t pathLen, uint8_t* path, uint8_t wildcardLen, uint8_t* wildcard, uint8_t fileListFlags);
 
-
-
-
-
+/// <summary>
+/// Populates buffer with the size, created datetime, modified datetime, 
+/// filename length, and filename of the file at the fileItemIndex.
+/// </summary>
+void rn_fileListItem(uint16_t fileItemIndex, FileDetailsStruct* s);
 
 // **************************************************************************
 // HCCA Receive
@@ -759,32 +826,8 @@ bool hcca_isRxBufferAvailable();
 uint8_t hcca_getSizeOfDataInBuffer();
 
 /// <summary>
-/// Block until a character is available in the buffer, and finally return
-/// the first character.
-/// </summary>
-uint8_t hcca_readFromBufferBlocking();
-
-/// <summary>
-/// Read a character from the buffer (256 bytes). 
-/// Check the hcca_ISRxBufferAvailable() first!
-/// </summary>
-uint8_t hcca_readFromBuffer();
-
-/// <summary>
-/// Initializes the HCCA interrupt to know when there is data to read
-/// 
-/// *Note: Do not call this if using the buffer interrupt mode
-/// </summary>
-void hcca_receiveModeStart();
-
-/// <summary>
-/// Always check if there is data before calling hcca_readbyte() otherwise you get garbage
-/// </summary>
-bool hcca_isDataAvailable();
-
-/// <summary>
-/// Read a byte from the HCCA
-/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+/// Read a byte from the buffer.
+/// Check the hcca_ISRxBufferAvailable() first or this blocks.
 /// </summary>
 uint8_t hcca_readByte();
 
@@ -811,6 +854,11 @@ uint32_t hcca_readUInt32();
 /// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
 /// </summary>
 int32_t hcca_readInt32();
+
+/// <summary>
+/// Read bufferLen into buffer, starting at the offset
+/// </summary>
+void hcca_readBytes(uint8_t offset, uint8_t bufferLen, uint8_t* buffer);
 
 
 
@@ -971,13 +1019,11 @@ void vdp_print(uint8_t* text);
 /// <summary>
 /// Print the specified portion of the string. No escape sequences are supported.
 /// </summary>
-void vdp_printPart(uint8_t* text, uint16_t offset, uint16_t length);
-
-///////
-///  Set backdrop color
-///
-/// - color
-////
+void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text);
+  
+/// <summary>
+/// Set backdrop border color
+/// </summary>
 void vdp_setBackDropColor(uint8_t);
 
 /// <summary>

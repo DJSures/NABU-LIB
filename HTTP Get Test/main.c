@@ -18,6 +18,9 @@ void main() {
 
 void main2() {
 
+  // We use this for displaying file information and directory information later on
+  FileDetailsStruct fs;
+
 #define BUFFERSIZE 4
   uint8_t buffer[BUFFERSIZE];
   uint32_t read;
@@ -100,7 +103,7 @@ void main2() {
     rn_fileHandleAppend(writeFileHandle, 0, toRead, buffer);
 
     // display the data that we read onto the screen
-    vdp_printPart(buffer, 0, toRead);
+    vdp_printPart(0, toRead, buffer);
   }
 
   vdp_newLine();
@@ -140,14 +143,114 @@ void main2() {
     read += rn_fileHandleRead(writeFileHandle, buffer, 0, read, toRead);
 
     // display the data that we read onto the screen
-    vdp_printPart(buffer, 0, toRead);
+    vdp_printPart(0, toRead, buffer);
   }
 
   vdp_newLine();
   vdp_newLine();
 
+  // Display addition details about the file we just wrote to
+  // ------------------------------------------------------------------------------------------------
+  rn_fileHandleDetails(writeFileHandle, &fs);
+
+  vdp_print("Filename: ");
+  vdp_printPart(0, fs.FilenameLen, fs.Filename);
+  vdp_newLine();
+
+  vdp_print("File Size: ");
+  vdp_writeInt32(fs.FileSize);
+  vdp_newLine();
+
+  vdp_print("Created: ");
+  vdp_writeUInt16(fs.CreatedYear);
+  vdp_write('-', true);
+  vdp_writeUInt8(fs.CreatedMonth);
+  vdp_write('-', true);
+  vdp_writeUInt8(fs.CreatedDay);
+  vdp_write(' ', true);
+  vdp_writeUInt8(fs.CreatedHour);
+  vdp_write(':', true);
+  vdp_writeUInt8(fs.CreatedMinute);
+  vdp_write(':', true);
+  vdp_writeUInt8(fs.CreatedSecond);
+  vdp_newLine();
+
+  vdp_print("Modified: ");
+  vdp_writeUInt16(fs.ModifiedYear);
+  vdp_write('-', true);
+  vdp_writeUInt8(fs.ModifiedMonth);
+  vdp_write('-', true);
+  vdp_writeUInt8(fs.ModifiedDay);
+  vdp_write(' ', true);
+  vdp_writeUInt8(fs.ModifiedHour);
+  vdp_write(':', true);
+  vdp_writeUInt8(fs.ModifiedMinute);
+  vdp_write(':', true);
+  vdp_writeUInt8(fs.ModifiedSecond);
+
+  vdp_newLine();
+  vdp_newLine();
+
+  // Okay, now let's get a directory listing of the folder we just wrote to
+  // ------------------------------------------------------------------------------------------------
+  uint16_t fileCnt = rn_fileList(17, "z:\\test\\directory", 1, "*", FILE_LIST_FLAG_INCLUDE_FILES | FILE_LIST_FLAG_INCLUDE_DIRECTORIES);
+
+  vdp_print("Files found: ");
+  vdp_writeInt32(fileCnt);
+  vdp_newLine();
+
+  for (uint16_t i = 0; i < fileCnt; i++) {
+
+    rn_fileListItem(i, &fs);
+
+    if (fs.IsFile) {
+
+      vdp_print("Filename: ");
+      vdp_printPart(0, fs.FilenameLen, fs.Filename);
+      vdp_newLine();
+
+      vdp_print("File Size: ");
+      vdp_writeInt32(fs.FileSize);
+      vdp_newLine();
+    } else {
+
+      vdp_print("Directory Name: ");
+      vdp_printPart(0, fs.FilenameLen, fs.Filename);
+      vdp_newLine();
+    }
+
+    vdp_print("Created: ");
+    vdp_writeUInt16(fs.CreatedYear);
+    vdp_write('-', true);
+    vdp_writeUInt8(fs.CreatedMonth);
+    vdp_write('-', true);
+    vdp_writeUInt8(fs.CreatedDay);
+    vdp_write(' ', true);
+    vdp_writeUInt8(fs.CreatedHour);
+    vdp_write(':', true);
+    vdp_writeUInt8(fs.CreatedMinute);
+    vdp_write(':', true);
+    vdp_writeUInt8(fs.CreatedSecond);
+    vdp_newLine();
+
+    vdp_print("Modified: ");
+    vdp_writeUInt16(fs.ModifiedYear);
+    vdp_write('-', true);
+    vdp_writeUInt8(fs.ModifiedMonth);
+    vdp_write('-', true);
+    vdp_writeUInt8(fs.ModifiedDay);
+    vdp_write(' ', true);
+    vdp_writeUInt8(fs.ModifiedHour);
+    vdp_write(':', true);
+    vdp_writeUInt8(fs.ModifiedMinute);
+    vdp_write(':', true);
+    vdp_writeUInt8(fs.ModifiedSecond);
+    vdp_newLine();
+  }
+
   // We're done withour test, so let's display DONE and hang out
   // until someone preses physical reset on the NABU.
+  // ------------------------------------------------------------------------------------------------
 
   vdp_print("Done");
 

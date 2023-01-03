@@ -57,7 +57,7 @@ void main2() {
     vdp_newLine();
 
     vdp_print("Hello, there ");
-    vdp_printPart(name, 0, read);
+    vdp_printPart(0, read, name);
 
     vdp_newLine();
     vdp_newLine();

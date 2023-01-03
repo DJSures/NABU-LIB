@@ -61,7 +61,7 @@ uint8_t rn_fileOpen(uint8_t filenameLen, uint8_t* filename, uint16_t fileFlag, u
 
   hcca_writeByte(fileHandle);
 
-  return hcca_readFromBuffer();
+  return hcca_readByte();
 }
 
 void rn_fileHandleClose(uint8_t fileHandle) {
@@ -110,7 +110,7 @@ uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferO
   hcca_writeUInt16(readLength);
 
   for (uint16_t i = 0; i < readLength; i++)
-    buffer[i + bufferOffset] = hcca_readFromBuffer();
+    buffer[i + bufferOffset] = hcca_readByte();
 
   return readLength;
 }
@@ -225,9 +225,141 @@ void rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t des
   hcca_writeByte(copyMoveFlag);
 }
 
+uint16_t rn_fileList(uint8_t pathLen, uint8_t* path, uint8_t wildcardLen, uint8_t* wildcard, uint8_t fileListFlags) {
 
+  // 0xb1
 
+  hcca_writeByte(0xb1);
 
+  hcca_writeByte(pathLen);
+
+  hcca_writeBytes(0, pathLen, path);
+
+  hcca_writeByte(wildcardLen);
+
+  hcca_writeBytes(0, wildcardLen, wildcard);
+
+  hcca_writeByte(fileListFlags);
+
+  return hcca_readUInt16();
+}
+
+void rn_fileListItem(uint16_t fileItemIndex, FileDetailsStruct* s) {
+
+  // 0xb2
+  // 
+  // The response is 83 bytes and structured like so...
+  // 
+  // Bytes       Type      Description
+  // ----------  --------  ------------------------------------
+  // 0, 1, 2, 3  int32_t   Filesize (or -1 for a folder)
+  // 4, 5        uint16_t  Created Year
+  // 6           uint8_t   Created Month
+  // 7           uint8_t   Created Day
+  // 8           uint8_t   Created Hour (24 hour)
+  // 9           uint8_t   Created Minute
+  // 10          uint8_t   Created Second
+  // 11, 12      uint16_t  Modified Year
+  // 13          uint8_t   Modified Month
+  // 14          uint8_t   Modified Day
+  // 15          uint8_t   Modified Hour (24 hour)
+  // 16          uint8_t   Modified Minute
+  // 17          uint8_t   Modified Second
+  // 18          uint8_t   Length of filename (max 64)
+  // 19..82                The remaining bytes is the filename
+
+  hcca_writeByte(0xb2);
+
+  hcca_writeUInt16(fileItemIndex);
+
+  s->FileSize = hcca_readInt32(); // 0, 1, 2, 3
+
+  s->CreatedYear = hcca_readUInt16(); // 4, 5
+  s->CreatedMonth = hcca_readByte(); // 6
+  s->CreatedDay = hcca_readByte(); // 7
+  s->CreatedHour = hcca_readByte(); // 8
+  s->CreatedMinute = hcca_readByte(); // 9
+  s->CreatedSecond = hcca_readByte(); // 10
+
+  s->ModifiedYear = hcca_readUInt16(); // 11, 12
+  s->ModifiedMonth = hcca_readByte(); // 13
+  s->ModifiedDay = hcca_readByte(); // 14
+  s->ModifiedHour = hcca_readByte(); // 15
+  s->ModifiedMinute = hcca_readByte(); // 16
+  s->ModifiedSecond = hcca_readByte(); // 17
+
+  s->FilenameLen = hcca_readByte(); // 18
+
+  hcca_readBytes(0, 64, (uint8_t*)s->Filename); // 19-64
+
+  s->IsFile = (s->FileSize >= 0);
+  s->Exists = (s->FileSize != -2);
+}
+
+void rn_fileDetails(uint8_t filenameLen, uint8_t* filename, FileDetailsStruct* s) {
+
+  // 0xb3
+  hcca_writeByte(0xb3);
+
+  hcca_writeByte(filenameLen);
+
+  hcca_writeBytes(0, filenameLen, filename);
+
+  s->FileSize = hcca_readInt32(); // 0, 1, 2, 3
+
+  s->CreatedYear = hcca_readUInt16(); // 4, 5
+  s->CreatedMonth = hcca_readByte(); // 6
+  s->CreatedDay = hcca_readByte(); // 7
+  s->CreatedHour = hcca_readByte(); // 8
+  s->CreatedMinute = hcca_readByte(); // 9
+  s->CreatedSecond = hcca_readByte(); // 10
+
+  s->ModifiedYear = hcca_readUInt16(); // 11, 12
+  s->ModifiedMonth = hcca_readByte(); // 13
+  s->ModifiedDay = hcca_readByte(); // 14
+  s->ModifiedHour = hcca_readByte(); // 15
+  s->ModifiedMinute = hcca_readByte(); // 16
+  s->ModifiedSecond = hcca_readByte(); // 17
+
+  s->FilenameLen = hcca_readByte(); // 18
+
+  hcca_readBytes(0, 64, (uint8_t*)s->Filename); // 19-64
+
+  s->IsFile = (s->FileSize >= 0);
+  s->Exists = (s->FileSize != -2);
+}
+
+void rn_fileHandleDetails(int8_t fileHandle, FileDetailsStruct* s) {
+
+  // 0xb4
+
+  hcca_writeByte(0xb4);
+
+  hcca_writeByte(fileHandle);
+
+  s->FileSize = hcca_readInt32(); // 0, 1, 2, 3
+
+  s->CreatedYear = hcca_readUInt16(); // 4, 5
+  s->CreatedMonth = hcca_readByte(); // 6
+  s->CreatedDay = hcca_readByte(); // 7
+  s->CreatedHour = hcca_readByte(); // 8
+  s->CreatedMinute = hcca_readByte(); // 9
+  s->CreatedSecond = hcca_readByte(); // 10
+
+  s->ModifiedYear = hcca_readUInt16(); // 11, 12
+  s->ModifiedMonth = hcca_readByte(); // 13
+  s->ModifiedDay = hcca_readByte(); // 14
+  s->ModifiedHour = hcca_readByte(); // 15
+  s->ModifiedMinute = hcca_readByte(); // 16
+  s->ModifiedSecond = hcca_readByte(); // 17
+
+  s->FilenameLen = hcca_readByte(); // 18
+
+  hcca_readBytes(0, 64, (uint8_t*)s->Filename); // 19-64
+
+  s->IsFile = (s->FileSize >= 0);
+  s->Exists = (s->FileSize != -2);
+}
 
 
 
@@ -428,7 +560,7 @@ uint8_t hcca_getSizeOfDataInBuffer() {
   return _rxBufferWritePos - _rxBufferReadPos;
 }
 
-uint8_t hcca_readFromBuffer() {
+uint8_t hcca_readByte() {
 
   while (!hcca_isRxBufferAvailable());
 
@@ -442,49 +574,39 @@ uint8_t hcca_readFromBuffer() {
   return ret;
 }
 
-inline void hcca_receiveModeStart() {
-
-  ayWrite(IOPORTA, 0b10000000);
-}
-
-inline bool hcca_isDataAvailable() {
-
-  return !(ayRead(IOPORTB) & 0b00000010);
-}
-
-inline uint8_t hcca_readByte() {
-
-  return IO_HCCA;
-}
-
 inline uint16_t hcca_readUInt16() {
 
-  return (uint16_t)hcca_readFromBuffer() +
-    ((uint16_t)hcca_readFromBuffer() << 8);
+  return (uint16_t)hcca_readByte() +
+    ((uint16_t)hcca_readByte() << 8);
 }
 
 inline int16_t hcca_readInt16() {
 
-  return (int16_t)hcca_readFromBuffer() +
-    ((int16_t)hcca_readFromBuffer() << 8);
+  return (int16_t)hcca_readByte() +
+    ((int16_t)hcca_readByte() << 8);
 }
 
 inline uint32_t hcca_readUInt32() {
 
-  return (uint32_t)hcca_readFromBuffer() +
-    ((uint32_t)hcca_readFromBuffer() << 8) +
-    ((uint32_t)hcca_readFromBuffer() << 16) +
-    ((uint32_t)hcca_readFromBuffer() << 24);
+  return (uint32_t)hcca_readByte() +
+    ((uint32_t)hcca_readByte() << 8) +
+    ((uint32_t)hcca_readByte() << 16) +
+    ((uint32_t)hcca_readByte() << 24);
 }
 
 inline int32_t hcca_readInt32() {
 
-  return (int32_t)hcca_readFromBuffer() +
-    ((int32_t)hcca_readFromBuffer() << 8) +
-    ((int32_t)hcca_readFromBuffer() << 16) +
-    ((int32_t)hcca_readFromBuffer() << 24);
+  return (int32_t)hcca_readByte() +
+    ((int32_t)hcca_readByte() << 8) +
+    ((int32_t)hcca_readByte() << 16) +
+    ((int32_t)hcca_readByte() << 24);
 }
 
+void hcca_readBytes(uint8_t offset, uint8_t bufferLen, uint8_t* buffer) {
+
+  for (uint8_t i = 0; i < bufferLen; i++)
+    buffer[offset + i] = hcca_readByte();
+}
 
 
 
@@ -979,9 +1101,9 @@ void vdp_printG2(uint8_t* text) {
     vdp_writeG2(text[i], true);
 }
 
-void vdp_printPart(uint8_t* text, uint16_t offset, uint16_t length) {
+void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text) {
 
-  for (uint16_t i = 0; i < length; i++)
+  for (uint16_t i = 0; i < textLength; i++)
     vdp_write(text[offset + i], true);
 }
 

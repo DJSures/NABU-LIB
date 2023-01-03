@@ -20,8 +20,6 @@ void main2() {
 
   vdp_initTextMode(0x1, 0x3, false);
 
-  hcca_receiveModeStart();
-
   vdp_setCursor2(0, 0);
   vdp_print("Super Fancy Scancode Displayer!");
 

@@ -152,7 +152,7 @@ void doHCCAInput() {
   if (!hcca_isRxBufferAvailable())
     return;
 
-  uint8_t c = hcca_readFromBuffer();
+  uint8_t c = hcca_readByte();
 
   if (c == 0xff && _telnetEscapePos == 0) {
 
