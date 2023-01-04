@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 3, 2023 (v2023.01.03.00)
+// Last updated on January 4, 2023 (v2023.01.04.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -226,7 +226,7 @@ typedef struct {
 // in the comment below. The equilevant midi note is also displayed, but that's
 // not the value you will pass to playNoteDelay(). 
 // 
-// 8, //   8, midi note: 44 ( G#2/Ab2 )
+// 8, //   8, midi note: 44 (ï¿½G#2/Ab2ï¿½)
 //         ^ 
 //         this value you pass to playNoteDelay()
 // 
@@ -235,151 +235,151 @@ typedef struct {
 
 const uint8_t _NOTES_COURSE[] = {
 13, //  0, midi note: 36 (C2)
-12, //  1, midi note: 37 ( C#2/Db2 )
+12, //  1, midi note: 37 (ï¿½C#2/Db2ï¿½)
 11, //  2, midi note: 38 (D2)
-11, //  3, midi note: 39 ( D#2/Eb2 )
+11, //  3, midi note: 39 (ï¿½D#2/Eb2ï¿½)
 10, //  4, midi note: 40 (E2)
 10, //  5, midi note: 41 (F2)
-9, //  6, midi note: 42 ( F#2/Gb2 )
+9, //  6, midi note: 42 (ï¿½F#2/Gb2ï¿½)
 8, //  7, midi note: 43 (G2)
-8, //  8, midi note: 44 ( G#2/Ab2 )
+8, //  8, midi note: 44 (ï¿½G#2/Ab2ï¿½)
 7, //  9, midi note: 45 (A2)
-7, //  10, midi note: 46 ( A#2/Bb2 )
+7, //  10, midi note: 46 (ï¿½A#2/Bb2ï¿½)
 7, //  11, midi note: 47 (B2)
 6, //  12, midi note: 48 (C3)
-6, //  13, midi note: 49 ( C#3/Db3 )
+6, //  13, midi note: 49 (ï¿½C#3/Db3ï¿½)
 5, //  14, midi note: 50 (D3)
-5, //  15, midi note: 51 ( D#3/Eb3 )
+5, //  15, midi note: 51 (ï¿½D#3/Eb3ï¿½)
 5, //  16, midi note: 52 (E3)
 5, //  17, midi note: 53 (F3)
-4, //  18, midi note: 54 ( F#3/Gb3 )
+4, //  18, midi note: 54 (ï¿½F#3/Gb3ï¿½)
 4, //  19, midi note: 55 (G3)
-4, //  20, midi note: 56 ( G#3/Ab3 )
+4, //  20, midi note: 56 (ï¿½G#3/Ab3ï¿½)
 3, //  21, midi note: 57 (A3)
-3, //  22, midi note: 58 ( A#3/Bb3 )
+3, //  22, midi note: 58 (ï¿½A#3/Bb3ï¿½)
 3, //  23, midi note: 59 (B3)
 3, //  24, midi note: 60 (C4)
-3, //  25, midi note: 61 ( C#4/Db4 )
+3, //  25, midi note: 61 (ï¿½C#4/Db4ï¿½)
 2, //  26, midi note: 62 (D4)
-2, //  27, midi note: 63 ( D#4/Eb4 )
+2, //  27, midi note: 63 (ï¿½D#4/Eb4ï¿½)
 2, //  28, midi note: 64 (E4)
 2, //  29, midi note: 65 (F4)
-2, //  30, midi note: 66 ( F#4/Gb4 )
+2, //  30, midi note: 66 (ï¿½F#4/Gb4ï¿½)
 2, //  31, midi note: 67 (G4)
-2, //  32, midi note: 68 ( G#4/Ab4 )
+2, //  32, midi note: 68 (ï¿½G#4/Ab4ï¿½)
 1, //  33, midi note: 69 (A4)
-1, //  34, midi note: 70 ( A#4/Bb4 )
+1, //  34, midi note: 70 (ï¿½A#4/Bb4ï¿½)
 1, //  35, midi note: 71 (B4)
 1, //  36, midi note: 72 (C5)
-1, //  37, midi note: 73 ( C#5/Db5 )
+1, //  37, midi note: 73 (ï¿½C#5/Db5ï¿½)
 1, //  38, midi note: 74 (D5)
-1, //  39, midi note: 75 ( D#5/Eb5 )
+1, //  39, midi note: 75 (ï¿½D#5/Eb5ï¿½)
 1, //  40, midi note: 76 (E5)
 1, //  41, midi note: 77 (F5)
-1, //  42, midi note: 78 ( F#5/Gb5 )
+1, //  42, midi note: 78 (ï¿½F#5/Gb5ï¿½)
 1, //  43, midi note: 79 (G5)
-1, //  44, midi note: 80 ( G#5/Ab5 )
+1, //  44, midi note: 80 (ï¿½G#5/Ab5ï¿½)
 0, //  45, midi note: 81 (A5)
-0, //  46, midi note: 82 ( A#5/Bb5 )
+0, //  46, midi note: 82 (ï¿½A#5/Bb5ï¿½)
 0, //  47, midi note: 83 (B5)
 0, //  48, midi note: 84 (C6)
-0, //  49, midi note: 85 ( C#6/Db6 )
+0, //  49, midi note: 85 (ï¿½C#6/Db6ï¿½)
 0, //  50, midi note: 86 (D6)
-0, //  51, midi note: 87 ( D#6/Eb6 )
+0, //  51, midi note: 87 (ï¿½D#6/Eb6ï¿½)
 0, //  52, midi note: 88 (E6)
 0, //  53, midi note: 89 (F6)
-0, //  54, midi note: 90 ( F#6/Gb6 )
+0, //  54, midi note: 90 (ï¿½F#6/Gb6ï¿½)
 0, //  55, midi note: 91 (G6)
-0, //  56, midi note: 92 ( G#6/Ab6 )
+0, //  56, midi note: 92 (ï¿½G#6/Ab6ï¿½)
 0, //  57, midi note: 93 (A6)
-0, //  58, midi note: 94 ( A#6/Bb6 )
+0, //  58, midi note: 94 (ï¿½A#6/Bb6ï¿½)
 0, //  59, midi note: 95 (B6)
 0, //  60, midi note: 96 (C7)
-0, //  61, midi note: 97 ( C#7/Db7 )
+0, //  61, midi note: 97 (ï¿½C#7/Db7ï¿½)
 0, //  62, midi note: 98 (D7)
-0, //  63, midi note: 99 ( D#7/Eb7 )
+0, //  63, midi note: 99 (ï¿½D#7/Eb7ï¿½)
 0, //  64, midi note: 100 (E7)
 0, //  65, midi note: 101 (F7)
-0, //  66, midi note: 102 ( F#7/Gb7 )
+0, //  66, midi note: 102 (ï¿½F#7/Gb7ï¿½)
 0, //  67, midi note: 103 (G7)
-0, //  68, midi note: 104 ( G#7/Ab7 )
+0, //  68, midi note: 104 (ï¿½G#7/Ab7ï¿½)
 0, //  69, midi note: 105 (A7)
-0, //  70, midi note: 106 ( A#7/Bb7 )
+0, //  70, midi note: 106 (ï¿½A#7/Bb7ï¿½)
 0, //  71, midi note: 107 (B7)
 };
 
 const uint8_t _NOTES_FINE[] = {
 92, //  0, midi note: 36 (C2)
-156, //  1, midi note: 37 ( C#2/Db2 )
+156, //  1, midi note: 37 (ï¿½C#2/Db2ï¿½)
 231, //  2, midi note: 38 (D2)
-60, //  3, midi note: 39 ( D#2/Eb2 )
+60, //  3, midi note: 39 (ï¿½D#2/Eb2ï¿½)
 155, //  4, midi note: 40 (E2)
 2, //  5, midi note: 41 (F2)
-114, //  6, midi note: 42 ( F#2/Gb2 )
+114, //  6, midi note: 42 (ï¿½F#2/Gb2ï¿½)
 235, //  7, midi note: 43 (G2)
-106, //  8, midi note: 44 ( G#2/Ab2 )
+106, //  8, midi note: 44 (ï¿½G#2/Ab2ï¿½)
 242, //  9, midi note: 45 (A2)
-127, //  10, midi note: 46 ( A#2/Bb2 )
+127, //  10, midi note: 46 (ï¿½A#2/Bb2ï¿½)
 20, //  11, midi note: 47 (B2)
 174, //  12, midi note: 48 (C3)
-78, //  13, midi note: 49 ( C#3/Db3 )
+78, //  13, midi note: 49 (ï¿½C#3/Db3ï¿½)
 243, //  14, midi note: 50 (D3)
-158, //  15, midi note: 51 ( D#3/Eb3 )
+158, //  15, midi note: 51 (ï¿½D#3/Eb3ï¿½)
 77, //  16, midi note: 52 (E3)
 1, //  17, midi note: 53 (F3)
-185, //  18, midi note: 54 ( F#3/Gb3 )
+185, //  18, midi note: 54 (ï¿½F#3/Gb3ï¿½)
 117, //  19, midi note: 55 (G3)
-53, //  20, midi note: 56 ( G#3/Ab3 )
+53, //  20, midi note: 56 (ï¿½G#3/Ab3ï¿½)
 249, //  21, midi note: 57 (A3)
-191, //  22, midi note: 58 ( A#3/Bb3 )
+191, //  22, midi note: 58 (ï¿½A#3/Bb3ï¿½)
 138, //  23, midi note: 59 (B3)
 87, //  24, midi note: 60 (C4)
-39, //  25, midi note: 61 ( C#4/Db4 )
+39, //  25, midi note: 61 (ï¿½C#4/Db4ï¿½)
 249, //  26, midi note: 62 (D4)
-207, //  27, midi note: 63 ( D#4/Eb4 )
+207, //  27, midi note: 63 (ï¿½D#4/Eb4ï¿½)
 166, //  28, midi note: 64 (E4)
 128, //  29, midi note: 65 (F4)
-92, //  30, midi note: 66 ( F#4/Gb4 )
+92, //  30, midi note: 66 (ï¿½F#4/Gb4ï¿½)
 58, //  31, midi note: 67 (G4)
-26, //  32, midi note: 68 ( G#4/Ab4 )
+26, //  32, midi note: 68 (ï¿½G#4/Ab4ï¿½)
 252, //  33, midi note: 69 (A4)
-223, //  34, midi note: 70 ( A#4/Bb4 )
+223, //  34, midi note: 70 (ï¿½A#4/Bb4ï¿½)
 197, //  35, midi note: 71 (B4)
 171, //  36, midi note: 72 (C5)
-147, //  37, midi note: 73 ( C#5/Db5 )
+147, //  37, midi note: 73 (ï¿½C#5/Db5ï¿½)
 124, //  38, midi note: 74 (D5)
-103, //  39, midi note: 75 ( D#5/Eb5 )
+103, //  39, midi note: 75 (ï¿½D#5/Eb5ï¿½)
 83, //  40, midi note: 76 (E5)
 64, //  41, midi note: 77 (F5)
-46, //  42, midi note: 78 ( F#5/Gb5 )
+46, //  42, midi note: 78 (ï¿½F#5/Gb5ï¿½)
 29, //  43, midi note: 79 (G5)
-13, //  44, midi note: 80 ( G#5/Ab5 )
+13, //  44, midi note: 80 (ï¿½G#5/Ab5ï¿½)
 254, //  45, midi note: 81 (A5)
-239, //  46, midi note: 82 ( A#5/Bb5 )
+239, //  46, midi note: 82 (ï¿½A#5/Bb5ï¿½)
 226, //  47, midi note: 83 (B5)
 213, //  48, midi note: 84 (C6)
-201, //  49, midi note: 85 ( C#6/Db6 )
+201, //  49, midi note: 85 (ï¿½C#6/Db6ï¿½)
 190, //  50, midi note: 86 (D6)
-179, //  51, midi note: 87 ( D#6/Eb6 )
+179, //  51, midi note: 87 (ï¿½D#6/Eb6ï¿½)
 169, //  52, midi note: 88 (E6)
 160, //  53, midi note: 89 (F6)
-151, //  54, midi note: 90 ( F#6/Gb6 )
+151, //  54, midi note: 90 (ï¿½F#6/Gb6ï¿½)
 142, //  55, midi note: 91 (G6)
-134, //  56, midi note: 92 ( G#6/Ab6 )
+134, //  56, midi note: 92 (ï¿½G#6/Ab6ï¿½)
 127, //  57, midi note: 93 (A6)
-119, //  58, midi note: 94 ( A#6/Bb6 )
+119, //  58, midi note: 94 (ï¿½A#6/Bb6ï¿½)
 113, //  59, midi note: 95 (B6)
 106, //  60, midi note: 96 (C7)
-100, //  61, midi note: 97 ( C#7/Db7 )
+100, //  61, midi note: 97 (ï¿½C#7/Db7ï¿½)
 95, //  62, midi note: 98 (D7)
-89, //  63, midi note: 99 ( D#7/Eb7 )
+89, //  63, midi note: 99 (ï¿½D#7/Eb7ï¿½)
 84, //  64, midi note: 100 (E7)
 80, //  65, midi note: 101 (F7)
-75, //  66, midi note: 102 ( F#7/Gb7 )
+75, //  66, midi note: 102 (ï¿½F#7/Gb7ï¿½)
 71, //  67, midi note: 103 (G7)
-67, //  68, midi note: 104 ( G#7/Ab7 )
+67, //  68, midi note: 104 (ï¿½G#7/Ab7ï¿½)
 63, //  69, midi note: 105 (A7)
-59, //  70, midi note: 106 ( A#7/Bb7 )
+59, //  70, midi note: 106 (ï¿½A#7/Bb7ï¿½)
 56, //  71, midi note: 107 (B7)
 };
 
@@ -446,7 +446,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength);
 /// <summary>
 /// Write VAL in REG to the AY IC
 /// </summary>
-void ayWrite(uint8_t reg, uint8_t val);
+inline void ayWrite(uint8_t reg, uint8_t val);
 
 /// <summary>
 /// Read from the REG of AY IC
@@ -684,7 +684,7 @@ uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferO
 /// - dataLen is the length of data that will be written 
 /// - data is a pointer to the data
 /// </summary>
-void rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen, int8_t* data);
+void rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
 
 /// <summary>
 /// Insert data in the file at the specified offset. This function will shift all data following the
@@ -696,7 +696,7 @@ void rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataL
 /// - dataLen is the length of data that will be written 
 /// - data is a pointer to the data
 /// </summary>
-void rn_fileHandleInsert(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data);
+void rn_fileHandleInsert(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
 
 /// <summary>
 /// Delete range of bytes from within file handle
@@ -725,7 +725,7 @@ void rn_fileHandleEmptyFile(uint8_t fileHandle);
 /// - dataLen is the length of data that will be written 
 /// - data is a pointer to the data
 /// </summary>
-void rn_fileHandleReplace(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data);
+void rn_fileHandleReplace(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
 
 /// <summary>
 /// Delete the physical file from the store. If the file has a handle, it is closed
@@ -818,7 +818,7 @@ void hcca_enableReceiveBufferInterrupt();
 /// <summary>
 /// Returns TRUE if there is data to be read from the hcca rx buffer (256 bytes)
 /// </summary>
-bool hcca_isRxBufferAvailable();
+inline bool hcca_isRxBufferAvailable();
 
 /// <summary>
 /// Returns how much data is currently in the RX buffer
@@ -926,9 +926,15 @@ void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes);
 // **************************************************************************
 
 /// <summary>
-/// initialize the VDP
-/// Not all parameters are useful for all modes.Refer to documentation
-///
+/// initialize the VDP with the default font.
+/// Add one of these #define's into your main.c program before the #include "nabu-lib.h"
+/// If you with to use your own font, specify the font as a const uint8_t[768] ASCII = {} before the #include "nabu-lib.h" in your code
+/// --------------------------------------------------------------------------------------------------------------------------
+/// #define FONT_AMIGA
+/// #define FONT_SET1
+/// #define FONT_STANDARD
+/// #define LM80C
+/// 
 /// - mode VDP_MODE_G1 | VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT
 /// - color
 /// - big_sprites true: Use 16x16 sprites false : use 8x8 sprites
@@ -936,6 +942,11 @@ void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes);
 /// </summary>
 int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll);
 
+/// <summary>
+/// This will update the vram to the specified font.
+/// The vdp_init will initialize the default font. This is if you want to change the font.
+/// </summary>
+void vdp_initTextModeFont(uint8_t* font);
 
 /// <summary>
 /// Initializes the VDP in text mode

@@ -1,9 +1,7 @@
 #pragma once
 
-#define VT100_SCREEN_WIDTH 39
-#define VT100_SCREEN_HEIGHT 24
-#define VT100_HEIGHT VT100_SCREEN_HEIGHT
-#define VT100_WIDTH VT100_SCREEN_WIDTH
+#define VT100_WIDTH 39
+#define VT100_HEIGHT 24
 
 void vt100_init(void (*send_response)(char* str));
 void vt100_putc(uint8_t ch);

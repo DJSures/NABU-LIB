@@ -14,46 +14,19 @@ void main() {
   main2();
 }
 
+//#define FONT_AMIGA
+//#define FONT_SET1
+//#define FONT_STANDARD
+#define LM80C
+
 #include "../NABULIB/NABU-LIB.h"
 #include "vt100.c"
-
-void writeCharToScreen(uint8_t c) {
-
-  if (c == 13) {
-
-    if (vdp_cursor.y == 23) {
-
-      vdp_scrollTextUp(0, 23);
-
-      vdp_cursor.x = 0;
-      vdp_cursor.y = 23;
-    } else {
-
-      vdp_newLine();
-    }
-  } else if (c >= 0x20 && c <= 0x7d) {
-
-    if (vdp_cursor.x == 39 && vdp_cursor.y == 23) {
-
-      vdp_scrollTextUp(0, 23);
-
-      vdp_cursor.x = 0;
-      vdp_cursor.y = 23;
-    }
-
-    vdp_write(c, true);
-  }
-}
 
 void doKeyInput() {
 
   uint8_t key = isKeyPressed();
 
-  if (key == 13) {
-
-
-    hcca_writeByte(key);
-  } else if (key >= 0x01 && key <= 0x7d) {
+  if (key >= 0x01 && key <= 0x7d) {
 
     hcca_writeByte(key);
   } else if (key == 127) {
@@ -205,7 +178,7 @@ void main2() {
   vdp_initTextMode(0xf, 0x0, false);
 
   vdp_setCursor2(0, 0);
-  vdp_print("RetroNet Telnet Client (0.7b)");
+  vdp_print("RetroNet Telnet Client (0.8b)");
   vdp_setCursor2(0, 1);
   vdp_print("by DJ Sures (c)2023");
 

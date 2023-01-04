@@ -14,6 +14,11 @@ void main() {
   main2();
 }
 
+//#define FONT_AMIGA
+//#define FONT_SET1
+#define FONT_STANDARD
+//#define LM80C
+
 #include "../NABULIB/NABU-LIB.h"
 
 void main2() {

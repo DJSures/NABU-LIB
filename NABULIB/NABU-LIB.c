@@ -19,20 +19,20 @@
 // ------
 // **************************************************************************
 
-inline void nop() {
+void nop() {
   __asm
   NOP
     __endasm;
 }
 
-inline void NABU_DisableInterrupts() {
+void NABU_DisableInterrupts() {
 
   __asm
   di
     __endasm;
 }
 
-inline void NABU_EnableInterrupts() {
+void NABU_EnableInterrupts() {
 
   __asm
   ei
@@ -115,7 +115,7 @@ uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferO
   return readLength;
 }
 
-void rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen, int8_t* data) {
+void rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data) {
 
   //0xa9
 
@@ -128,7 +128,7 @@ void rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataL
   hcca_writeBytes(dataOffset, dataLen, data);
 }
 
-void rn_fileHandleInsert(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data) {
+void rn_fileHandleInsert(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, uint8_t* data) {
 
   //0xaa
 
@@ -165,7 +165,7 @@ void rn_fileHandleEmptyFile(uint8_t fileHandle) {
   hcca_writeByte(fileHandle);
 }
 
-void rn_fileHandleReplace(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data) {
+void rn_fileHandleReplace(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, uint8_t* data) {
 
   // 0xac
 
@@ -368,14 +368,14 @@ void rn_fileHandleDetails(int8_t fileHandle, FileDetailsStruct* s) {
 // -----
 // **************************************************************************
 
-inline void ayWrite(uint8_t reg, uint8_t val) {
+void ayWrite(uint8_t reg, uint8_t val) {
 
   IO_AYLATCH = reg;
 
   IO_AYDATA = val;
 }
 
-inline uint8_t ayRead(uint8_t reg) {
+uint8_t ayRead(uint8_t reg) {
 
   IO_AYLATCH = reg;
 
@@ -547,7 +547,7 @@ void hcca_enableReceiveBufferInterrupt() {
   NABU_EnableInterrupts();
 }
 
-inline bool hcca_isRxBufferAvailable() {
+bool hcca_isRxBufferAvailable() {
 
   return _rxBufferWritePos != _rxBufferReadPos;
 }
@@ -574,19 +574,19 @@ uint8_t hcca_readByte() {
   return ret;
 }
 
-inline uint16_t hcca_readUInt16() {
+uint16_t hcca_readUInt16() {
 
   return (uint16_t)hcca_readByte() +
     ((uint16_t)hcca_readByte() << 8);
 }
 
-inline int16_t hcca_readInt16() {
+int16_t hcca_readInt16() {
 
   return (int16_t)hcca_readByte() +
     ((int16_t)hcca_readByte() << 8);
 }
 
-inline uint32_t hcca_readUInt32() {
+uint32_t hcca_readUInt32() {
 
   return (uint32_t)hcca_readByte() +
     ((uint32_t)hcca_readByte() << 8) +
@@ -594,7 +594,7 @@ inline uint32_t hcca_readUInt32() {
     ((uint32_t)hcca_readByte() << 24);
 }
 
-inline int32_t hcca_readInt32() {
+int32_t hcca_readInt32() {
 
   return (int32_t)hcca_readByte() +
     ((int32_t)hcca_readByte() << 8) +
@@ -615,7 +615,7 @@ void hcca_readBytes(uint8_t offset, uint8_t bufferLen, uint8_t* buffer) {
 // -------------
 // **************************************************************************
 
-inline void hcca_writeByte(uint8_t c) {
+void hcca_writeByte(uint8_t c) {
 
   //NABU_DisableInterrupts();
 
@@ -711,30 +711,30 @@ inline void hcca_writeByte(uint8_t c) {
 
 void hcca_writeUInt32(uint32_t val) {
 
-  hcca_writeByte(val & 0xff);
-  hcca_writeByte((val >> 8) & 0xff);
-  hcca_writeByte((val >> 16) & 0xff);
-  hcca_writeByte((val >> 24) & 0xff);
+  hcca_writeByte((uint8_t)(val & 0xff));
+  hcca_writeByte((uint8_t)((val >> 8) & 0xff));
+  hcca_writeByte(((uint8_t)(val >> 16) & 0xff));
+  hcca_writeByte((uint8_t)((val >> 24) & 0xff));
 }
 
 void hcca_writeInt32(int32_t val) {
 
-  hcca_writeByte(val & 0xff);
-  hcca_writeByte((val >> 8) & 0xff);
-  hcca_writeByte((val >> 16) & 0xff);
-  hcca_writeByte((val >> 24) & 0xff);
+  hcca_writeByte((uint8_t)(val & 0xff));
+  hcca_writeByte((uint8_t)((val >> 8) & 0xff));
+  hcca_writeByte((uint8_t)((val >> 16) & 0xff));
+  hcca_writeByte((uint8_t)((val >> 24) & 0xff));
 }
 
 void hcca_writeUInt16(uint16_t val) {
 
-  hcca_writeByte(val & 0xff);
-  hcca_writeByte((val >> 8) & 0xff);
+  hcca_writeByte((uint8_t)(val & 0xff));
+  hcca_writeByte((uint8_t)((val >> 8) & 0xff));
 }
 
 void hcca_writeInt16(int16_t val) {
 
-  hcca_writeByte(val & 0xff);
-  hcca_writeByte((val >> 8) & 0xff);
+  hcca_writeByte((uint8_t)(val & 0xff));
+  hcca_writeByte((uint8_t)((val >> 8) & 0xff));
 }
 
 void hcca_writeString(uint8_t* str) {
@@ -892,6 +892,14 @@ int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool a
   vdp_setRegister(7, color);
 
   return VDP_OK;
+}
+
+void vdp_initTextModeFont(uint8_t* font) {
+
+  vdp_setWriteAddress(_vdp_pattern_table + 0x100);
+
+  for (uint16_t i = 0; i < 768; i++)
+    IO_VDPDATA = font[i];
 }
 
 void vdp_dumpFontToScreen() {
@@ -1120,7 +1128,7 @@ void vdp_newLine() {
   }
 }
 
-void vdp_setBackDropColor(uint8_t color) {
+inline void vdp_setBackDropColor(uint8_t color) {
 
   vdp_setRegister(7, color);
 }

@@ -515,7 +515,7 @@ STATE(_st_esc_sq_bracket, term, ev, arg) {
           term->scroll_start_row = term->args[0] - 1;
           term->scroll_end_row = term->args[1] - 1;
           uint8_t top_margin = term->scroll_start_row;
-          uint8_t bottom_margin = VT100_SCREEN_HEIGHT - term->scroll_end_row;
+          uint8_t bottom_margin = VT100_HEIGHT - term->scroll_end_row;
 
           //  ili9340_setScrollMargins(top_margin, bottom_margin);
             //ili9340_setScrollStart(0); // reset scroll 
