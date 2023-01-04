@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2024.01.04.00
+Ability to choose your own font per application, rather than being LIB specific. Before the #include "nabu-lib.h" in your program, #define the font. Look at any of the examples in this github repo to see how it's done. And if you want to load a font programmatically while the program is running, there is a vdp_setTextModeFont() as well.
+
 ## v2023.01.03.00
 Updated with additional file functions for listing directories, files, searching with wildcards and more. Use the HTTP Get Test project to see it in action.
 
