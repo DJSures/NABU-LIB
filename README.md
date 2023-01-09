@@ -6,7 +6,7 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
-# v2023.01.09.00
+## v2023.01.09.00
 Minor change in that the NABU-LIB and Retro File System stuff has been seperated into files. This is because I'm working on a new NABU-LIB-CPM, that will include the remote file system. There is also a chnage to the rn_handleFileRead() because it now returns the number of bytes read. That makes it operate more like standard C streams. In addition, I have added rn_handleFileReadSeq() for sequential reading, and a related rn_handleSeek() to seek through the file. These changes require the latest Internet Adapter 2023.01.09.00
 
 ## v2023.01.04.00
