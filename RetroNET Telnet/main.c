@@ -21,6 +21,7 @@ void main() {
 
 #include "../NABULIB/NABU-LIB.h"
 #include "vt100.c"
+#include <z80.h>
 
 void doKeyInput() {
 
@@ -175,16 +176,14 @@ void doHCCAInput() {
 
 void main2() {
 
+  initNABULib();
+
   vdp_initTextMode(0xf, 0x0, false);
 
   vdp_setCursor2(0, 0);
   vdp_print("RetroNet Telnet Client (0.8b)");
   vdp_setCursor2(0, 1);
   vdp_print("by DJ Sures (c)2023");
-
-  hcca_enableReceiveBufferInterrupt();
-
-  initAudio();
 
   // col 0: note
   // col 1: length of note (ms)

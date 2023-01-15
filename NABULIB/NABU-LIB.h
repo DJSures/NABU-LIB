@@ -25,8 +25,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <im2.h>
-#include <z80.h>
 #include "patterns.h"
 
 
@@ -49,6 +47,7 @@
 // return IO_AYDATA;
 // 
 // **************************************************************************
+
 __sfr __at 0xA0 IO_VDPDATA;
 __sfr __at 0xA1 IO_VDPLATCH;
 
@@ -60,18 +59,46 @@ __sfr __at 0x80 IO_HCCA;
 __sfr __at 0x90 IO_KEYBOARD;
 __sfr __at 0x91 IO_KEYBOARD_STATUS;
 
+__sfr __at 0x00 IO_CONTROL;
+
+#define CONTROL_ROMSEL     0x01
+#define CONTROL_VDOBUF     0x02
+#define CONTROL_STROBE     0x04
+#define CONTROL_LED_CHECK  0x08
+#define CONTROL_LED_ALERT  0x10
+#define CONTROL_LED_PAUSE  0x20
+
+#define INTERUPT_VECTOR_MAP_MSB 0xff
+#define INTERUPT_VECTOR_MAP_ADDRESS 0xff00
+
+#define INT_MASK_HCCARX   0x80
+#define INT_MASK_HCCATX   0x40
+#define INT_MASK_KEYBOARD 0x20
+#define INT_MASK_VDP      0x10
+
+#define INTERUPT_VECTOR_MAP_MSB 0xff
+#define INTERUPT_VECTOR_MAP_ADDRESS 0xff00
+
 #define IOPORTA  0x0e
 #define IOPORTB  0x0f
 
+/// <summary>
+/// The cursor that will be displayed.
+/// You can override this value by defining it before the <include> in your main.c
+/// If you do not want a cursor, set it to 0x00
+/// </summary>
+#ifndef CURSOR_CHAR
+#define CURSOR_CHAR '_'
+#endif
 
 /// <summary>
-/// HCCA RX Input buffer
+/// HCCA RX Input buffer.
+/// You can override the RX BUFFER SIZE by defining it before the <include> in your main.c
 /// </summary>
-
 #ifndef RX_BUFFER_SIZE
-#define RX_BUFFER_SIZE 2048
+#define RX_BUFFER_SIZE 1048
 #endif
-uint8_t _rxBuffer[RX_BUFFER_SIZE];
+uint8_t _rxBuffer[RX_BUFFER_SIZE] = { 0 };
 
 /// <summary>
 /// HCCA RX read position
@@ -82,6 +109,13 @@ uint16_t _rxBufferReadPos = 0;
 /// HCCA RX write position (used in interrupt)
 /// </summary>
 uint16_t _rxBufferWritePos = 0;
+
+/// <summary>
+/// Keyboard Input buffer.
+/// </summary>
+volatile uint8_t _kbdBuffer[256] = { 0 };
+volatile uint8_t _kbdBufferReadPos = 0;
+volatile uint8_t _kbdBufferWritePos = 0;
 
 
 // **************************************************************************
@@ -120,7 +154,7 @@ uint8_t _vdp_textBuffer[24 * 40]; // row * col = 960 bytes
 struct {
   uint8_t x;
   uint8_t y;
-} vdp_cursor;
+} vdp_cursor = { 0, 0};
 
 uint16_t       _vdp_sprite_attribute_table;
 uint16_t       _vdp_sprite_pattern_table;
@@ -398,6 +432,12 @@ const uint8_t _NOTES_FINE[] = {
 // **************************************************************************
 
 /// <summary>
+/// Initialize the NABU-LIB. This should be the very first thing in your program!
+/// This will enable the HCCA RX Interupt, the Keyboard Interupt, and disable the ROM
+/// </summary>
+void initNABULib();
+
+/// <summary>
 /// Disable interrupts on the nabu
 /// </summary>
 void NABU_DisableInterrupts();
@@ -424,18 +464,13 @@ inline void nop();
 // AY in 3 channel tone mode, with no noise channel. The mixer is configured
 // for an fading envelope for convenience.
 // 
-// To use the generic simple audio functions provided, use initAudio()
+// To use the generic simple audio functions provided, use initNABULib()
 // at the beginning of your program.
 // 
 // *Note: You can use the AY ports (IO_AYLATCH and IO_AYDATA) to configure
 // the AY chip yourself. Otherwise, you can use these simple helper functions.
 // 
 // **************************************************************************
-
-/// <summary>
-/// Initializes the audio for 3 channels of tones
-/// </summary>
-void initAudio();
 
 /// <summary>
 /// Play a note with delay envelope
@@ -469,7 +504,7 @@ inline uint8_t ayRead(uint8_t reg);
 // **************************************************************************
 
 /// <summary>
-/// The last key that was pressed when isKeyPressed is called
+/// The last key that was pressed when isKeyPressed or getChar is called
 /// </summary>
 uint8_t LastKeyPressed = 0x00;
 
@@ -512,11 +547,6 @@ uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
 // to ensure there is actually data available.
 // 
 // **************************************************************************
-
-/// <summary>
-/// Enable the HCCA rx buffer (256 bytes).
-/// </summary>
-void hcca_enableReceiveBufferInterrupt();
 
 /// <summary>
 /// Returns TRUE if there is data to be read from the hcca rx buffer (256 bytes)

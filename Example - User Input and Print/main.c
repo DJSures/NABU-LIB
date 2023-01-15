@@ -20,14 +20,15 @@ void main() {
 #define LM80C
 
 #include "../NABULIB/NABU-LIB.h"
+#include <z80.h> // for z80_delay_ms()
 
 void main2() {
+ 
+  // init the nabu lib which does interrupts and all that jazz
+  initNABULib();
 
   // Set the text mode to foreground color white, bg black
   vdp_initTextMode(0xf, 0x0, true);
-
-  // init the audio because we'll play some funky music!
-  initAudio();
 
   // This is our intro song
   // col 0: note

@@ -21,6 +21,8 @@ void main() {
 
 #include "../NABULIB/RetroNET-FileStore.h"
 #include "../NABULIB/NABU-LIB.h"
+#include <z80.h> // for z80_delay_ms()
+
 
 #define LOCAL_TMP_FILE "z:\\test\\directory\\testing.txt"
 #define LOCAL_TMP_FILE_LEN 29
@@ -343,11 +345,10 @@ void doDirectoryListing() {
 
 void main2() {
 
+  initNABULib();
+
   // Put the graphics into text mode with the text color 0x01 and background color 0x03
   vdp_initTextMode(VDP_WHITE, VDP_BLACK, true);
-
-  // Enable the receive buffer interrupt
-  hcca_enableReceiveBufferInterrupt();
 
   vdp_print("Hi, the goal of NABU is to be a PC with no local storage, relying on the network (or internet) for everything. This is a demo of reading/writing files from the cloud and over the Internet Adapter.");
   vdp_newLine();

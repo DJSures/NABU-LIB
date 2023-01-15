@@ -20,6 +20,7 @@ void main() {
 #define LM80C
 
 #include "../NABULIB/NABU-LIB.h"
+#include <z80.h>
 
 void main2() {
 
@@ -50,7 +51,7 @@ void main2() {
   ayWrite(0, 0);
   ayWrite(1, 0);
 
-  z80_delay_ms(1500);
+  z80_delay_ms(500);
 
   for (uint8_t i = 0; i < 31; i++) {
 

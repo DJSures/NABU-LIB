@@ -20,8 +20,13 @@ void main() {
 //#define LM80C
 
 #include "../NABULIB/NABU-LIB.h"
+#include <z80.h> // for z80_delay_ms();
 
+// This just tests the performance of scroll. Automatic text scroll like a console can 
+// be enabled in vdp_initTextMode()
 void main2() {
+
+  initNABULib();
 
   vdp_initTextMode(0xf, 0x0, false);
 

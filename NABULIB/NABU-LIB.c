@@ -19,28 +19,156 @@
 // ------
 // **************************************************************************
 
+void initNABULib(){
+
+  // Turn off the rom
+  IO_CONTROL = 0x01;
+
+  __asm
+
+    di;
+  
+    IM 2;
+
+    ld a, INTERUPT_VECTOR_MAP_MSB
+    ld i, a
+
+    // HCCA Receive
+    ld hl, _isrHCCARX;
+    ld (INTERUPT_VECTOR_MAP_ADDRESS), hl;
+
+    // // HCCA Send
+    // ld hl, _isrHCCATX;
+    // ld (INTERUPT_VECTOR_MAP_ADDRESS + 2), hl;
+
+    // HCCA Keyboard
+    ld hl, _isrKeyboard;
+    ld (INTERUPT_VECTOR_MAP_ADDRESS + 4), hl;
+
+    // // Video Frame Sync
+    // ld hl, _isrVideoSync;
+    // ld (INTERUPT_VECTOR_MAP_ADDRESS + 6), hl;
+
+    // // Option card 0
+    // ld hl, _isrFunc;
+    // ld (INTERUPT_VECTOR_MAP_ADDRESS + 8), hl;
+
+    // // Option card 1
+    // ld hl, _isrFunc;
+    // ld (INTERUPT_VECTOR_MAP_ADDRESS + 10), hl;
+
+    // // Option card 2
+    // ld hl, _isrFunc;
+    // ld (INTERUPT_VECTOR_MAP_ADDRESS + 12), hl;
+
+    // // Option card 3
+    // ld hl, _isrFunc;
+    // ld (INTERUPT_VECTOR_MAP_ADDRESS + 14), hl;
+
+    // enable HCCA RX and Keyboard interrupts
+    ld	a, IOPORTA;
+    out	(_IO_AYLATCH), a;
+
+    ld	a, INT_MASK_HCCARX | INT_MASK_KEYBOARD;
+    out	(_IO_AYDATA), a;
+
+    ei;
+
+  __endasm;
+
+  // Noise envelope
+  ayWrite(6, 0b00000000);
+
+  // Set the amplitude (volume) to enveoloe
+  ayWrite(8, 0b00010000);
+  ayWrite(9, 0b00010000);
+  ayWrite(10, 0b00010000);
+
+  // Enable only the Tone generators on A B C
+  ayWrite(7, 0b01111000);
+}
+
 void nop() {
   __asm
-  NOP
+    NOP
     __endasm;
 }
 
 void NABU_DisableInterrupts() {
 
   __asm
-  di
+    di
     __endasm;
 }
 
 void NABU_EnableInterrupts() {
 
   __asm
-  ei
+    ei
     __endasm;
 }
 
 
 
+
+// **************************************************************************
+// Interrupts
+// -----
+// **************************************************************************
+
+void isrHCCARX() __naked {
+
+  __asm
+    push af;
+    push bc;
+    push de;
+    push hl;
+  __endasm;
+
+  _rxBuffer[_rxBufferWritePos] = IO_HCCA;
+
+  _rxBufferWritePos++;
+
+  if (_rxBufferWritePos == RX_BUFFER_SIZE)
+    _rxBufferWritePos = 0;
+
+  __asm
+    pop hl;
+    pop de;
+    pop bc;
+    pop af;
+    ei;
+    reti;
+  __endasm;
+}
+
+void isrKeyboard() __naked {
+
+  __asm
+    push af;
+    push bc;
+    push de;
+    push hl;
+  __endasm;
+
+  uint8_t inKey = IO_KEYBOARD;
+
+  if (inKey < 0x90 || inKey > 0x95) {
+
+    _kbdBuffer[_kbdBufferWritePos] = inKey;
+
+    _kbdBufferWritePos++;
+  }
+
+  __asm
+    pop hl;
+    pop de;
+    pop bc;
+    pop af;
+    ei;
+    reti;
+  __endasm;
+}
 
 
 // **************************************************************************
@@ -60,20 +188,6 @@ uint8_t ayRead(uint8_t reg) {
   IO_AYLATCH = reg;
 
   return IO_AYDATA;
-}
-
-void initAudio() {
-
-  // Noise envelope
-  ayWrite(6, 0b00000000);
-
-  // Set the amplitude (volume) to enveoloe
-  ayWrite(8, 0b00010000);
-  ayWrite(9, 0b00010000);
-  ayWrite(10, 0b00010000);
-
-  // Enable only the Tone generators on A B C
-  ayWrite(7, 0b01111000);
 }
 
 void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
@@ -114,29 +228,42 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
 uint8_t isKeyPressed() {
 
-  if (IO_KEYBOARD_STATUS & 0x02) {
+  if (_kbdBufferWritePos == _kbdBufferReadPos)
+    return 0;
 
-    uint8_t inKey = IO_KEYBOARD;
+  LastKeyPressed = _kbdBuffer[_kbdBufferReadPos];
 
-    if (inKey >= 0x90 && inKey <= 0x95)
-      return 0x00;
+  _kbdBufferReadPos++;
 
-    LastKeyPressed = inKey;
-
-    return inKey;
-  }
-
-  return false;
+  return LastKeyPressed;    
 }
 
 uint8_t getChar() {
 
-  uint8_t retVal = 0;
+  uint16_t cursorCnt = 0;
 
-  while (retVal == 0)
-    retVal = isKeyPressed();
+  while (_kbdBufferWritePos == _kbdBufferReadPos)
+    if (CURSOR_CHAR != 0) {
 
-  return retVal;
+      if (cursorCnt == 1)
+        vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, CURSOR_CHAR);
+      else if (cursorCnt == 15000)
+        vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
+      else if (cursorCnt > 30000)     
+        cursorCnt = 0;
+      
+      cursorCnt++;
+    }
+  
+
+  if (CURSOR_CHAR != 0)
+    vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
+
+  LastKeyPressed = _kbdBuffer[_kbdBufferReadPos];
+
+  _kbdBufferReadPos++;
+
+  return LastKeyPressed;
 }
 
 uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) {
@@ -179,53 +306,10 @@ uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) {
 
 
 
-
-
 // **************************************************************************
 // HCCA Receive
 // ------------
 // **************************************************************************
-
-//IM2_DEFINE_ISR(isr) {
-void isr() {
-
-  __asm
-  push af;
-  push bc;
-  push de;
-  push hl;
-  __endasm;
-
-  _rxBuffer[_rxBufferWritePos] = IO_HCCA;
-
-  _rxBufferWritePos++;
-
-  if (_rxBufferWritePos == RX_BUFFER_SIZE)
-    _rxBufferWritePos = 0;
-
-  __asm
-  pop hl;
-  pop de;
-  pop bc;
-  pop af;
-  ei;
-  reti;
-  __endasm;
-}
-
-void hcca_enableReceiveBufferInterrupt() {
-
-  NABU_DisableInterrupts();
-
-  ayWrite(IOPORTA, 0b10000000);          // Enable the interrupts that we want to raise (HCCA RX) 
-
-  im2_init((void*)0xe300);               // init the IM2 to point to the start of the table at 0xe300
-  memset((void*)0xe300, 0xe4, 257);      // init the table at 0xe300 to point to 0xe4e4 (table contains 127 16-bit addresses)
-  z80_bpoke(0xe4e4, 195);                // at 0xe4e4, put a JP
-  z80_wpoke(0xe4e5, (unsigned int)isr);  // at 0xe4e5, put the address to JP to, which is our ISR function
-
-  NABU_EnableInterrupts();
-}
 
 bool hcca_isRxBufferAvailable() {
 
@@ -883,7 +967,7 @@ void vdp_write(uint8_t chr, bool advanceNextChar) {
 
   IO_VDPDATA = chr;
 
-  _vdp_textBuffer[vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x] = chr;
+  _vdp_textBuffer[name_offset] = chr;
 
   if (vdp_cursor.x == 39 && vdp_cursor.y == 23) {
 
@@ -917,7 +1001,7 @@ void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c) {
 
   uint16_t name_offset = y * (_vdp_crsr_max_x + 1) + x; // Position in name table
 
-  _vdp_textBuffer[y * (_vdp_crsr_max_x + 1) + x] = c;
+  _vdp_textBuffer[name_offset] = c;
 
   vdp_setWriteAddress(_vdp_name_table + name_offset);
 

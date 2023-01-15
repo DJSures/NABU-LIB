@@ -20,9 +20,10 @@ void main() {
 #define LM80C
 
 #include "../NABULIB/NABU-LIB.h"
+#include <z80.h> // for z80_delay_ms()
 
 void main2() {
-
+  
   // Put the graphics into text mode with the text color 0x01 and background color 0x03
   vdp_initTextMode(0x01, 0x03, false);
 
