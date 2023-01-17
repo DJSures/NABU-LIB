@@ -24,9 +24,6 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
-#include <im2.h>
-#include <z80.h>
 #include "NABU-LIB.h"
 
 // **************************************************************************

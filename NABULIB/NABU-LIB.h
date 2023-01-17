@@ -22,9 +22,64 @@
 #ifndef NABU_H
 #define NABU_H
 
+
+/// **************************************************************************
+/// If you are using CPM stdio, such as gets, you will need to disable the keyboard
+/// interupt in NABULIB. Add this #define above your #include in the main.c
+/// If you disable the keyboard interrupt, you cannot use any NABULIB keyboard
+/// input commands and have to use the cpm ones.
+///
+/// For safety and memory, this will hide all NABULIB keyboard input functions
+/// **************************************************************************
+// #define DISABLE_KEYBOARD_INT
+
+
+/// **************************************************************************
+/// If your program is not using the file store or HCCA for retronet, you can
+/// disable the RX interrupt to save filesize.
+///
+/// Note that there are a few VDP commands in the HCCA functions, so you cannot
+/// disable VDP and enable HCCA RX. You can disable HCCA RX and keep VDP, but 
+/// you cannot disable VDP and keep HCCA.
+///
+/// Add this #define above your #include in the main.c to disable the HCCA RX INT
+/// **************************************************************************
+// #define DISABLE_HCCA_RX_INT
+
+
+/// **************************************************************************
+/// You can disable the vdp functions if you're just using the cpm built-in
+/// console stuff, like puts() or printf(), etc.
+///
+/// Note that there are a few VDP commands in the HCCA functions, so you cannot
+/// disable VDP and enable HCCA RX. You can disable HCCA RX and keep VDP, but 
+/// you cannot disable VDP and keep HCCA.
+///
+/// Add this #define above your #include in the main.c to disable the VDP commands
+/// **************************************************************************
+// #define DISABLE_VDP
+
+
+/// **************************************************************************
+/// The cursor that will be displayed with getChar() and readLine()
+/// You can override this value by defining it before the #include in your main.c
+/// If you do not want a cursor, set it to 0x00
+/// Note: This is only valid when using the nabulib vdp and keyboard interupts
+/// **************************************************************************
+#ifndef CURSOR_CHAR
+#define CURSOR_CHAR '_'
+#endif
+
+/// **************************************************************************
+/// HCCA RX Input buffer.
+/// You can override the RX BUFFER SIZE by defining it before the #include in your main.c
+/// **************************************************************************
+#ifndef RX_BUFFER_SIZE
+#define RX_BUFFER_SIZE 1048
+#endif
+
 #include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
 #include "patterns.h"
 
 
@@ -76,46 +131,53 @@ __sfr __at 0x00 IO_CONTROL;
 #define INT_MASK_KEYBOARD 0x20
 #define INT_MASK_VDP      0x10
 
-#define INTERUPT_VECTOR_MAP_MSB 0xff
+/// <summary>
+/// The interupt vector address should not be changed becuase it is shared with CPM.
+/// This is because you can disable either the HCCA RX or Keyboard interrupt and let
+/// CPM subsystem (BDOS) continue using it. So this address must always stay the same
+/// as CPM is using.
+/// </summary>
+#define INTERUPT_VECTOR_MAP_MSB     0xff
 #define INTERUPT_VECTOR_MAP_ADDRESS 0xff00
 
 #define IOPORTA  0x0e
 #define IOPORTB  0x0f
 
-/// <summary>
-/// The cursor that will be displayed.
-/// You can override this value by defining it before the <include> in your main.c
-/// If you do not want a cursor, set it to 0x00
-/// </summary>
-#ifndef CURSOR_CHAR
-#define CURSOR_CHAR '_'
+#ifndef DISABLE_HCCA_RX_INT
+
+  uint8_t _rxBuffer[RX_BUFFER_SIZE] = { 0 };
+
+  /// <summary>
+  /// HCCA RX read position
+  /// </summary>
+  uint16_t _rxBufferReadPos = 0;
+
+  /// <summary>
+  /// HCCA RX write position (used in interrupt)
+  /// </summary>
+  uint16_t _rxBufferWritePos = 0;
+
 #endif
 
-/// <summary>
-/// HCCA RX Input buffer.
-/// You can override the RX BUFFER SIZE by defining it before the <include> in your main.c
-/// </summary>
-#ifndef RX_BUFFER_SIZE
-#define RX_BUFFER_SIZE 1048
-#endif
-uint8_t _rxBuffer[RX_BUFFER_SIZE] = { 0 };
-
-/// <summary>
-/// HCCA RX read position
-/// </summary>
-uint16_t _rxBufferReadPos = 0;
-
-/// <summary>
-/// HCCA RX write position (used in interrupt)
-/// </summary>
-uint16_t _rxBufferWritePos = 0;
 
 /// <summary>
 /// Keyboard Input buffer.
 /// </summary>
-volatile uint8_t _kbdBuffer[256] = { 0 };
-volatile uint8_t _kbdBufferReadPos = 0;
-volatile uint8_t _kbdBufferWritePos = 0;
+#ifndef DISABLE_KEYBOARD_INT
+  volatile uint8_t _kbdBuffer[256] = { 0 };
+  volatile uint8_t _kbdBufferReadPos = 0;
+  volatile uint8_t _kbdBufferWritePos = 0;
+#endif
+
+/// <summary>
+/// This stream of bytes are sent by calling the function hcca_exitRetroNETBridgeMode();
+/// Sending this stream of bytes when in a bridge mode (i.e. TCP connection terminal connection) will exit bridge mode
+/// and return you back to the main nabu talker loop.
+/// 
+/// Yes this is a hack, because I should have implemented a file stream just like I did with rn_fileHandle stuff (TODO I guess)
+/// </summary>
+#define RETRONET_BRIDGE_EXIT_CODE_LEN 21
+uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7, 0xb8, 0xb9, 0x0f, 0xb9, 0xb8, 0xb7, 0xb8, 0xb9, 0xb7, 0xb7, 0xb8, 0xb9, 0xb9, 0xb8, 0xb7, 0xb8, 0x0f, 0xb9, 0xb7 };
 
 
 // **************************************************************************
@@ -127,117 +189,120 @@ volatile uint8_t _kbdBufferWritePos = 0;
 // the text buffer.
 // 
 // **************************************************************************
+#ifndef DISABLE_VDP
 
-#define VDP_MODE 11
-#define VDP_CSW 10
-#define VDP_CSR 9
-#define VDP_RESET 8
-#define VDP_R1_IE 0x20
-#define VDP_R1_M1 0x10
-#define VDP_R1_M2 0x08
-#define VDP_R1_SIZE 0x02
-#define VDP_R1_MAG 0x01
+  #define VDP_MODE 11
+  #define VDP_CSW 10
+  #define VDP_CSR 9
+  #define VDP_RESET 8
+  #define VDP_R1_IE 0x20
+  #define VDP_R1_M1 0x10
+  #define VDP_R1_M2 0x08
+  #define VDP_R1_SIZE 0x02
+  #define VDP_R1_MAG 0x01
 
-/// <summary>
-/// Double buffer for text mode scrolling.
-/// This is because reading and writing the VDP vram is very slow
-/// and it is quicker to keep 960 bytes in RAM to double buffer
-/// the text mode.
-/// </summary>
-uint8_t _vdp_textBuffer[24 * 40]; // row * col = 960 bytes
+  /// <summary>
+  /// Double buffer for text mode scrolling.
+  /// This is because reading and writing the VDP vram is very slow
+  /// and it is quicker to keep 960 bytes in RAM to double buffer
+  /// the text mode.
+  /// </summary>
+  uint8_t _vdp_textBuffer[24 * 40]; // row * col = 960 bytes
 
-/// <summary>
-/// The current position of the cursor used by textmode
-/// functions. Such as vdp_write() and vdp_print() and
-/// vdp_newLine().
-/// </summary>
-struct {
-  uint8_t x;
-  uint8_t y;
-} vdp_cursor = { 0, 0};
+  /// <summary>
+  /// The current position of the cursor used by textmode
+  /// functions. Such as vdp_write() and vdp_print() and
+  /// vdp_newLine().
+  /// </summary>
+  struct {
+    uint8_t x;
+    uint8_t y;
+  } vdp_cursor = { 0, 0};
 
-uint16_t       _vdp_sprite_attribute_table;
-uint16_t       _vdp_sprite_pattern_table;
-uint8_t        _vdp_sprite_size_sel;      // 0: 8x8 sprites 1: 16x16 sprites
-uint16_t       _vdp_name_table;
-uint16_t       _vdp_color_table_size = 0;
-uint16_t       _vdp_color_table;
-uint16_t       _vdp_pattern_table;
-uint8_t        _vdp_crsr_max_x = 31;      // max number of colums (Overwritten in Text mode)
-const uint8_t  _vdp_crsr_max_y = 23;      // max number of rows
-uint8_t        _vdp_mode;
-uint8_t        _vdp_fgcolor;
-uint8_t        _vdp_bgcolor;
-bool           _autoScroll;
+  uint16_t       _vdp_sprite_attribute_table;
+  uint16_t       _vdp_sprite_pattern_table;
+  uint8_t        _vdp_sprite_size_sel;      // 0: 8x8 sprites 1: 16x16 sprites
+  uint16_t       _vdp_name_table;
+  uint16_t       _vdp_color_table_size = 0;
+  uint16_t       _vdp_color_table;
+  uint16_t       _vdp_pattern_table;
+  uint8_t        _vdp_crsr_max_x = 31;      // max number of colums (Overwritten in Text mode)
+  const uint8_t  _vdp_crsr_max_y = 23;      // max number of rows
+  uint8_t        _vdp_mode;
+  uint8_t        _vdp_fgcolor;
+  uint8_t        _vdp_bgcolor;
+  bool           _autoScroll;
 
-/// <summary>
-/// Colors for the VDP fgColor or bgColor settings
-/// </summary>
-enum VDP_COLORS {
-  VDP_TRANSPARENT = 0,
-  VDP_BLACK = 1,
-  VDP_MED_GREEN = 2,
-  VDP_LIGHT_GREEN = 3,
-  VDP_DARK_BLUE = 4,
-  VDP_LIGHT_BLUE = 5,
-  VDP_DARK_RED = 6,
-  VDP_CYAN = 7,
-  VDP_MED_RED = 8,
-  VDP_LIGHT_RED = 9,
-  VDP_DARK_YELLOW = 10,
-  VDP_LIGHT_YELLOW = 11,
-  VDP_DARK_GREEN = 12,
-  VDP_MAGENTA = 13,
-  VDP_GRAY = 14,
-  VDP_WHITE = 15
-};
-
-
-/// <summary>
-/// Available graphic/text modes for the VDP
-/// </summary>
-enum VDP_MODES {
-  VDP_MODE_G1 = 0,
-  VDP_MODE_G2 = 1,
-  VDP_MODE_MULTICOLOR = 2,
-  VDP_MODE_TEXT = 3,
-};
+  /// <summary>
+  /// Colors for the VDP fgColor or bgColor settings
+  /// </summary>
+  enum VDP_COLORS {
+    VDP_TRANSPARENT = 0,
+    VDP_BLACK = 1,
+    VDP_MED_GREEN = 2,
+    VDP_LIGHT_GREEN = 3,
+    VDP_DARK_BLUE = 4,
+    VDP_LIGHT_BLUE = 5,
+    VDP_DARK_RED = 6,
+    VDP_CYAN = 7,
+    VDP_MED_RED = 8,
+    VDP_LIGHT_RED = 9,
+    VDP_DARK_YELLOW = 10,
+    VDP_LIGHT_YELLOW = 11,
+    VDP_DARK_GREEN = 12,
+    VDP_MAGENTA = 13,
+    VDP_GRAY = 14,
+    VDP_WHITE = 15
+  };
 
 
-/// <summary>
-/// The direction to move the cursor that some VDP functions will accept.
-/// </summary>
-enum VDP_CURSOR_DIR {
-  VDP_CURSOR_UP = 0,
-  VDP_CURSOR_DOWN = 1,
-  VDP_CURSOR_LEFT = 2,
-  VDP_CURSOR_RIGHT = 3
-};
+  /// <summary>
+  /// Available graphic/text modes for the VDP
+  /// </summary>
+  enum VDP_MODES {
+    VDP_MODE_G1 = 0,
+    VDP_MODE_G2 = 1,
+    VDP_MODE_MULTICOLOR = 2,
+    VDP_MODE_TEXT = 3,
+  };
 
 
-// ---------------------------------------------
-// Coincidence flag, set when sprites overlap
-#define VDP_FLAG_COIN 0x20 
+  /// <summary>
+  /// The direction to move the cursor that some VDP functions will accept.
+  /// </summary>
+  enum VDP_CURSOR_DIR {
+    VDP_CURSOR_UP = 0,
+    VDP_CURSOR_DOWN = 1,
+    VDP_CURSOR_LEFT = 2,
+    VDP_CURSOR_RIGHT = 3
+  };
 
 
-// 5th sprite flag, set when more than 4 sprite per line 
-#define VDP_FLAG_S5 0x40  
+  // ---------------------------------------------
+  // Coincidence flag, set when sprites overlap
+  #define VDP_FLAG_COIN 0x20 
 
 
-/// <summary>
-/// 4-Byte record defining sprite attributes
-/// </summary>
-typedef struct {
-  uint8_t x; //Sprite X position
-  uint8_t y; //Sprite Y position
-  uint8_t name_ptr; //Sprite name in pattern table
-  uint8_t ecclr; //Bit 7: Early clock bit, bit 3:0 color
-} Sprite_attributes;
+  // 5th sprite flag, set when more than 4 sprite per line 
+  #define VDP_FLAG_S5 0x40  
 
 
-// VDP Status
-#define VDP_OK 0
-#define VDP_ERROR 1
+  /// <summary>
+  /// 4-Byte record defining sprite attributes
+  /// </summary>
+  typedef struct {
+    uint8_t x; //Sprite X position
+    uint8_t y; //Sprite Y position
+    uint8_t name_ptr; //Sprite name in pattern table
+    uint8_t ecclr; //Bit 7: Early clock bit, bit 3:0 color
+  } Sprite_attributes;
+
+
+  // VDP Status
+  #define VDP_OK 0
+  #define VDP_ERROR 1
+
+#endif
 
 
 
@@ -502,35 +567,38 @@ inline uint8_t ayRead(uint8_t reg);
 // Get keys from the keyboard, which is also the joysticks.
 // 
 // **************************************************************************
+#ifndef DISABLE_KEYBOARD_INT
 
-/// <summary>
-/// The last key that was pressed when isKeyPressed or getChar is called
-/// </summary>
-uint8_t LastKeyPressed = 0x00;
+  /// <summary>
+  /// The last key that was pressed when isKeyPressed or getChar is called
+  /// </summary>
+  uint8_t LastKeyPressed = 0x00;
 
-/// <summary>
-/// Returns false if no key has been pressed, otherwise it returns the key value
-/// </summary>
-uint8_t isKeyPressed();
+  /// <summary>
+  /// Returns false if no key has been pressed, otherwise it returns the key value
+  /// Stores the last key pressed in LastKeyPressed as well
+  /// </summary>
+  uint8_t isKeyPressed();
 
-/// <summary>
-/// Blocks and waits for a key, returns that key value
-/// </summary>
-uint8_t getChar();
+  /// <summary>
+  /// Blocks and waits for a key, returns that key value
+  /// Stores the last key pressed in LastKeyPressed as well
+  /// </summary>
+  uint8_t getChar();
 
-/// <summary>
-/// Read a line of text inputed by the keyboard. This does not null terminate the
-/// user input. If you need the input null terminated, make the maxInputLen one byte
-/// less than the buffer size, and manually set the 0x00 yourself after the return.
-/// 
-/// - buffer is the pointer to store the text input
-/// - maxInputLen is the max length of data you want to retrieve (no larger than the buffer!)
-/// 
-/// Returns the length of data entered by the user. 
-/// </summary>
-uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
+  /// <summary>
+  /// Read a line of text inputed by the keyboard. This does not null terminate the
+  /// user input. If you need the input null terminated, make the maxInputLen one byte
+  /// less than the buffer size, and manually set the 0x00 yourself after the return.
+  /// 
+  /// - buffer is the pointer to store the text input
+  /// - maxInputLen is the max length of data you want to retrieve (no larger than the buffer!)
+  /// 
+  /// Returns the length of data entered by the user. 
+  /// </summary>
+  uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
 
-
+#endif 
 
 
 // **************************************************************************
@@ -547,102 +615,110 @@ uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
 // to ensure there is actually data available.
 // 
 // **************************************************************************
+#ifndef DISABLE_HCCA_RX_INT
 
-/// <summary>
-/// Returns TRUE if there is data to be read from the hcca rx buffer (256 bytes)
-/// </summary>
-inline bool hcca_isRxBufferAvailable();
+  /// <summary>
+  /// Returns TRUE if there is data to be read from the hcca rx buffer (256 bytes)
+  /// </summary>
+  inline bool hcca_isRxBufferAvailable();
 
-/// <summary>
-/// Returns how much data is currently in the RX buffer
-/// </summary>
-uint8_t hcca_getSizeOfDataInBuffer();
+  /// <summary>
+  /// Returns how much data is currently in the RX buffer
+  /// </summary>
+  uint8_t hcca_getSizeOfDataInBuffer();
 
-/// <summary>
-/// Read a byte from the buffer.
-/// Check the hcca_ISRxBufferAvailable() first or this blocks.
-/// </summary>
-uint8_t hcca_readByte();
+  /// <summary>
+  /// Read a byte from the buffer.
+  /// Check the hcca_ISRxBufferAvailable() first or this blocks.
+  /// </summary>
+  uint8_t hcca_readByte();
 
-/// <summary>
-/// Read an unsigned 16-bit integer from the HCCA
-/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
-/// </summary>
-uint16_t hcca_readUInt16();
+  /// <summary>
+  /// Read an unsigned 16-bit integer from the HCCA
+  /// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+  /// </summary>
+  uint16_t hcca_readUInt16();
 
-/// <summary>
-/// Read an signed 16-bit integer from the HCCA
-/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
-/// </summary>
-int16_t hcca_readInt16();
+  /// <summary>
+  /// Read an signed 16-bit integer from the HCCA
+  /// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+  /// </summary>
+  int16_t hcca_readInt16();
 
-/// <summary>
-/// Read an unsigned 32-bit integer from the HCCA
-/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
-/// </summary>
-uint32_t hcca_readUInt32();
+  /// <summary>
+  /// Read an unsigned 32-bit integer from the HCCA
+  /// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+  /// </summary>
+  uint32_t hcca_readUInt32();
 
-/// <summary>
-/// Read an signed 32-bit integer from the HCCA
-/// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
-/// </summary>
-int32_t hcca_readInt32();
+  /// <summary>
+  /// Read an signed 32-bit integer from the HCCA
+  /// *Note: You must first check if a byte is available with hcca_IsDataAvailble() first or you get garbage.
+  /// </summary>
+  int32_t hcca_readInt32();
 
-/// <summary>
-/// Read bufferLen into buffer, starting at the offset
-/// </summary>
-void hcca_readBytes(uint8_t offset, uint8_t bufferLen, uint8_t* buffer);
-
-
+  /// <summary>
+  /// Read bufferLen into buffer, starting at the offset
+  /// </summary>
+  void hcca_readBytes(uint8_t offset, uint8_t bufferLen, uint8_t* buffer);
 
 
-// **************************************************************************
-// HCCA Transmit
-// -------------
-// 
-// These are transmit methods for the HCCA port
-// 
-// **************************************************************************
 
-/// <summary>
-/// Write a byte to the HCCA
-/// </summary>
-void hcca_writeByte(uint8_t c);
 
-/// <summary>
-/// Write the unsigned 32-bit integer to the HCCA.
-/// This is LSB First
-/// </summary>
-void hcca_writeUInt32(uint32_t val);
+  // **************************************************************************
+  // HCCA Transmit
+  // -------------
+  // 
+  // These are transmit methods for the HCCA port
+  // 
+  // **************************************************************************
 
-/// <summary>
-/// Write the signed 32-bit integer to the HCCA.
-/// This is LSB First
-/// </summary>
-void hcca_writeInt32(int32_t val);
+  /// <summary>
+  /// Write a byte to the HCCA
+  /// </summary>
+  void hcca_writeByte(uint8_t c);
 
-/// <summary>
-/// Write the unsigned 16-bit integer to the HCCA.
-/// This is LSB First
-/// </summary>
-void hcca_writeUInt16(uint16_t val);
+  /// <summary>
+  /// Write the unsigned 32-bit integer to the HCCA.
+  /// This is LSB First
+  /// </summary>
+  void hcca_writeUInt32(uint32_t val);
 
-/// <summary>
-/// Write the signed 16-bit integer to the HCCA.
-/// This is LSB First
-/// </summary>
-void hcca_writeInt16(int16_t val);
+  /// <summary>
+  /// Write the signed 32-bit integer to the HCCA.
+  /// This is LSB First
+  /// </summary>
+  void hcca_writeInt32(int32_t val);
 
-/// <summary>
-/// Write null terminated string to the HCCA
-/// </summary>
-void hcca_writeString(uint8_t* str);
+  /// <summary>
+  /// Write the unsigned 16-bit integer to the HCCA.
+  /// This is LSB First
+  /// </summary>
+  void hcca_writeUInt16(uint16_t val);
 
-/// <summary>
-/// Write to the HCCA
-/// </summary>
-void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes);
+  /// <summary>
+  /// Write the signed 16-bit integer to the HCCA.
+  /// This is LSB First
+  /// </summary>
+  void hcca_writeInt16(int16_t val);
 
+  /// <summary>
+  /// Write null terminated string to the HCCA
+  /// </summary>
+  void hcca_writeString(uint8_t* str);
+
+  /// <summary>
+  /// Write to the HCCA
+  /// </summary>
+  void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes);
+
+  /// <summary>
+  /// Exit the TCP bridge mode for Telnet and RetroNET Chat
+  /// This is a hack because I should have implemented a file stream just like i did with rn_fileHandle stuff (TODO I guess)
+  /// </summary>
+  void hcca_exitRetroNETBridgeMode();
+
+#endif
 
 
 
@@ -657,302 +733,299 @@ void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes);
 // with your graphic mode. Some text functions, such as scroll up, are only
 // available in text mode.
 // **************************************************************************
+#ifndef DISABLE_VDP
 
-/// <summary>
-/// initialize the VDP with the default font.
-/// Add one of these #define's into your main.c program before the #include "nabu-lib.h"
-/// If you with to use your own font, specify the font as a const uint8_t[768] ASCII = {} before the #include "nabu-lib.h" in your code
-/// --------------------------------------------------------------------------------------------------------------------------
-/// #define FONT_AMIGA
-/// #define FONT_SET1
-/// #define FONT_STANDARD
-/// #define LM80C
-/// 
-/// - mode VDP_MODE_G1 | VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT
-/// - color
-/// - big_sprites true: Use 16x16 sprites false : use 8x8 sprites
-/// - magnify true: Scale sprites up by 2
-/// </summary>
-int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll);
+  /// <summary>
+  /// initialize the VDP with the default font.
+  /// Add one of these #define's into your main.c program before the #include "nabu-lib.h"
+  /// If you with to use your own font, specify the font as a const uint8_t[768] ASCII = {} before the #include "nabu-lib.h" in your code
+  /// --------------------------------------------------------------------------------------------------------------------------
+  /// #define FONT_AMIGA
+  /// #define FONT_SET1
+  /// #define FONT_STANDARD
+  /// #define LM80C
+  /// 
+  /// - mode VDP_MODE_G1 | VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT
+  /// - color
+  /// - big_sprites true: Use 16x16 sprites false : use 8x8 sprites
+  /// - magnify true: Scale sprites up by 2
+  /// </summary>
+  int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll);
 
-/// <summary>
-/// This will update the vram to the specified font.
-/// The vdp_init will initialize the default font. This is if you want to change the font.
-/// </summary>
-void vdp_initTextModeFont(uint8_t* font);
+  /// <summary>
+  /// This will update the vram to the specified font.
+  /// The vdp_init will initialize the default font. This is if you want to change the font.
+  /// </summary>
+  void vdp_initTextModeFont(uint8_t* font);
 
-/// <summary>
-/// Initializes the VDP in text mode
-/// 
-/// - fgcolor Text color default: default black
-/// - bgcolor Background color : default white
-/// 
-/// returns VDP_ERROR | VDP_SUCCESS
-/// </summary>
-int vdp_initTextMode(uint8_t fgcolor, uint8_t, bool autoScroll);
+  /// <summary>
+  /// Initializes the VDP in text mode
+  /// 
+  /// - fgcolor Text color default: default black
+  /// - bgcolor Background color : default white
+  /// 
+  /// returns VDP_ERROR | VDP_SUCCESS
+  /// </summary>
+  int vdp_initTextMode(uint8_t fgcolor, uint8_t, bool autoScroll);
 
-/// <summary>
-/// Initializes the VDP in Graphic Mode 1. Not really useful if more than 4k Video ram is available
-///
-/// - fgcolor Text color default: default black
-/// - bgcolor Background color : default white
-/// 
-/// returns VDP_ERROR | VDP_SUCCESS
-/// </summary>
-int vdp_initG1Mode(uint8_t fgcolor, uint8_t bgcolor);
+  /// <summary>
+  /// Initializes the VDP in Graphic Mode 1. Not really useful if more than 4k Video ram is available
+  ///
+  /// - fgcolor Text color default: default black
+  /// - bgcolor Background color : default white
+  /// 
+  /// returns VDP_ERROR | VDP_SUCCESS
+  /// </summary>
+  int vdp_initG1Mode(uint8_t fgcolor, uint8_t bgcolor);
 
-/// <summary>
-/// Initializes the VDP in Graphic Mode 2
-/// 
-/// - big_sprites true: use 16x16 sprites false : use 8x8 sprites
-/// - scale_sprites Scale sprites up by 2
-/// 
-/// returns VDP_ERROR | VDP_SUCCESS
-/// </summary>
-int vdp_initG2Mode(bool big_sprites, bool scale_sprites);
+  /// <summary>
+  /// Initializes the VDP in Graphic Mode 2
+  /// 
+  /// - big_sprites true: use 16x16 sprites false : use 8x8 sprites
+  /// - scale_sprites Scale sprites up by 2
+  /// 
+  /// returns VDP_ERROR | VDP_SUCCESS
+  /// </summary>
+  int vdp_initG2Mode(bool big_sprites, bool scale_sprites);
 
-/// <summary>
-/// Initializes the VDP in 64x48 Multicolor Mode. Not really useful if more than 4k Video ram is available
-///
-/// returns VDP_ERROR | VDP_SUCCESS
-/// </summary>
-int vdp_initMultiColorMode();
+  /// <summary>
+  /// Initializes the VDP in 64x48 Multicolor Mode. Not really useful if more than 4k Video ram is available
+  ///
+  /// returns VDP_ERROR | VDP_SUCCESS
+  /// </summary>
+  int vdp_initMultiColorMode();
 
-/// <summary>
-/// Set foreground and background color of the pattern at the current cursor position
-/// 
-/// Only available in Graphic mode 2
-/// - fgcolor Foreground color
-/// - bgcolor Background color
-/// </summary>
-void vdp_colorize(uint8_t fgcolor, uint8_t bgcolor);
+  /// <summary>
+  /// Set foreground and background color of the pattern at the current cursor position
+  /// 
+  /// Only available in Graphic mode 2
+  /// - fgcolor Foreground color
+  /// - bgcolor Background color
+  /// </summary>
+  void vdp_colorize(uint8_t fgcolor, uint8_t bgcolor);
 
-/// <summary>
-/// Plot a point at position (x,y), where x <= 255. The full resolution of 256 by 192 is available.
-/// Only two different colors are possible whithin 8 neighboring pixels
-/// VDP_MODE G2 only
-///
-/// - x
-/// - y
-/// - color1 Color of pixel at (x,y). If NULL, plot a pixel with color2
-/// - color2 Color of the pixels not set or color of pixel at (x,y) when color1 == NULL
-/// </summary>
-void vdp_plotHires(uint8_t x, uint8_t y, uint8_t color1, uint8_t color2);
+  /// <summary>
+  /// Plot a point at position (x,y), where x <= 255. The full resolution of 256 by 192 is available.
+  /// Only two different colors are possible whithin 8 neighboring pixels
+  /// VDP_MODE G2 only
+  ///
+  /// - x
+  /// - y
+  /// - color1 Color of pixel at (x,y). If NULL, plot a pixel with color2
+  /// - color2 Color of the pixels not set or color of pixel at (x,y) when color1 == NULL
+  /// </summary>
+  void vdp_plotHires(uint8_t x, uint8_t y, uint8_t color1, uint8_t color2);
 
-/// <summary>
-/// Plot a point at position (x,y), where x <= 64. In Graphics mode2, the resolution is 64 by 192 pixels, neighboring pixels can have different colors.
-/// In Multicolor  mode, the resolution is 64 by 48 pixels
-///
-/// - x
-/// - y
-/// - color
-/// </summary>
-void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color);
+  /// <summary>
+  /// Plot a point at position (x,y), where x <= 64. In Graphics mode2, the resolution is 64 by 192 pixels, neighboring pixels can have different colors.
+  /// In Multicolor  mode, the resolution is 64 by 48 pixels
+  ///
+  /// - x
+  /// - y
+  /// - color
+  /// </summary>
+  void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color);
 
-/// <summary>
-/// Print null terminated string at current cursor position. These Escape sequences are supported:
-/// 
-/// Graphic Mode 2 only: \\033[<fg>;[<bg>]m sets the colors and optionally the background of the subsequent characters 
-/// 
-/// Example: vdp_print("\033[4m Dark blue on transparent background\n\r\033[4;14m dark blue on gray background");
-/// 
-/// - text Text to print
-/// </summary>
-void vdp_print(uint8_t* text);
+  /// <summary>
+  /// Print null terminated string at current cursor position. These Escape sequences are supported:
+  /// 
+  /// Graphic Mode 2 only: \\033[<fg>;[<bg>]m sets the colors and optionally the background of the subsequent characters 
+  /// 
+  /// Example: vdp_print("\033[4m Dark blue on transparent background\n\r\033[4;14m dark blue on gray background");
+  /// 
+  /// - text Text to print
+  /// </summary>
+  void vdp_print(uint8_t* text);
 
-/// <summary>
-/// Print the specified portion of the string. No escape sequences are supported.
-/// </summary>
-void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text);
-  
-/// <summary>
-/// Set backdrop border color
-/// </summary>
-void vdp_setBackDropColor(uint8_t);
+  /// <summary>
+  /// Print the specified portion of the string. No escape sequences are supported.
+  /// </summary>
+  void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text);
+    
+  /// <summary>
+  /// Set backdrop border color
+  /// </summary>
+  void vdp_setBackDropColor(uint8_t);
 
-/// <summary>
-///  Set the color of patterns at the cursor position
-///
-/// - index VDP_MODE_G2: Number of pattern to set the color, VDP_MODE_G1: one of 32 groups of 8 subsequent patterns
-/// - fg Pattern foreground color
-/// - bg Pattern background color
-/// </summary>
-void vdp_setPatternColor(uint16_t index, uint8_t fgcolor, uint8_t bgcolor);
+  /// <summary>
+  ///  Set the color of patterns at the cursor position
+  ///
+  /// - index VDP_MODE_G2: Number of pattern to set the color, VDP_MODE_G1: one of 32 groups of 8 subsequent patterns
+  /// - fg Pattern foreground color
+  /// - bg Pattern background color
+  /// </summary>
+  void vdp_setPatternColor(uint16_t index, uint8_t fgcolor, uint8_t bgcolor);
 
-/// <summary>
-///  Position the cursor at the specified position
-///
-/// - col column
-/// - row row
-/// </summary>
-void vdp_setCursor2(uint8_t col, uint8_t row);
+  /// <summary>
+  ///  Position the cursor at the specified position
+  ///
+  /// - col column
+  /// - row row
+  /// </summary>
+  void vdp_setCursor2(uint8_t col, uint8_t row);
 
-/// <summary>
-///  Move the cursor along the specified direction
-///
-/// - direction {VDP_CURSOR_UP|VDP_CURSOR_DOWN|VDP_CURSOR_LEFT|VDP_CURSOR_RIGHT}
-/// </summary
-void vdp_setCursor(uint8_t direction) __z88dk_fastcall;
+  /// <summary>
+  ///  Move the cursor along the specified direction
+  ///
+  /// - direction {VDP_CURSOR_UP|VDP_CURSOR_DOWN|VDP_CURSOR_LEFT|VDP_CURSOR_RIGHT}
+  /// </summary
+  void vdp_setCursor(uint8_t direction) __z88dk_fastcall;
 
-/// <summary>
-///  set foreground and background color of the characters printed after this function has been called.
-/// In Text Mode and Graphics Mode 1, all characters are changed. In Graphics Mode 2, the escape sequence \\033[<fg>;<bg>m can be used instead.
-/// See vdp_print()
-///
-/// - fg Foreground color
-/// - bg Background color
-/// </summary>
-void vdp_setTextColor(uint8_t fgcolor, uint8_t bgcolor);
+  /// <summary>
+  ///  set foreground and background color of the characters printed after this function has been called.
+  /// In Text Mode and Graphics Mode 1, all characters are changed. In Graphics Mode 2, the escape sequence \\033[<fg>;<bg>m can be used instead.
+  /// See vdp_print()
+  ///
+  /// - fg Foreground color
+  /// - bg Background color
+  /// </summary>
+  void vdp_setTextColor(uint8_t fgcolor, uint8_t bgcolor);
 
-/// <summary>
-///  Write ASCII character at current cursor position
-///
-/// - chr Pattern at the respective location of the  pattern memory. Graphic Mode 1 and Text Mode: Ascii code of character
-/// </summary>
-void vdp_write(uint8_t chr, bool advanceNextChar);
+  /// <summary>
+  ///  Write ASCII character at current cursor position
+  ///
+  /// - chr Pattern at the respective location of the  pattern memory. Graphic Mode 1 and Text Mode: Ascii code of character
+  /// </summary>
+  void vdp_write(uint8_t chr, bool advanceNextChar);
 
-/// <summary>
-///  Write ASCII character at current cursor position
-///
-/// - chr Pattern at the respective location of the  pattern memory. Graphic Mode 1 and Text Mode: Ascii code of character
-/// </summary>
-void vdp_writeG2(uint8_t chr, bool advanceNextChar);
+  /// <summary>
+  ///  Write ASCII character at current cursor position
+  ///
+  /// - chr Pattern at the respective location of the  pattern memory. Graphic Mode 1 and Text Mode: Ascii code of character
+  /// </summary>
+  void vdp_writeG2(uint8_t chr, bool advanceNextChar);
 
-/// <summary>
-///  Write a sprite into the sprite pattern table
-///
-/// - name Reference of sprite 0-255 for 8x8 sprites, 0-63 for 16x16 sprites
-/// - sprite Array with sprite data. Type uint8_t[8] for 8x8 sprites, uint8_t[32] for 16x16 sprites
-/// </summary>
-void vdp_setSpritePattern(uint8_t name, const uint8_t* sprite);
+  /// <summary>
+  ///  Write a sprite into the sprite pattern table
+  ///
+  /// - name Reference of sprite 0-255 for 8x8 sprites, 0-63 for 16x16 sprites
+  /// - sprite Array with sprite data. Type uint8_t[8] for 8x8 sprites, uint8_t[32] for 16x16 sprites
+  /// </summary>
+  void vdp_setSpritePattern(uint8_t name, const uint8_t* sprite);
 
-/// <summary>
-///  Set the sprite color
-///
-/// - handle Sprite Handle returned by vdp_sprite_init()
-/// - color
-/// </summary>
-void vdp_setSpriteColor(uint16_t handle, uint8_t color);
+  /// <summary>
+  ///  Set the sprite color
+  ///
+  /// - handle Sprite Handle returned by vdp_sprite_init()
+  /// - color
+  /// </summary>
+  void vdp_setSpriteColor(uint16_t handle, uint8_t color);
 
-/// <summary>
-///  Get the sprite attributes
-///
-/// - handle Sprite Handle returned by vdp_sprite_init()
-/// 
-/// Returns Sprite_attributes
-/// </summary>
-Sprite_attributes vdp_sprite_get_attributes(uint16_t handle);
+  /// <summary>
+  ///  Get the sprite attributes
+  ///
+  /// - handle Sprite Handle returned by vdp_sprite_init()
+  /// 
+  /// Returns Sprite_attributes
+  /// </summary>
+  Sprite_attributes vdp_sprite_get_attributes(uint16_t handle);
 
-/// <summary>
-/// Add a new line (move down and to line start)
-/// </summary>
-void vdp_newLine();
+  /// <summary>
+  /// Add a new line (move down and to line start)
+  /// </summary>
+  void vdp_newLine();
 
-/// <summary>
-/// Get the character in text mode at the specified location directly from VRAM, which is slow
-/// </summary>
-uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y);
+  /// <summary>
+  /// Get the character in text mode at the specified location directly from VRAM, which is slow
+  /// </summary>
+  uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y);
 
-/// <summary>
-/// In text mode, there is a buffer copy of the screen
-/// </summary>
-uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y);
+  /// <summary>
+  /// In text mode, there is a buffer copy of the screen
+  /// </summary>
+  uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y);
 
-/// <summary>
-/// Set the character in memory buffer at location. This does not update the screen!
-/// It is used by the text scroll methods
-/// </summary
-void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c);
+  /// <summary>
+  /// Set the character in memory buffer at location. This does not update the screen!
+  /// It is used by the text scroll methods
+  /// </summary
+  void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c);
 
-/// <summary>
-/// Scroll all lines up between topRow and bottomRow
-/// </summary>
-void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow);
+  /// <summary>
+  /// Scroll all lines up between topRow and bottomRow
+  /// </summary>
+  void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow);
 
-/// <summary>
-/// Clear the rows with 0x20 between topRow and bottomRow
-/// </summary>
-void vdp_clearRows(uint8_t topRow, uint8_t bottomRow);
+  /// <summary>
+  /// Clear the rows with 0x20 between topRow and bottomRow
+  /// </summary>
+  void vdp_clearRows(uint8_t topRow, uint8_t bottomRow);
 
-/// <summary>
-/// Write a character at the specified location
-/// </summary>
-void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c);
+  /// <summary>
+  /// Write a character at the specified location
+  /// </summary>
+  void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c);
 
-/// <summary>
-/// Dump the current font/name table to the screen for preview
-/// </summary>
-void vdp_dumpFontToScreen();
+  /// <summary>
+  /// Display the numeric value of the variable
+  /// </summary>
+  void vdp_writeUInt8(uint8_t v);
 
-/// <summary>
-/// Display the numeric value of the variable
-/// </summary>
-void vdp_writeUInt8(uint8_t v);
+  /// <summary>
+  /// Display the numeric value of the variable
+  /// </summary>
+  void vdp_writeInt8(int8_t v);
 
-/// <summary>
-/// Display the numeric value of the variable
-/// </summary>
-void vdp_writeInt8(int8_t v);
+  /// <summary>
+  /// Display the numer value of the variable
+  /// </summary>
+  void vdp_writeUInt16(uint16_t v);
 
-/// <summary>
-/// Display the numer value of the variable
-/// </summary>
-void vdp_writeUInt16(uint16_t v);
+  /// <summary>
+  /// Display the numer value of the variable
+  /// </summary
+  void vdp_writeInt16(int16_t v);
 
-/// <summary>
-/// Display the numer value of the variable
-/// </summary
-void vdp_writeInt16(int16_t v);
+  /// <summary>
+  /// Display the numer value of the variable
+  /// </summary>
+  void vdp_writeUInt32(uint32_t v);
 
-/// <summary>
-/// Display the numer value of the variable
-/// </summary>
-void vdp_writeUInt32(uint32_t v);
+  /// <summary>
+  /// Display the numer value of the variable
+  /// </summary>
+  void vdp_writeInt32(int32_t v);
 
-/// <summary>
-/// Display the numer value of the variable
-/// </summary>
-void vdp_writeInt32(int32_t v);
+  /// <summary>
+  /// Display the binary value of the variable
+  /// </summary>
+  void vdp_writeUInt8ToBinary(uint8_t v);
 
-/// <summary>
-/// Display the binary value of the variable
-/// </summary>
-void vdp_writeUInt8ToBinary(uint8_t v);
+  /// <summary>
+  /// Display the binary value of the variable
+  /// </summary>
+  void vdp_writeUInt16ToBinary(uint16_t v);
 
-/// <summary>
-/// Display the binary value of the variable
-/// </summary>
-void vdp_writeUInt16ToBinary(uint16_t v);
+  /// <summary>
+  ///  Get the current position of a sprite
+  ///
+  /// - handle Sprite Handle returned by vdp_sprite_init()
+  /// - xpos Reference to x-position
+  /// - ypos Reference to y-position
+  /// </summary>
+  void vdp_getSpritePosition(uint16_t handle, uint16_t xpos, uint8_t ypos);
 
-/// <summary>
-///  Get the current position of a sprite
-///
-/// - handle Sprite Handle returned by vdp_sprite_init()
-/// - xpos Reference to x-position
-/// - ypos Reference to y-position
-/// </summary>
-void vdp_getSpritePosition(uint16_t handle, uint16_t xpos, uint8_t ypos);
+  /// <summary>
+  ///  Activate a sprite
+  ///
+  /// - name Number of the sprite as defined in vdp_set_sprite()
+  /// - priority 0: Highest priority; 31: Lowest priority
+  /// - color
+  /// Returnss     Sprite Handle
+  /// </summary>
+  uint16_t vdp_spriteInit(uint8_t name, uint8_t priority, uint8_t color);
 
-/// <summary>
-///  Activate a sprite
-///
-/// - name Number of the sprite as defined in vdp_set_sprite()
-/// - priority 0: Highest priority; 31: Lowest priority
-/// - color
-/// Returnss     Sprite Handle
-/// </summary>
-uint16_t vdp_spriteInit(uint8_t name, uint8_t priority, uint8_t color);
+  /// <summary>
+  ///  Set position of a sprite
+  ///
+  /// - handle  Sprite Handle returned by vdp_sprite_init()
+  /// - x
+  /// - y
+  /// Returnss     true: In case of a collision with other sprites
+  /// </summary>
+  uint8_t vdp_setSpritePosition(uint16_t handle, uint16_t x, uint8_t y);
 
-/// <summary>
-///  Set position of a sprite
-///
-/// - handle  Sprite Handle returned by vdp_sprite_init()
-/// - x
-/// - y
-/// Returnss     true: In case of a collision with other sprites
-/// </summary>
-uint8_t vdp_setSpritePosition(uint16_t handle, uint16_t x, uint8_t y);
-
+#endif
 
 
 #include "NABU-LIB.c"
