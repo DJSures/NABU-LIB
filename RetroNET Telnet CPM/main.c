@@ -1,7 +1,6 @@
-//#define FONT_AMIGA
-//#define FONT_SET1
-//#define FONT_STANDARD
-#define LM80C
+#define FONT_LM80C
+
+#define BIN_TYPE BIN_CPM
 
 #define RX_BUFFER_SIZE 4096
 
@@ -194,7 +193,7 @@ void main() {
   vdp_print("by DJ Sures (c)2023"); vdp_newLine();
   vdp_newLine();
   vdp_newLine();
-  vdp_print("*Hint: Press TV<-> NABU key to exit"); vdp_newLine();
+  vdp_print("*Hint: Press TV<->NABU key to exit"); vdp_newLine();
   vdp_newLine();
 
   // col 0: note
