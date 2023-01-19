@@ -22,9 +22,9 @@ void initNABULib() {
   // Turn off the rom
   IO_CONTROL = 0x01;
 
-  __asm
+  NABU_DisableInterrupts();
 
-  di;
+  __asm
 
   IM 2;
 
