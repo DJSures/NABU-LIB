@@ -1,5 +1,6 @@
 // Mandelbrot.c - Render the Mandelbrot Set with a NABU PC in 64 x 48 multicolor mode
 // Copyright Mike Debreceni 2022
+// Converted to CPM by DJ Sures 2023
 
 #define BIN_TYPE BIN_CPM
 #define FONT_LM80C
