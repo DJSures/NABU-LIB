@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 4, 2023 (v2023.01.04.00)
+// Last updated on January 4, 2023 (v2023.01.18.01)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -66,13 +66,13 @@
 
 /// <summary>
 /// These are options for the rn_fileHandleSeed()
-/// SEEK_SET seek from the beginning of the file
-/// SEEK_CUR offset from the current position
-/// SEEK_END offset from the end of the file
+/// RN_SEEK_SET seek from the beginning of the file
+/// RN_SEEK_CUR offset from the current position
+/// RN_SEEK_END offset from the end of the file
 /// </summary>
-#define SEEK_SET 1
-#define SEEK_CUR 2
-#define SEEK_END 3
+#define RN_SEEK_SET 1
+#define RN_SEEK_CUR 2
+#define RN_SEEK_END 3
 
 
 /// <summary>
@@ -369,15 +369,15 @@ uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t buff
 /// Sets the sequential read position within the file for using rn_fileHandleReadSeq()
 /// 
 /// - fileHandle is obtained by rn_fileOpen()
-/// - offset is the positive or negative position to move to. If using SEEK_SET,
-///          only positive values are relevant. If using SEEK_CUR, a positive or 
+/// - offset is the positive or negative position to move to. If using RN_SEEK_SET,
+///          only positive values are relevant. If using RN_SEEK_CUR, a positive or 
 ///          negative value can be used to move forward or backward from the current
-///          position. If using SEEK_END, only a negatie number can be used because it
+///          position. If using RN_SEEK_END, only a negatie number can be used because it
 ///          will be the offset from the end of the file.
 /// - seekOption is the option to seek. One of these...
-///              SEEK_SET seek from the beginning of the file
-///              SEEK_CUR offset from the current position
-///              SEEK_END offset from the end of the file
+///              RN_SEEK_SET seek from the beginning of the file
+///              RN_SEEK_CUR offset from the current position
+///              RN_SEEK_END offset from the end of the file
 /// 
 /// Returns the new position of the file. If the seek is set past the end of the file, the
 /// end of the file position is returned. The seek function will not let you seek past
