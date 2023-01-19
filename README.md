@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2023.01.18.00
+Includes options for enabling and disabling VDP, HCCA, Keyboard, and others. There is also a way to specify if the program you are creating is CPM or HOMEBREW. Read the NABU-LIB.h file for description of settings.
+
 ## v2023.01.15.00
 Updated NABU-LIB to have a initNABULib() function that will be called at the start of the program. It does a bunch of configuring, such as disabling the ROM, enabling HCCA and Keyboard interrupts, and audio.
 
