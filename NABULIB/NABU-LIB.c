@@ -24,28 +24,28 @@ void initNABULib() {
 
   __asm
 
-    di;
+  di;
 
-    IM 2;
+  IM 2;
 
-    ld a, INTERUPT_VECTOR_MAP_MSB;
-    ld i, a;
+  ld a, INTERUPT_VECTOR_MAP_MSB;
+  ld i, a;
 
-#ifndef DISABLE_HCCA_RX_INT
+  #ifndef DISABLE_HCCA_RX_INT
     // HCCA Receive
     ld hl, _isrHCCARX;
     ld (INTERUPT_VECTOR_MAP_ADDRESS), hl;
-#endif 
+  #endif 
 
     // // HCCA Send
     // ld hl, _isrHCCATX;
     // ld (INTERUPT_VECTOR_MAP_ADDRESS + 2), hl;
 
-#ifndef DISABLE_KEYBOARD_INT
+  #ifndef DISABLE_KEYBOARD_INT
     // HCCA Keyboard
     ld hl, _isrKeyboard;
     ld (INTERUPT_VECTOR_MAP_ADDRESS + 4), hl;
-#endif
+  #endif
 
     // // Video Frame Sync
     // ld hl, _isrVideoSync;
@@ -69,8 +69,14 @@ void initNABULib() {
 
   __endasm;
 
-  IO_AYDATA = IOPORTA;
-  uint8_t intMask = IO_AYDATA;
+  #if BIN_TYPE == BIN_HOMEBREW
+    uint8_t intMask = 0;
+  #elif BIN_TYPE == BIN_CPM
+    // if cpm, we get the previous interrupt settings because we only override what we want
+    // other stuff, like keyboard, might still need to be used by cpm if this user's
+    // program is gonna use fget and stuff
+    uint8_t intMask = ayRead(IOPORTA);
+  #endif
 
   #ifndef DISABLE_HCCA_RX_INT
     intMask |= INT_MASK_HCCARX;
@@ -80,10 +86,10 @@ void initNABULib() {
     intMask |= INT_MASK_KEYBOARD;
   #endif
 
-  NABU_EnableInterrupts();
-  
   ayWrite(IOPORTA, intMask);
 
+  NABU_EnableInterrupts();
+  
   // Noise envelope
   ayWrite(6, 0b00000000);
 
@@ -297,6 +303,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         vdp_write(c, true);
 
         i++;
+      } else if (i == maxInputLen && c != 127) {
+
+        playNoteDelay(0, 60, 10);
       } else if (c == 127 && i > 0) {
 
         if (vdp_cursor.x == 0) {

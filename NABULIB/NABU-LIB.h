@@ -11,9 +11,6 @@
 // with many functions for the VDP, Sound, HCCA, and Keyboard. The functions are split
 // into sections based on the peripheral.  
 // 
-// Many of the functions have been optimized for performance with either __fastcall or 
-// inlining.
-// 
 // Read the summaries below for details of each function in this file.
 // 
 // **********************************************************************************************
@@ -21,6 +18,43 @@
 
 #ifndef NABU_H
 #define NABU_H
+#define BIN_HOMEBREW 100
+#define BIN_CPM 200
+
+
+/// **************************************************************************
+/// If you will be using the VDP, choose the default font.
+/// Add one of these #define's into your main.c program before the #include "nabu-lib.h"
+/// If you with to use your own font, specify the font as:
+///
+///    const uint8_t[768] ASCII = {} 
+///
+/// before the #include "nabu-lib.h" in your code. You can look at the included
+/// patterns.h for the array format. The default font with case sensitive letters
+/// is FONT_LM80C
+/// **************************************************************************
+/// #define FONT_AMIGA
+/// #define FONT_SET1
+/// #define FONT_STANDARD
+/// #define FONT_LM80C
+
+
+/// **************************************************************************
+/// It is important to define what kind of binary we are going to be creating.
+/// Add one of these two options to the top of your main.c before the #include
+/// statements.
+///
+/// HOMEBREW
+/// This binary is executable as a standalone application from the NABU
+/// Internet Adapter or as a NABU Channel.
+///
+/// Cloud CP/M
+/// A binary that produces a .COM executable which will be run on the
+/// Cloud CP/M Operating System.
+///
+/// **************************************************************************
+// #define BIN_TYPE BIN_HOMEBREW
+// #define BIN_TYPE BIN_CPM
 
 
 /// **************************************************************************
@@ -76,6 +110,10 @@
 /// **************************************************************************
 #ifndef RX_BUFFER_SIZE
 #define RX_BUFFER_SIZE 1048
+#endif
+
+#ifndef BIN_TYPE
+  #error A BIN_TYPE has not been specified. Look at the NABU-LIB.h to configure your application.
 #endif
 
 #include <stdbool.h>
@@ -743,7 +781,7 @@ inline uint8_t ayRead(uint8_t reg);
   /// #define FONT_AMIGA
   /// #define FONT_SET1
   /// #define FONT_STANDARD
-  /// #define LM80C
+  /// #define FONT_LM80C
   /// 
   /// - mode VDP_MODE_G1 | VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT
   /// - color

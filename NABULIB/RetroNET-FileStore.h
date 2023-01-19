@@ -8,11 +8,8 @@
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
 // This is a z88dk C library for the NABU Personal Computer. This is a large library
-// with many functions for the VDP, Sound, HCCA, and Keyboard. The functions are split
-// into sections based on the peripheral.  
-// 
-// Many of the functions have been optimized for performance with either __fastcall or 
-// inlining.
+// for remote filesystem functions. For example, this is how Cloud CP/M talks to the
+// cloud disk images or local file system on the IA.
 // 
 // Read the summaries below for details of each function in this file.
 // 
@@ -42,6 +39,10 @@
 // 
 // This allows a NABU program the ability to have a practically unlimited 
 // amount of RAM or storage by using the cloud and Internet Adapter.
+//
+// *NOTE:
+// ------
+// All files stored on the IA Server will be in UPPERCASE
 // 
 // **************************************************************************
 
@@ -146,7 +147,7 @@ typedef struct {
 /// when an INIT command is received.
 /// 
 /// - filenameLen is the length of the filename to open
-/// - filename is a pointer to the filename
+/// - filename is a pointer to the filename. All files stored on the IA Server will be in UPPERCASE
 /// - fileFlag is one of #define OPEN_FILE_FLAG_* types
 /// - fileHandle can be a file handle that you specify or 0xff (255) for the
 ///   server to assign one for you
@@ -173,6 +174,8 @@ void rn_fileHandleClose(uint8_t fileHandle);
 /// This is different than using rn_fileHandleSize() because that will create an empty file when
 /// a file handle is assigned. If you want to see if a file exists without creating it first, this
 /// is the function you would use. 
+///
+/// Note: All files stored on the IA Server will be in UPPERCASE
 /// </summary>
 int32_t rn_fileSize(uint8_t filenameLen, uint8_t* filename);
 
@@ -192,6 +195,8 @@ int32_t rn_fileHandleSize(uint8_t fileHandle);
 /// 
 /// The FileDetailStruct is populated with details about the file. If the file does not exist,
 /// the FileDetailStruct->Exists will reflect that.
+///
+/// Note: All files stored on the IA Server will be in UPPERCASE
 /// </summary>
 void rn_fileDetails(uint8_t filenameLen, uint8_t* filename, FileDetailsStruct* s);
 
@@ -273,7 +278,7 @@ void rn_fileHandleReplace(uint8_t fileHandle, uint32_t fileOffset, uint16_t data
 /// <summary>
 /// Delete the physical file from the store. If the file has a handle, it is closed
 /// 
-/// - filenameLen is the length of the filename
+/// - filenameLen is the length of the filename. All files stored on the IA Server will be in UPPERCASE
 /// - filename is the filename string
 /// </summary>
 void rn_fileDelete(uint8_t filenameLen, uint8_t* filename);
@@ -298,6 +303,8 @@ void rn_fileHandleCopy(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t des
 ///        working with the old filename. It's expected that a friendly
 ///        programmer would close the file first before moving/renaming it. 
 /// 
+/// *Note: All files stored on the IA Server will be in UPPERCASE
+///
 /// - srcFilenameLen is the length of the source file to move
 /// - srcFilename is a pointer to the filename of the source file
 /// - destFilenameLen is the length of the destination filename
@@ -308,6 +315,8 @@ void rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t des
 
 /// <summary>
 /// Returns the number of files within the path, including wildcards.
+///
+/// *Note: All files and directories stored on the IA Server will be in UPPERCASE
 /// 
 /// To get the details of a file, you must do this...
 /// 

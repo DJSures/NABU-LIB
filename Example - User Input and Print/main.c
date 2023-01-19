@@ -14,10 +14,9 @@ void main() {
   main2();
 }
 
-//#define FONT_AMIGA
-//#define FONT_SET1
-//#define FONT_STANDARD
-#define LM80C
+#define FONT_LM80C
+
+#define BIN_TYPE BIN_HOMEBREW
 
 #include "../NABULIB/NABU-LIB.h"
 #include <z80.h> // for z80_delay_ms()
@@ -48,7 +47,7 @@ void main2() {
     z80_delay_ms(song[i + 1]);
   }
 
-  // Let's ask the user for their name
+  // Let's ask the user for their nam
   vdp_setCursor2(0, 0);
 
   while (true) {

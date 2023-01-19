@@ -14,15 +14,13 @@ void main() {
   main2();
 }
 
-//#define FONT_AMIGA
-//#define FONT_SET1
-//#define FONT_STANDARD
-#define LM80C
+#define FONT_LM80C
+
+#define BIN_TYPE BIN_HOMEBREW
 
 #include "../NABULIB/RetroNET-FileStore.h"
 #include "../NABULIB/NABU-LIB.h"
 #include <z80.h> // for z80_delay_ms()
-
 
 #define LOCAL_TMP_FILE "z:\\test\\directory\\testing.txt"
 #define LOCAL_TMP_FILE_LEN 29

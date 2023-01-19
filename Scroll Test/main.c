@@ -14,10 +14,13 @@ void main() {
   main2();
 }
 
-//#define FONT_AMIGA
-//#define FONT_SET1
 #define FONT_STANDARD
-//#define LM80C
+
+#define BIN_TYPE BIN_HOMEBREW
+
+#define DISABLE_KEYBOARD_INT
+
+#define DISABLE_HCCA_RX_INT
 
 #include "../NABULIB/NABU-LIB.h"
 #include <z80.h> // for z80_delay_ms();
@@ -32,18 +35,18 @@ void main2() {
 
   z80_delay_ms(1000);
 
-  for (int x = 0; x < 10; x++) {
+  while (true) {
 
     vdp_setCursor2(0, 0);
 
     for (uint16_t i = 0; i < 960; i++)
       vdp_write((i % 30) + 65, true);
 
+    playNoteDelay(0, 10, 100);
+
     for (int y = 0; y < 24; y++)
       vdp_scrollTextUp(0, 23);
 
     z80_delay_ms(100);
   }
-
-  while (true);
 }

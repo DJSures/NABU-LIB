@@ -7,9 +7,9 @@
 //#define FONT_AMIGA
 //#define FONT_SET1
 //#define FONT_STANDARD
-//#define LM80C
+//#define FONT_LM80C
 
-#ifdef LM80C
+#ifdef FONT_LM80C
 
 const uint8_t ASCII[768] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // space
@@ -111,6 +111,7 @@ const uint8_t ASCII[768] = {
 #endif
 
 #ifdef FONT_AMIGA
+
 const uint8_t  ASCII[768] = {
    0, 0, 0, 0, 0, 0, 0, 0,
    24, 60, 60, 24, 24, 0, 24, 0,

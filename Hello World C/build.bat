@@ -1,5 +1,9 @@
 @echo off
 
+SET Z88DK_DIR=c:\z88dk\
+SET ZCCCFG=%Z88DK_DIR%lib\config\
+SET PATH=%Z88DK_DIR%bin;%PATH%
+
 echo.
 echo ****************************************************************************
 
@@ -21,3 +25,4 @@ move "C:\NABU Segments\000001_code_compiler.bin" "C:\NABU Segments\000001.nabu"
 
 dir "C:\NABU Segments"
 
+pause

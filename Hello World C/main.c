@@ -1,6 +1,6 @@
 static void orgit() __naked {
   __asm
-  org     0x140D
+    org 0x140D
     nop
     nop
     nop
@@ -17,40 +17,39 @@ void main() {
 //#define FONT_AMIGA
 //#define FONT_SET1
 //#define FONT_STANDARD
-#define LM80C
+#define FONT_LM80C
+
+// This is a homebrew app
+#define BIN_TYPE BIN_HOMEBREW
+
+// Not using any file system or hcca calls
+#define DISABLE_HCCA_RX_INT
 
 #include "../NABULIB/NABU-LIB.h"
-#include <z80.h> // for z80_delay_ms()
+#include <z80.h>
 
 void main2() {
-  
+
   // Put the graphics into text mode with the text color 0x01 and background color 0x03
   vdp_initTextMode(0x01, 0x03, false);
 
-  // Enable only the Tone Generator on Channel A
-  ayWrite(0x7, 0b00111110);
+  initNABULib();
 
-  // Set the amplitude (volume) to maximum on Channel A
-  ayWrite(0x8, 0b00001111);
-
-  const uint8_t song[] = { 200, 100, 50, 100, 150, 200, 100, 50, 230, 90, 20, 80, 20, 20, 20, 80, 50, 50, 20, 80, 20, 80 };
+  const uint8_t song[] = { 20, 10, 50, 10, 15, 20, 10, 30, 23, 9, 2, 8, 20, 2, 20, 8, 30, 10, 20, 8, 20, 8 };
 
   struct {
     uint8_t x;
     uint8_t y;
-  } newPosition;
+  } newPosition = { 10, 10 };
 
   struct {
     uint8_t x;
     uint8_t y;
-  } lastPosition;
+  } lastPosition = { 10, 10 };
 
   bool    xDir = true;
   bool    yDir = true;
   uint8_t songPos = 0;
-
-  lastPosition.x = 0;
-  lastPosition.y = 0;
 
   while (true) {
 
@@ -90,9 +89,12 @@ void main2() {
     lastPosition.x = newPosition.x;
     lastPosition.y = newPosition.y;
 
-    ayWrite(0, song[songPos++ % sizeof(song)]);
-    ayWrite(1, 1);
+    playNoteDelay(0, song[songPos++ % sizeof(song)], 10);
 
     z80_delay_ms(100);
+
+    // for fun display the keys pressed as trail
+    if (isKeyPressed()) 
+      vdp_write(LastKeyPressed, false);    
   }
 }

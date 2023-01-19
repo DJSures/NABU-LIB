@@ -14,10 +14,13 @@ void main() {
   main2();
 }
 
-//#define FONT_AMIGA
-//#define FONT_SET1
-//#define FONT_STANDARD
-#define LM80C
+#define FONT_LM80C
+
+#define BIN_TYPE BIN_HOMEBREW
+
+#define DISABLE_KEYBOARD_INT
+
+#define DISABLE_HCCA_RX_INT
 
 #include "../NABULIB/NABU-LIB.h"
 #include <z80.h>

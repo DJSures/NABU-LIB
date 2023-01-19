@@ -25,3 +25,4 @@ move "C:\NABU Segments\000001_code_compiler.bin" "C:\NABU Segments\000001.nabu"
 
 dir "C:\NABU Segments"
 
+pause
