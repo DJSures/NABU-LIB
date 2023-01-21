@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2023.01.21.00
+Update includes the check in the HCCA TX for the interrupt flag. Also a few other fixes and restructures. A fix for not disabling the COAX output on the control port in initNABULib()
+
 ## v2023.01.18.00
 Includes options for enabling and disabling VDP, HCCA, Keyboard, and others. There is also a way to specify if the program you are creating is CPM or HOMEBREW. Read the NABU-LIB.h file for description of settings.
 
