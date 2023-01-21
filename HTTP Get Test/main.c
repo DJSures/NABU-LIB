@@ -90,7 +90,7 @@ void doReadSequential() {
  
   vdp_print("Skipping first 3 characters with seek");
   vdp_newLine();
-  uint32_t newPos = rn_fileHandleSeek(readFileHandle, 3, SEEK_SET);
+  uint32_t newPos = rn_fileHandleSeek(readFileHandle, 3, RN_SEEK_SET);
 
   vdp_print("read position is: ");
   vdp_writeInt32(newPos);
@@ -243,29 +243,29 @@ void doShowFileDetails() {
 
   vdp_print("Created: ");
   vdp_writeUInt16(fs.CreatedYear);
-  vdp_write('-', true);
+  vdp_write('-');
   vdp_writeUInt8(fs.CreatedMonth);
-  vdp_write('-', true);
+  vdp_write('-');
   vdp_writeUInt8(fs.CreatedDay);
-  vdp_write(' ', true);
+  vdp_write(' ');
   vdp_writeUInt8(fs.CreatedHour);
-  vdp_write(':', true);
+  vdp_write(':');
   vdp_writeUInt8(fs.CreatedMinute);
-  vdp_write(':', true);
+  vdp_write(':');
   vdp_writeUInt8(fs.CreatedSecond);
   vdp_newLine();
 
   vdp_print("Modified: ");
   vdp_writeUInt16(fs.ModifiedYear);
-  vdp_write('-', true);
+  vdp_write('-');
   vdp_writeUInt8(fs.ModifiedMonth);
-  vdp_write('-', true);
+  vdp_write('-');
   vdp_writeUInt8(fs.ModifiedDay);
-  vdp_write(' ', true);
+  vdp_write(' ');
   vdp_writeUInt8(fs.ModifiedHour);
-  vdp_write(':', true);
+  vdp_write(':');
   vdp_writeUInt8(fs.ModifiedMinute);
-  vdp_write(':', true);
+  vdp_write(':');
   vdp_writeUInt8(fs.ModifiedSecond);
 
   vdp_newLine();
@@ -311,29 +311,29 @@ void doDirectoryListing() {
 
     vdp_print("Created: ");
     vdp_writeUInt16(fs.CreatedYear);
-    vdp_write('-', true);
+    vdp_write('-');
     vdp_writeUInt8(fs.CreatedMonth);
-    vdp_write('-', true);
+    vdp_write('-');
     vdp_writeUInt8(fs.CreatedDay);
-    vdp_write(' ', true);
+    vdp_write(' ');
     vdp_writeUInt8(fs.CreatedHour);
-    vdp_write(':', true);
+    vdp_write(':');
     vdp_writeUInt8(fs.CreatedMinute);
-    vdp_write(':', true);
+    vdp_write(':');
     vdp_writeUInt8(fs.CreatedSecond);
     vdp_newLine();
 
     vdp_print("Modified: ");
     vdp_writeUInt16(fs.ModifiedYear);
-    vdp_write('-', true);
+    vdp_write('-');
     vdp_writeUInt8(fs.ModifiedMonth);
-    vdp_write('-', true);
+    vdp_write('-');
     vdp_writeUInt8(fs.ModifiedDay);
-    vdp_write(' ', true);
+    vdp_write(' ');
     vdp_writeUInt8(fs.ModifiedHour);
-    vdp_write(':', true);
+    vdp_write(':');
     vdp_writeUInt8(fs.ModifiedMinute);
-    vdp_write(':', true);
+    vdp_write(':');
     vdp_writeUInt8(fs.ModifiedSecond);
     vdp_newLine();
   }

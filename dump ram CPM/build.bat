@@ -7,7 +7,7 @@ SET PATH=%Z88DK_DIR%bin;%PATH%
 echo.
 echo ****************************************************************************
 
-zcc +cpm -subtype=nabu main.c -compiler=sdcc -create-app -o DUMPRAM
+zcc +cpm -subtype=nabu main.c -compiler=sdcc -create-app -O3 --opt-code-speed -o DUMPRAM
 
 :: zcc +cpm -subtype=nabu main.c -compiler=sdcc -create-app -lndos -pragma-need=ansiterminal -pragma-define:ansicolumns=51 -o DUMPRAM
 :: Columns can be 85, 80, 64, 51, 42, 40, 46, 32, 28, 24

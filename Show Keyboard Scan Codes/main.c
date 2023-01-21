@@ -60,14 +60,14 @@ void main2() {
 
     vdp_setCursor2(i, 0);
     ayWrite(0, i * 10);
-    vdp_write(' ', true);
+    vdp_write(' ');
     z80_delay_ms(5);
   }
   for (uint8_t i = 31; i > 0; i--) {
 
     vdp_setCursor2(i - 1, 2);
     ayWrite(0, i * 10);
-    vdp_write(' ', true);
+    vdp_write(' ');
     z80_delay_ms(20);
   }
 
@@ -92,7 +92,7 @@ void main2() {
     uint8_t status = IO_KEYBOARD_STATUS;
     vdp_print("Status (91h): ");
     vdp_writeUInt8(status);
-    vdp_write(' ', true);
+    vdp_write(' ');
     vdp_writeUInt8ToBinary(status);
     vdp_print("   ");
 
@@ -104,7 +104,7 @@ void main2() {
       vdp_writeUInt8(key);
       vdp_print("(91h): ");
       vdp_writeUInt8(status);
-      vdp_write(' ', true);
+      vdp_write(' ');
       vdp_writeUInt8ToBinary(status);
       vdp_newLine();
 

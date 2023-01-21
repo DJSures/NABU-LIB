@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 18, 2023 (v2023.01.18.01)
+// Last updated on January 21, 2023 (v2023.01.21.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -105,6 +105,13 @@
 #endif
 
 /// **************************************************************************
+/// You can disable the cursor by putting this line above the #include in your main.c
+/// If you disable the VDP but still want to use the keyboard interrupt, then
+/// this will also work. 
+/// **************************************************************************
+// #define DISABLE_CURSOR
+
+/// **************************************************************************
 /// HCCA RX Input buffer.
 /// You can override the RX BUFFER SIZE by defining it before the #include in your main.c
 /// **************************************************************************
@@ -182,31 +189,19 @@ __sfr __at 0x00 IO_CONTROL;
 #define IOPORTB  0x0f
 
 #ifndef DISABLE_HCCA_RX_INT
-
   uint8_t _rxBuffer[RX_BUFFER_SIZE] = { 0 };
-
-  /// <summary>
-  /// HCCA RX read position
-  /// </summary>
   uint16_t _rxBufferReadPos = 0;
-
-  /// <summary>
-  /// HCCA RX write position (used in interrupt)
-  /// </summary>
   uint16_t _rxBufferWritePos = 0;
-
 #endif
 
-
-/// <summary>
-/// Keyboard Input buffer.
-/// </summary>
 #ifndef DISABLE_KEYBOARD_INT
   volatile uint8_t _kbdBuffer[256] = { 0 };
   volatile uint8_t _kbdBufferReadPos = 0;
   volatile uint8_t _kbdBufferWritePos = 0;
 #endif
 
+ uint8_t _ORIGINAL_INT_MASK = 0;
+ 
 /// <summary>
 /// This stream of bytes are sent by calling the function hcca_exitRetroNETBridgeMode();
 /// Sending this stream of bytes when in a bridge mode (i.e. TCP connection terminal connection) will exit bridge mode
@@ -553,7 +548,7 @@ void NABU_EnableInterrupts();
 /// <summary>
 /// Perform one NOP
 /// </summary>
-inline void nop();
+void nop();
 
 
 
@@ -587,12 +582,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength);
 /// <summary>
 /// Write VAL in REG to the AY IC
 /// </summary>
-inline void ayWrite(uint8_t reg, uint8_t val);
+void ayWrite(uint8_t reg, uint8_t val);
 
 /// <summary>
 /// Read from the REG of AY IC
 /// </summary>
-inline uint8_t ayRead(uint8_t reg);
+uint8_t ayRead(uint8_t reg);
 
 
 
@@ -636,6 +631,44 @@ inline uint8_t ayRead(uint8_t reg);
   /// </summary>
   uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
 
+#endif
+
+#if BIN_TYPE == BIN_CPM
+
+  // **************************************************************************
+  // VT100/ANSI
+  // ----------
+  // 
+  // When the interrupt keyboard is disabled to use the CPM console read/write commands,
+  // the VT terminal commands can be used. You would also need to disable the VDP because
+  // the VDP is separate than the VT emulation in the Cloud CP/M BIOS. So, disable the  
+  // keyboard interrupt and you can use these VT emulation through CPM directly.
+  // **************************************************************************
+
+  void vt_clearScreen();
+
+  void vt_clearRow();
+
+  void vt_setCursor(uint8_t x, uint8_t y);
+
+  void vt_moveCursorUp(uint8_t i);
+
+  void vt_moveCursorDown(uint8_t i);
+
+  void vt_moveCursorRight(uint8_t i);
+
+  void vt_moveCursorLeft(uint8_t i);
+
+  void vt_startOfLineDown(uint8_t i);
+
+  void vt_startOfLineUp(uint8_t i);
+
+  void vt_moveToColumn(uint8_t i);
+
+  void vt_saveCursorPosition();
+
+  void vt_restoreCursorPosition();
+
 #endif 
 
 
@@ -658,7 +691,7 @@ inline uint8_t ayRead(uint8_t reg);
   /// <summary>
   /// Returns TRUE if there is data to be read from the hcca rx buffer (256 bytes)
   /// </summary>
-  inline bool hcca_isRxBufferAvailable();
+  bool hcca_isRxBufferAvailable();
 
   /// <summary>
   /// Returns how much data is currently in the RX buffer
@@ -920,18 +953,18 @@ inline uint8_t ayRead(uint8_t reg);
   void vdp_setTextColor(uint8_t fgcolor, uint8_t bgcolor);
 
   /// <summary>
-  ///  Write ASCII character at current cursor position
+  ///  Write ASCII character at current cursor position and advances forward
   ///
   /// - chr Pattern at the respective location of the  pattern memory. Graphic Mode 1 and Text Mode: Ascii code of character
   /// </summary>
-  void vdp_write(uint8_t chr, bool advanceNextChar);
+  void vdp_write(uint8_t chr);
 
   /// <summary>
-  ///  Write ASCII character at current cursor position
+  ///  Write ASCII character at current cursor position and advances forward
   ///
   /// - chr Pattern at the respective location of the  pattern memory. Graphic Mode 1 and Text Mode: Ascii code of character
   /// </summary>
-  void vdp_writeG2(uint8_t chr, bool advanceNextChar);
+  void vdp_writeG2(uint8_t chr);
 
   /// <summary>
   ///  Write a sprite into the sprite pattern table

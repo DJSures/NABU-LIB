@@ -40,7 +40,7 @@ void main2() {
     vdp_setCursor2(0, 0);
 
     for (uint16_t i = 0; i < 960; i++)
-      vdp_write((i % 30) + 65, true);
+      vdp_write((i % 30) + 65);
 
     playNoteDelay(0, 10, 100);
 

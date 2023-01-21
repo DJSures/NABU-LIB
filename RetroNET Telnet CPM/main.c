@@ -1,61 +1,59 @@
-#define FONT_LM80C
-
 #define BIN_TYPE BIN_CPM
+
+//#define DISABLE_KEYBOARD_INT
+
+#define DISABLE_VDP
 
 #define RX_BUFFER_SIZE 4096
 
+#include <conio.h>
 #include "../NABULIB/NABU-LIB.h"
-#include "vt100.c"
 #include <arch/z80.h>
 
 bool _isRunning = true;
 
 void doKeyInput() {
 
-  if (LastKeyPressed == 0xea) {
+//  uint8_t key = getch();
+  uint8_t key = LastKeyPressed;
+
+  switch (key) {
+    case 0xea:
     
-    _isRunning = false;
-  } else if (LastKeyPressed == 127) {
+      _isRunning = false;
+      break;
+    case 127:
+      
+      hcca_writeByte(0x08);
+      break;
+    case 0xe1:
 
-    if (vdp_cursor.x == 0) {
+      // left
+      hcca_writeByte(27);
+      hcca_writeBytes(0, 2, "[D");
+      break;
+    case 0xe0:
 
-      vdp_cursor.x = 39;
-      vdp_cursor.y--;
-    } else {
-
-      vdp_cursor.x--;
-    }
-
-    vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
-
-    hcca_writeByte(0x08);
-  } else if (LastKeyPressed == 0xe1) {
+      // right
+      hcca_writeByte(27);
+      hcca_writeBytes(0, 2, "[C");
+      break;
+    case 0xe2:
   
-    // left
-    hcca_writeByte(33);
-    hcca_writeByte(133);
-    hcca_writeByte(104);
-  } else if (LastKeyPressed == 0xe0) {
-
-    // right
-    hcca_writeByte(33);
-    hcca_writeByte(133);
-    hcca_writeByte(103);
-  } else if (LastKeyPressed == 0xe2) {
+      // up
+      hcca_writeByte(27);
+      hcca_writeBytes(0, 2, "[A");
+      break;
+    case 0xe3:
   
-    // up
-    hcca_writeByte(33);
-    hcca_writeByte(133);
-    hcca_writeByte(101);
-  } else if (LastKeyPressed == 0xe3) {
-  
-    // down
-    hcca_writeByte(33);
-    hcca_writeByte(133);
-    hcca_writeByte(102);
-  } else {
-
-    hcca_writeByte(LastKeyPressed);
+      // down
+      hcca_writeByte(27);
+      hcca_writeBytes(0, 2, "[B");
+      break;
+    default:
+      if (key < 0xe0)    
+        hcca_writeByte(key);
+      break;       
   }
 }
 
@@ -180,22 +178,20 @@ void doHCCAInput() {
     return;
   }
 
-  vt100_putc(c);
+  putchar(c);
 }
 
 void main() {
 
   initNABULib();
 
-  vdp_initTextMode(0xf, 0x0, false);
-
-  vdp_print("RetroNet Telnet Client CPM (0.2b)"); vdp_newLine();
-  vdp_print("by DJ Sures (c)2023"); vdp_newLine();
-  vdp_newLine();
-  vdp_newLine();
-  vdp_print("*Hint: Press TV<->NABU key to exit"); vdp_newLine();
-  vdp_newLine();
-
+  puts("RetroNet Telnet Client CPM (0.6b)");
+  puts("by DJ Sures (c)2023");
+  puts("");
+  puts("");
+  puts("*Hint: Press TV<->NABU key to exit"); 
+  puts("");
+  
   // col 0: note
   // col 1: length of note (ms)
   const uint8_t song[] = {
@@ -212,29 +208,21 @@ void main() {
     z80_delay_ms(song[i + 1]);
   }
 
-  z80_delay_ms(2000);
-
-  vdp_clearRows(0, 23);
-
   hcca_writeByte(0xa6);
-
-  vt100_init(hcca_writeString);
 
   while (_isRunning) {
 
     while (hcca_isRxBufferAvailable())
       doHCCAInput();
 
+//    while (kbhit())
     while (isKeyPressed())
       doKeyInput();
   }
 
-  hcca_exitRetroNETBridgeMode();
+//  vt_clearScreen();
 
-  for (uint8_t i = 0; i < 23; i++)
-    vdp_scrollTextUp(0, 23);
-  
-  vdp_setTextColor(VDP_WHITE, VDP_DARK_BLUE);
+  hcca_exitRetroNETBridgeMode();
 
   NABU_DisableInterrupts();  
 }

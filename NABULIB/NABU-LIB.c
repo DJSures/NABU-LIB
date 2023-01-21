@@ -20,7 +20,7 @@
 void initNABULib() {
 
   // Turn off the rom
-  IO_CONTROL = 0x01;
+  IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF;
 
   NABU_DisableInterrupts();
 
@@ -70,23 +70,23 @@ void initNABULib() {
   __endasm;
 
   #if BIN_TYPE == BIN_HOMEBREW
-    uint8_t intMask = 0;
+    _ORIGINAL_INT_MASK = 0;
   #elif BIN_TYPE == BIN_CPM
     // if cpm, we get the previous interrupt settings because we only override what we want
     // other stuff, like keyboard, might still need to be used by cpm if this user's
     // program is gonna use fget and stuff
-    uint8_t intMask = ayRead(IOPORTA);
+    _ORIGINAL_INT_MASK = ayRead(IOPORTA);
   #endif
 
   #ifndef DISABLE_HCCA_RX_INT
-    intMask |= INT_MASK_HCCARX;
+    _ORIGINAL_INT_MASK |= INT_MASK_HCCARX;
   #endif
 
   #ifndef DISABLE_KEYBOARD_INT
-    intMask |= INT_MASK_KEYBOARD;
+    _ORIGINAL_INT_MASK |= INT_MASK_KEYBOARD;
   #endif
 
-  ayWrite(IOPORTA, intMask);
+  ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
 
   NABU_EnableInterrupts();
   
@@ -102,20 +102,20 @@ void initNABULib() {
   ayWrite(7, 0b01111000);
 }
 
-void nop() {
+inline void nop() {
   __asm
     NOP
     __endasm;
 }
 
-void NABU_DisableInterrupts() {
+inline void NABU_DisableInterrupts() {
 
   __asm
     di
     __endasm;
 }
 
-void NABU_EnableInterrupts() {
+inline void NABU_EnableInterrupts() {
 
   __asm
     ei
@@ -186,6 +186,75 @@ void NABU_EnableInterrupts() {
       reti;
     __endasm;
   }
+#else 
+
+  // **************************************************************************
+  // VT100/ANSI for CPM
+  // ------------------
+  // **************************************************************************
+
+  #include <stdio.h>
+
+  void vt_clearScreen() {
+
+    printf("%c[2J", 27);
+  }
+
+  void vt_clearRow() {
+
+    printf("%c[2K", 27);
+  }
+
+  void vt_setCursor(uint8_t x, uint8_t y) {
+
+    printf("%c[%u;%uH", 27, y, x);
+  }
+
+  void vt_moveCursorUp(uint8_t i) {
+
+    printf("%c[%uA", 27, i);  
+  }
+
+  void vt_moveCursorDown(uint8_t i) {
+
+    printf("%c[%uB", 27, i);  
+  }
+
+  void vt_moveCursorRight(uint8_t i) {
+
+    printf("%c[%uC", 27, i);  
+  }
+
+  void vt_moveCursorLeft(uint8_t i) {
+
+    printf("%c[%uD", 27, i);  
+  }
+
+  void vt_startOfLineDown(uint8_t i) {
+
+    printf("%c[%uE", 27, i);  
+  }
+
+  void vt_startOfLineUp(uint8_t i) {
+
+    printf("%c[%uF", 27, i);  
+  }
+
+  void vt_moveToColumn(uint8_t i) {
+
+    printf("%c[%uG", 27, i);  
+  }
+
+  void vt_saveCursorPosition() {
+
+    printf("%c7", 27);  
+  }
+
+  void vt_restoreCursorPosition() {
+
+    printf("%c8", 27);  
+  }
+
 #endif
 
 // **************************************************************************
@@ -193,14 +262,14 @@ void NABU_EnableInterrupts() {
 // -----
 // **************************************************************************
 
-void ayWrite(uint8_t reg, uint8_t val) {
+inline void ayWrite(uint8_t reg, uint8_t val) {
 
   IO_AYLATCH = reg;
 
   IO_AYDATA = val;
 }
 
-uint8_t ayRead(uint8_t reg) {
+inline uint8_t ayRead(uint8_t reg) {
 
   IO_AYLATCH = reg;
 
@@ -261,22 +330,29 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint16_t cursorCnt = 0;
 
-    while (_kbdBufferWritePos == _kbdBufferReadPos)
-      if (CURSOR_CHAR != 0) {
+    #if defined(DISABLE_CURSOR) || defined(DISABLE_VDP)
 
-        if (cursorCnt == 1)
-          vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, CURSOR_CHAR);
-        else if (cursorCnt == 15000)
-          vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
-        else if (cursorCnt > 30000)     
-          cursorCnt = 0;
-        
-        cursorCnt++;
-      }
-    
+      while (_kbdBufferWritePos == _kbdBufferReadPos);   
 
-    if (CURSOR_CHAR != 0)
-      vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
+    #else
+
+      while (_kbdBufferWritePos == _kbdBufferReadPos)
+        if (CURSOR_CHAR != 0) {
+
+          if (cursorCnt == 1)
+            vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, CURSOR_CHAR);
+          else if (cursorCnt == 15000)
+            vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
+          else if (cursorCnt > 30000)     
+            cursorCnt = 0;
+          
+          cursorCnt++;
+        }
+      
+      if (CURSOR_CHAR != 0)
+        vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
+
+    #endif
 
     LastKeyPressed = _kbdBuffer[_kbdBufferReadPos];
 
@@ -285,46 +361,49 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     return LastKeyPressed;
   }
 
-  uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) {
+  #ifndef DISABLE_VDP
 
-    uint8_t i = 0;
+    uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) {
 
-    while (true) {
+      uint8_t i = 0;
 
-      uint8_t c = getChar();
+      while (true) {
 
-      if (c == 13) {
+        uint8_t c = getChar();
 
-        break;
-      } else if (i < maxInputLen && c >= 0x20 && c <= 126) {
+        if (c == 13) {
 
-        buffer[i] = c;
+          break;
+        } else if (i < maxInputLen && c >= 0x20 && c <= 126) {
 
-        vdp_write(c, true);
+          buffer[i] = c;
 
-        i++;
-      } else if (i == maxInputLen && c != 127) {
+          vdp_write(c);
 
-        playNoteDelay(0, 60, 10);
-      } else if (c == 127 && i > 0) {
+          i++;
+        } else if (i == maxInputLen && c != 127) {
 
-        if (vdp_cursor.x == 0) {
+          playNoteDelay(0, 60, 10);
+        } else if (c == 127 && i > 0) {
 
-          vdp_cursor.x = 39;
-          vdp_cursor.y--;
-        } else {
+          if (vdp_cursor.x == 0) {
 
-          vdp_cursor.x--;
+            vdp_cursor.x = 39;
+            vdp_cursor.y--;
+          } else {
+
+            vdp_cursor.x--;
+          }
+
+          i--;
+
+          vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
         }
-
-        i--;
-
-        vdp_writeCharAtLocation(vdp_cursor.x, vdp_cursor.y, ' ');
       }
-    }
 
-    return i;
-  }
+      return i;
+    }
+  #endif
 
 #endif
 
@@ -336,7 +415,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   // ------------
   // **************************************************************************
 
-  bool hcca_isRxBufferAvailable() {
+  inline bool hcca_isRxBufferAvailable() {
 
     return _rxBufferWritePos != _rxBufferReadPos;
   }
@@ -406,83 +485,18 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void hcca_writeByte(uint8_t c) {
 
+    NABU_DisableInterrupts();
+    
+    ayWrite(IOPORTA, _ORIGINAL_INT_MASK | INT_MASK_HCCATX);
+
+    IO_AYLATCH = IOPORTB;
+    while (IO_AYDATA & 0x04);
+
     IO_HCCA = c;
 
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
+    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+
+    NABU_EnableInterrupts();
   }
 
   void hcca_writeUInt32(uint32_t val) {
@@ -876,19 +890,19 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   void vdp_print(uint8_t* text) {
 
     for (uint16_t i = 0; text[i] != 0x00; i++)
-      vdp_write(text[i], true);
+      vdp_write(text[i]);
   }
 
   void vdp_printG2(uint8_t* text) {
 
     for (uint16_t i = 0; text[i] != 0x00; i++)
-      vdp_writeG2(text[i], true);
+      vdp_writeG2(text[i]);
   }
 
   void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text) {
 
     for (uint16_t i = 0; i < textLength; i++)
-      vdp_write(text[offset + i], true);
+      vdp_write(text[offset + i]);
   }
 
   void vdp_newLine() {
@@ -967,7 +981,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       vdp_setRegister(7, (fg << 4) + bg);
   }
 
-  void vdp_write(uint8_t chr, bool advanceNextChar) {
+  void vdp_write(uint8_t chr) {
 
     // Position in name table
     uint16_t name_offset = vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x;
@@ -986,13 +1000,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       vdp_scrollTextUp(0, 23);
 
       vdp_cursor.x = 0;
-    } else if (advanceNextChar) {
+    } 
 
-      vdp_setCursor(VDP_CURSOR_RIGHT);
-    }
+    vdp_setCursor(VDP_CURSOR_RIGHT);   
   }
 
-  void vdp_writeG2(uint8_t chr, bool advanceNextChar) {
+  void vdp_writeG2(uint8_t chr) {
 
     if (chr < 0x20 || chr > 0x7d)
       return;
@@ -1005,8 +1018,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     for (uint8_t i = 0; i < 8; i++)
       IO_VDPDATA = ASCII[((chr - 32) << 3) + i];
 
-    if (advanceNextChar)
-      vdp_setCursor(VDP_CURSOR_RIGHT);
+    vdp_setCursor(VDP_CURSOR_RIGHT);
   }
 
   void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c) {

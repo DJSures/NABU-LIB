@@ -95,6 +95,6 @@ void main2() {
 
     // for fun display the keys pressed as trail
     if (isKeyPressed()) 
-      vdp_write(LastKeyPressed, false);    
+      vdp_write(LastKeyPressed);    
   }
 }
