@@ -986,9 +986,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // Position in name table
     uint16_t name_offset = vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x;
 
-    // Offset of pattern in pattern table
-    uint16_t pattern_offset = name_offset << 3;
-
     vdp_setWriteAddress(_vdp_name_table + name_offset);
 
     IO_VDPDATA = chr;
