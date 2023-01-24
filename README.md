@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2023.01.23.00
+Includes VT52 commands for the CPM VT52 terminal emulation. There's also a VT52 and CPM Cursor project added.
+
 ## v2023.01.21.00
 Update includes the check in the HCCA TX for the interrupt flag. Also a few other fixes and restructures. A fix for not disabling the COAX output on the control port in initNABULib()
 
