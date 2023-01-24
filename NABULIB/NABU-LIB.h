@@ -115,8 +115,11 @@
 /// HCCA RX Input buffer.
 /// You can override the RX BUFFER SIZE by defining it before the #include in your main.c
 /// **************************************************************************
-#ifndef RX_BUFFER_SIZE
-#define RX_BUFFER_SIZE 1048
+#ifndef DISABLE_HCCA_RX_INT
+  #ifndef RX_BUFFER_SIZE
+    #define RX_BUFFER_SIZE 1024
+    #warning Using default 1024 HCCA RX Buffer
+  #endif
 #endif
 
 #ifndef BIN_TYPE
@@ -192,12 +195,18 @@ __sfr __at 0x00 IO_CONTROL;
   uint8_t _rxBuffer[RX_BUFFER_SIZE] = { 0 };
   uint16_t _rxBufferReadPos = 0;
   uint16_t _rxBufferWritePos = 0;
+  #warning HCCA Interupt: Enabled
+#else
+  #warning HCCA Interrupt: Disabled
 #endif
 
 #ifndef DISABLE_KEYBOARD_INT
   volatile uint8_t _kbdBuffer[256] = { 0 };
   volatile uint8_t _kbdBufferReadPos = 0;
   volatile uint8_t _kbdBufferWritePos = 0;
+  #warning Keyboard Interupt Enabled. Use NABU-LIB keyboard functions only (no CPM STDIN)
+#else
+  #warning Keyboard Interupt Disabled. If building for CPM, uses C STDIN stdio/conio functions for keyboard.
 #endif
 
  uint8_t _ORIGINAL_INT_MASK = 0;
@@ -250,8 +259,9 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   struct {
     uint8_t x;
     uint8_t y;
-  } vdp_cursor = { 0, 0};
+  } vdp_cursor = { 0, 0 };
 
+  
   uint16_t       _vdp_sprite_attribute_table;
   uint16_t       _vdp_sprite_pattern_table;
   uint8_t        _vdp_sprite_size_sel;      // 0: 8x8 sprites 1: 16x16 sprites
@@ -334,6 +344,12 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   // VDP Status
   #define VDP_OK 0
   #define VDP_ERROR 1
+
+  #warning VDP has been enabled. If using CPM, you can mix STDOUT and NABU-LIB vdp functions.
+
+#else
+
+  #warning VDP has been disabled. If using CPM, you must use STDOUT functions (i.e. printf, fputs, etc). NABU-LIB vdp functions are not available
 
 #endif
 
@@ -636,38 +652,64 @@ uint8_t ayRead(uint8_t reg);
 #if BIN_TYPE == BIN_CPM
 
   // **************************************************************************
-  // VT100/ANSI
+  // VT52
   // ----------
   // 
-  // When the interrupt keyboard is disabled to use the CPM console read/write commands,
-  // the VT terminal commands can be used. You would also need to disable the VDP because
-  // the VDP is separate than the VT emulation in the Cloud CP/M BIOS. So, disable the  
-  // keyboard interrupt and you can use these VT emulation through CPM directly.
+  // When using CPM STDOUT (i.e. printf, etc.) you can use the VT52 emulation built into the BIOS
+  // You can also SET and GET the cursor in CPM by using cpm_cursor.x and cpm_cursor.y
   // **************************************************************************
+
+  /// <summary>
+  /// This is the current position of the cursor in CPM in the BIOS.
+  /// This is here because CPM does not provide cursor information. So by using this with STDOUT, you can SET and GET the CPM cursor
+  /// position rather than using the VT52 commands.
+  /// </summary>
+  struct {
+    uint8_t x;
+    uint8_t y;
+  } __at (0xff10) cpm_cursor;
+
+  void vt_clearToEndOfScreen();
+
+  void vt_clearToEndOfLine();
 
   void vt_clearScreen();
 
-  void vt_clearRow();
+  void vt_clearLine();
+
+  void vt_clearToStartOfLine();
+
+  void vt_clearToStartOfScreen();
+
+  void vt_moveCursorDown(uint8_t count);
+
+  void vt_cursorHome();
+
+  void vt_moveCursorLeft(uint8_t count);
+
+  void vt_moveCursorRight(uint8_t count);
+
+  void vt_moveCursorUp(uint8_t count);
+
+  void vt_deleteLine();
 
   void vt_setCursor(uint8_t x, uint8_t y);
 
-  void vt_moveCursorUp(uint8_t i);
+  void vt_foregroundColor(uint8_t color);
 
-  void vt_moveCursorDown(uint8_t i);
+  void vt_insertLine();
 
-  void vt_moveCursorRight(uint8_t i);
+  void vt_restoreCursorPosition();
 
-  void vt_moveCursorLeft(uint8_t i);
-
-  void vt_startOfLineDown(uint8_t i);
-
-  void vt_startOfLineUp(uint8_t i);
-
-  void vt_moveToColumn(uint8_t i);
+  void vt_backgroundColor(uint8_t color);
 
   void vt_saveCursorPosition();
 
-  void vt_restoreCursorPosition();
+  void vt_cursorUpAndInsert();
+
+  void vt_wrapOff();
+
+  void vt_wrapOn();
 
 #endif 
 

@@ -189,70 +189,126 @@ inline void NABU_EnableInterrupts() {
 #else 
 
   // **************************************************************************
-  // VT100/ANSI for CPM
+  // VT51 for CPM
   // ------------------
   // **************************************************************************
 
   #include <stdio.h>
 
-  void vt_clearScreen() {
+  void vt_clearToEndOfScreen() {
 
-    printf("%c[2J", 27);
+    printf("%cJ", 27);
   }
 
-  void vt_clearRow() {
+  void vt_clearToEndOfLine() {
 
-    printf("%c[2K", 27);
+    printf("%cK", 27);
+  }
+
+  void vt_clearScreen() {
+
+    printf("%cE", 27);
+  }
+
+  void vt_clearLine() {
+
+    printf("%cl", 27);
+  }
+
+  void vt_clearToStartOfLine() {
+
+    printf("%co", 27);
+  }
+
+  void vt_clearToStartOfScreen() {
+
+    printf("%cd", 27);
+  }
+
+  void vt_moveCursorDown(uint8_t count) {
+
+    for (uint8_t i = 0; i < count; i++)
+      printf("%cB", 27);
+  }
+
+  void vt_cursorHome() {
+
+    printf("%cH", 27);
+  }
+
+  void vt_moveCursorLeft(uint8_t count) {
+
+    for (uint8_t i = 0; i < count; i++)
+      printf("%cD", 27);
+  }
+
+  void vt_moveCursorRight(uint8_t count) {
+
+    for (uint8_t i = 0; i < count; i++)
+      printf("%cC", 27);
+  }
+
+  void vt_moveCursorUp(uint8_t count) {
+
+    for (uint8_t i = 0; i < count; i++)
+      printf("%cA", 27);
+  }
+
+  void vt_deleteLine() {
+
+    printf("%cM", 27);
   }
 
   void vt_setCursor(uint8_t x, uint8_t y) {
 
-    printf("%c[%u;%uH", 27, y, x);
+    putchar(27);
+    putchar('Y');
+    putchar(32 + y);
+    putchar(32 + x);
   }
 
-  void vt_moveCursorUp(uint8_t i) {
+  void vt_foregroundColor(uint8_t color) {
 
-    printf("%c[%uA", 27, i);  
+    putchar(27);
+    putchar('b');
+    putchar(color);
   }
 
-  void vt_moveCursorDown(uint8_t i) {
+  void vt_insertLine() {
 
-    printf("%c[%uB", 27, i);  
-  }
-
-  void vt_moveCursorRight(uint8_t i) {
-
-    printf("%c[%uC", 27, i);  
-  }
-
-  void vt_moveCursorLeft(uint8_t i) {
-
-    printf("%c[%uD", 27, i);  
-  }
-
-  void vt_startOfLineDown(uint8_t i) {
-
-    printf("%c[%uE", 27, i);  
-  }
-
-  void vt_startOfLineUp(uint8_t i) {
-
-    printf("%c[%uF", 27, i);  
-  }
-
-  void vt_moveToColumn(uint8_t i) {
-
-    printf("%c[%uG", 27, i);  
-  }
-
-  void vt_saveCursorPosition() {
-
-    printf("%c7", 27);  
+    printf("%cL", 27);
   }
 
   void vt_restoreCursorPosition() {
 
-    printf("%c8", 27);  
+    printf("%ck", 27);
+  }
+
+  void vt_backgroundColor(uint8_t color) {
+
+    putchar(27);
+    putchar('c');
+    putchar(color);
+  }
+
+  void vt_saveCursorPosition() {
+
+    printf("%cj", 27);
+  }
+
+  void vt_cursorUpAndInsert() {
+
+    printf("%cI", 27);
+  }
+
+  void vt_wrapOff() {
+
+    printf("%cw", 27);
+  }
+
+  void vt_wrapOn() {
+
+    printf("%cv", 27);
   }
 
 #endif
