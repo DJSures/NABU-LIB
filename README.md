@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2023.01.25.00
+The Telnet CPM application demonstrates how to build a CPM program without needing the -subtype=nabu on the commandline. This fixes the issue where z88dk was taking the interupts and not using bdos for STDIN. The latest Cloud CP/M BIOS 2.7b with virtual 80 display is using this build.
+
 ## v2023.01.23.00
 Includes VT52 commands for the CPM VT52 terminal emulation. There's also a VT52 and CPM Cursor project added.
 
