@@ -761,7 +761,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       return;
 
     uint16_t name_offset = vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x; // Position in name table
-    uint16_t color_offset = name_offset << 3;                       // Offset of pattern in pattern table
+    uint16_t color_offset = name_offset << 3;                                   // Offset of pattern in pattern table
     vdp_setWriteAddress(_vdp_color_table + color_offset);
 
     for (uint8_t i = 0; i < 8; i++)
@@ -780,11 +780,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     if (color1 != NULL) {
 
-      pixel |= 0x80 >> (x % 8); //Set a "1"
+      pixel |= 0x80 >> (x % 8); // Set bit a "1"
       color = (color & 0x0F) | (color1 << 4);
     } else {
 
-      pixel &= ~(0x80 >> (x % 8)); //Set bit as "0"
+      pixel &= ~(0x80 >> (x % 8)); // Set bit as "0"
       color = (color & 0xF0) | (color2 & 0x0F);
     }
 
@@ -819,8 +819,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       uint8_t color_ = IO_VDPDATA;
 
       if ((x & 1) == 0) {
-        // Even 
 
+        // Even 
         color_ &= 0x0F;
         color_ |= (color << 4);
       } else {
@@ -843,18 +843,15 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       vdp_setWriteAddress(_vdp_sprite_pattern_table + 32 * number);
 
-      for (uint8_t i = 0; i < 32; i++) {
-        IO_VDPDATA = sprite[i];
-      }
+      for (uint8_t i = 0; i < 32; i++) 
+        IO_VDPDATA = sprite[i];      
     } else {
 
       vdp_setWriteAddress(_vdp_sprite_pattern_table + 8 * number);
 
-      for (uint8_t i = 0; i < 8; i++) {
+      for (uint8_t i = 0; i < 8; i++) 
         IO_VDPDATA = sprite[i];
-      }
     }
-
   }
 
   void vdp_setSpriteColor(uint16_t addr, uint8_t color) {
@@ -1012,18 +1009,18 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   void vdp_setCursor(uint8_t direction) __z88dk_fastcall {
 
     switch (direction) {
-    case VDP_CURSOR_UP:
-      vdp_setCursor2(vdp_cursor.x, vdp_cursor.y - 1);
-      break;
-    case VDP_CURSOR_DOWN:
-      vdp_setCursor2(vdp_cursor.x, vdp_cursor.y + 1);
-      break;
-    case VDP_CURSOR_LEFT:
-      vdp_setCursor2(vdp_cursor.x - 1, vdp_cursor.y);
-      break;
-    case VDP_CURSOR_RIGHT:
-      vdp_setCursor2(vdp_cursor.x + 1, vdp_cursor.y);
-      break;
+      case VDP_CURSOR_UP:
+        vdp_setCursor2(vdp_cursor.x, vdp_cursor.y - 1);
+        break;
+      case VDP_CURSOR_DOWN:
+        vdp_setCursor2(vdp_cursor.x, vdp_cursor.y + 1);
+        break;
+      case VDP_CURSOR_LEFT:
+        vdp_setCursor2(vdp_cursor.x - 1, vdp_cursor.y);
+        break;
+      case VDP_CURSOR_RIGHT:
+        vdp_setCursor2(vdp_cursor.x + 1, vdp_cursor.y);
+        break;
     }
   }
 
@@ -1064,7 +1061,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       return;
 
     uint16_t name_offset = vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x; // Position in name table
-    uint16_t pattern_offset = name_offset << 3;                    // Offset of pattern in pattern table
+    uint16_t pattern_offset = name_offset << 3;                                 // Offset of pattern in pattern table
 
     vdp_setWriteAddress(_vdp_pattern_table + pattern_offset);
 
@@ -1076,7 +1073,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c) {
 
-    uint16_t name_offset = y * (_vdp_crsr_max_x + 1) + x; // Position in name table
+    uint16_t name_offset = y * (_vdp_crsr_max_x + 1) + x; 
 
     _vdp_textBuffer[name_offset] = c;
 
@@ -1087,7 +1084,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y) {
 
-    uint16_t name_offset = y * (_vdp_crsr_max_x + 1) + x; // Position in name table
+    uint16_t name_offset = y * (_vdp_crsr_max_x + 1) + x; 
 
     vdp_setReadAddress(_vdp_name_table + name_offset);
 

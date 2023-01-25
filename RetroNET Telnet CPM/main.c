@@ -1,6 +1,6 @@
 #define BIN_TYPE BIN_CPM
 
-//#define DISABLE_KEYBOARD_INT
+#define DISABLE_KEYBOARD_INT
 
 #define DISABLE_VDP
 
@@ -14,8 +14,8 @@ bool _isRunning = true;
 
 void doKeyInput() {
 
-//  uint8_t key = getch();
-  uint8_t key = LastKeyPressed;
+  uint8_t key = getch();
+//  uint8_t key = LastKeyPressed;
 
   switch (key) {
     case 0xea:
@@ -30,25 +30,25 @@ void doKeyInput() {
 
       // left
       hcca_writeByte(27);
-      hcca_writeBytes(0, 2, "[D");
+      hcca_writeByte('D');
       break;
     case 0xe0:
 
       // right
       hcca_writeByte(27);
-      hcca_writeBytes(0, 2, "[C");
+      hcca_writeByte('C');
       break;
     case 0xe2:
   
       // up
       hcca_writeByte(27);
-      hcca_writeBytes(0, 2, "[A");
+      hcca_writeByte('A');
       break;
     case 0xe3:
   
       // down
       hcca_writeByte(27);
-      hcca_writeBytes(0, 2, "[B");
+      hcca_writeByte('B');
       break;
     default:
       if (key < 0xe0)    
@@ -115,7 +115,7 @@ void telnet31() {
 
   sendOption(OPT_WILL, 31);
 
-  const uint8_t tmpBuff1[] = { 255, 250, 31, 0, 40, 0, 24, 255, 240 };
+  const uint8_t tmpBuff1[] = { 255, 250, 31, 0, 80, 0, 24, 255, 240 };
   hcca_writeBytes(0, 9, tmpBuff1);
 }
 
@@ -124,8 +124,8 @@ void telnet24() {
 
   sendOption(OPT_WILL, 24);
 
-  const uint8_t tmpBuff1[] = { 255, 250, 24, 0, 'V', 'T', '1', '0', '0', 255, 240 };
-  hcca_writeBytes(0, 11, tmpBuff1);
+  const uint8_t tmpBuff1[] = { 255, 250, 24, 0, 'V', 'T', '5', '2', 255, 240 };
+  hcca_writeBytes(0, 10, tmpBuff1);
 
   // no extended ascii
   sendOption(OPT_DONT, 17);
@@ -185,7 +185,8 @@ void main() {
 
   initNABULib();
 
-  puts("RetroNet Telnet Client CPM (0.6b)");
+  puts("");
+  puts("RetroNet Telnet Client CPM (0.8b)");
   puts("by DJ Sures (c)2023");
   puts("");
   puts("");
@@ -215,12 +216,10 @@ void main() {
     while (hcca_isRxBufferAvailable())
       doHCCAInput();
 
-//    while (kbhit())
-    while (isKeyPressed())
+    while (kbhit())
+//    while (isKeyPressed())
       doKeyInput();
   }
-
-//  vt_clearScreen();
 
   hcca_exitRetroNETBridgeMode();
 
