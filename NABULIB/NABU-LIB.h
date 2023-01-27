@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 25, 2023 (v2023.01.25.00)
+// Last updated on January 27, 2023 (v2023.01.27.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -118,7 +118,9 @@
 #ifndef DISABLE_HCCA_RX_INT
   #ifndef RX_BUFFER_SIZE
     #define RX_BUFFER_SIZE 1024
+    #warning
     #warning Using default 1024 HCCA RX Buffer
+    #warning
   #endif
 #endif
 
@@ -195,21 +197,48 @@ __sfr __at 0x00 IO_CONTROL;
   uint8_t _rxBuffer[RX_BUFFER_SIZE] = { 0 };
   uint16_t _rxBufferReadPos = 0;
   uint16_t _rxBufferWritePos = 0;
+  #warning
   #warning HCCA Interupt: Enabled
+  #warning
 #else
+  #warning
   #warning HCCA Interrupt: Disabled
+  #warning
 #endif
 
 #ifndef DISABLE_KEYBOARD_INT
+
   volatile uint8_t _kbdBuffer[256] = { 0 };
   volatile uint8_t _kbdBufferReadPos = 0;
   volatile uint8_t _kbdBufferWritePos = 0;
+  volatile uint8_t _lastKeyboardIntVal = 0;
+  volatile uint8_t _joyStatus[4] = {0};
+
+  typedef enum JOYSTICKENUM {
+    Joy_Left = 0b00000001,
+    Joy_Down = 0b00000010,
+    Joy_Right = 0b00000100,
+    Joy_Up = 0b00001000,
+    Joy_Button = 0b00010000,
+  };
+
+  #warning
   #warning Keyboard Interupt Enabled. Use NABU-LIB keyboard functions only (no CPM STDIN)
+  #warning
 #else
+  #warning
   #warning Keyboard Interupt Disabled. If building for CPM, uses C STDIN stdio/conio functions for keyboard.
+  #warning
 #endif
 
- uint8_t _ORIGINAL_INT_MASK = 0;
+/// <summary>
+/// The original Interrupt Mask when initNABULib() was called. 
+/// This is used when a function needs to briefly pause or change interrupts, it can put the interrupt back.
+/// For example, this is used with writeByte() and all of it's parents (i.e. writeByteUInt16, etc..)
+/// The writebyte() will disable interrupts and modify the interrupt mask so it can monitor the TX flag.
+/// Once the byte has been sent, it will restore the interrupts as they were.
+/// </summary>
+uint8_t _ORIGINAL_INT_MASK = 0;
  
 /// <summary>
 /// This stream of bytes are sent by calling the function hcca_exitRetroNETBridgeMode();
@@ -338,18 +367,22 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
     uint8_t y; //Sprite Y position
     uint8_t name_ptr; //Sprite name in pattern table
     uint8_t ecclr; //Bit 7: Early clock bit, bit 3:0 color
-  } Sprite_attributes;
+  } SpriteAttributesStruct;
 
 
   // VDP Status
   #define VDP_OK 0
   #define VDP_ERROR 1
 
+  #warning
   #warning VDP has been enabled. If using CPM, you can mix STDOUT and NABU-LIB vdp functions.
+  #warning
 
 #else
 
+  #warning
   #warning VDP has been disabled. If using CPM, you must use STDOUT functions (i.e. printf, fputs, etc). NABU-LIB vdp functions are not available
+  #warning
 
 #endif
 
@@ -619,19 +652,12 @@ uint8_t ayRead(uint8_t reg);
 #ifndef DISABLE_KEYBOARD_INT
 
   /// <summary>
-  /// The last key that was pressed when isKeyPressed or getChar is called
-  /// </summary>
-  uint8_t LastKeyPressed = 0x00;
-
-  /// <summary>
   /// Returns false if no key has been pressed, otherwise it returns the key value
-  /// Stores the last key pressed in LastKeyPressed as well
   /// </summary>
   uint8_t isKeyPressed();
 
   /// <summary>
   /// Blocks and waits for a key, returns that key value
-  /// Stores the last key pressed in LastKeyPressed as well
   /// </summary>
   uint8_t getChar();
 
@@ -647,6 +673,27 @@ uint8_t ayRead(uint8_t reg);
   /// </summary>
   uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
 
+  /// <summary>
+  /// Returns the status of the joystick at the specified index (0 - 3)
+  /// The status will return the following byte structure...
+  ///
+  /// MSB Byte 5: Button status
+  ///     Byte 4: Up
+  ///     Byte 3: Right
+  ///     Byte 2: Down
+  /// LSB Byte 1: Left
+  ///
+  /// You can check for a direction by comparing the value against JOYSTICKENUM values. 
+  /// For example you can check if a button is pressed with this example. Same applies to directions...
+  ///
+  ///   if (getJoyStatus(0) & Joy_Button)
+  ///  
+  /// or check a direction...
+  ///  
+  ///   if (getJoyStatus(0) & Joy_Up)
+  ///  
+  /// </summary>
+  uint8_t getJoyStatus(uint8_t joyNum);
 #endif
 
 #if BIN_TYPE == BIN_CPM
@@ -879,7 +926,7 @@ uint8_t ayRead(uint8_t reg);
   /// 
   /// returns VDP_ERROR | VDP_SUCCESS
   /// </summary>
-  int vdp_initTextMode(uint8_t fgcolor, uint8_t, bool autoScroll);
+  int vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll);
 
   /// <summary>
   /// Initializes the VDP in Graphic Mode 1. Not really useful if more than 4k Video ram is available
@@ -1011,10 +1058,10 @@ uint8_t ayRead(uint8_t reg);
   /// <summary>
   ///  Write a sprite into the sprite pattern table
   ///
-  /// - name Reference of sprite 0-255 for 8x8 sprites, 0-63 for 16x16 sprites
-  /// - sprite Array with sprite data. Type uint8_t[8] for 8x8 sprites, uint8_t[32] for 16x16 sprites
+  /// - id: Reference of sprite 0-255 for 8x8 sprites, 0-63 for 16x16 sprites
+  /// - sprite: Array with sprite data. Type uint8_t[8] for 8x8 sprites, uint8_t[32] for 16x16 sprites
   /// </summary>
-  void vdp_setSpritePattern(uint8_t name, const uint8_t* sprite);
+  void vdp_setSpritePattern(uint8_t id, const uint8_t* sprite);
 
   /// <summary>
   ///  Set the sprite color
@@ -1031,7 +1078,36 @@ uint8_t ayRead(uint8_t reg);
   /// 
   /// Returns Sprite_attributes
   /// </summary>
-  Sprite_attributes vdp_sprite_get_attributes(uint16_t handle);
+  void vdp_getSpriteeAttributes(uint16_t addr, SpriteAttributesStruct* s);
+
+  /// <summary>
+  ///  Activate a sprite
+  ///
+  /// - name Number of the sprite as defined in vdp_set_sprite()
+  /// - priority 0: Highest priority; 31: Lowest priority
+  /// - color
+  /// Returnss     Sprite Handle
+  /// </summary>
+  uint16_t vdp_spriteInit(uint8_t name, uint8_t priority, uint8_t color);
+
+  /// <summary>
+  ///  Get the current position of a sprite
+  ///
+  /// - handle Sprite Handle returned by vdp_spriteInit()
+  /// - xpos Reference to x-position
+  /// - ypos Reference to y-position
+  /// </summary>
+  void vdp_getSpritePosition(uint16_t handle, uint16_t xpos, uint8_t ypos);
+
+  /// <summary>
+  ///  Set position of a sprite
+  ///
+  /// - handle  Sprite Handle returned by vdp_sprite_init()
+  /// - x
+  /// - y
+  /// Returnss     true: In case of a collision with other sprites
+  /// </summary>
+  uint8_t vdp_setSpritePosition(uint16_t handle, uint16_t x, uint8_t y);
 
   /// <summary>
   /// Add a new line (move down and to line start)
@@ -1108,35 +1184,6 @@ uint8_t ayRead(uint8_t reg);
   /// Display the binary value of the variable
   /// </summary>
   void vdp_writeUInt16ToBinary(uint16_t v);
-
-  /// <summary>
-  ///  Get the current position of a sprite
-  ///
-  /// - handle Sprite Handle returned by vdp_sprite_init()
-  /// - xpos Reference to x-position
-  /// - ypos Reference to y-position
-  /// </summary>
-  void vdp_getSpritePosition(uint16_t handle, uint16_t xpos, uint8_t ypos);
-
-  /// <summary>
-  ///  Activate a sprite
-  ///
-  /// - name Number of the sprite as defined in vdp_set_sprite()
-  /// - priority 0: Highest priority; 31: Lowest priority
-  /// - color
-  /// Returnss     Sprite Handle
-  /// </summary>
-  uint16_t vdp_spriteInit(uint8_t name, uint8_t priority, uint8_t color);
-
-  /// <summary>
-  ///  Set position of a sprite
-  ///
-  /// - handle  Sprite Handle returned by vdp_sprite_init()
-  /// - x
-  /// - y
-  /// Returnss     true: In case of a collision with other sprites
-  /// </summary>
-  uint8_t vdp_setSpritePosition(uint16_t handle, uint16_t x, uint8_t y);
 
 #endif
 

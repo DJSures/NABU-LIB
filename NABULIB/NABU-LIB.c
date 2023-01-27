@@ -170,11 +170,43 @@ inline void NABU_EnableInterrupts() {
 
     uint8_t inKey = IO_KEYBOARD;
 
-    if (inKey < 0x90 || inKey > 0x95) {
+    switch (inKey) {
+      case 0x90: // statuses
+      case 0x91: // statuses
+      case 0x92: // statuses
+      case 0x93: // statuses
+      case 0x94: // statuses
+      case 0x95: // statuses
+        break;
+      case 0x80: // j1
+      case 0x81: // j2
+      case 0x82: // j3
+      case 0x83: // j4
+        _lastKeyboardIntVal = inKey;
+        break;
+      default:
 
-      _kbdBuffer[_kbdBufferWritePos] = inKey;
-
-      _kbdBufferWritePos++;
+        switch (_lastKeyboardIntVal) {
+          case 0x80:
+            _lastKeyboardIntVal = 0;
+            _joyStatus[0] = inKey;
+            break;
+          case 0x81:
+            _lastKeyboardIntVal = 0;
+            _joyStatus[1] = inKey;
+            break;
+          case 0x82:
+            _lastKeyboardIntVal = 0;
+            _joyStatus[2] = inKey;
+            break;
+          case 0x83:
+            _lastKeyboardIntVal = 0;
+            _joyStatus[3] = inKey;
+            break;
+          default:
+            _kbdBuffer[_kbdBufferWritePos] = inKey;
+            _kbdBufferWritePos++;
+        }
     }
 
     __asm
@@ -372,14 +404,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   uint8_t isKeyPressed() {
 
-    if (_kbdBufferWritePos == _kbdBufferReadPos)
-      return 0;
-
-    LastKeyPressed = _kbdBuffer[_kbdBufferReadPos];
-
-    _kbdBufferReadPos++;
-
-    return LastKeyPressed;    
+    return (_kbdBufferWritePos != _kbdBufferReadPos);
   }
 
   uint8_t getChar() {
@@ -410,11 +435,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     #endif
 
-    LastKeyPressed = _kbdBuffer[_kbdBufferReadPos];
+    uint8_t key = _kbdBuffer[_kbdBufferReadPos];
 
     _kbdBufferReadPos++;
 
-    return LastKeyPressed;
+    return key;
+  }
+
+  inline uint8_t getJoyStatus(uint8_t joyNum) {
+
+      return _joyStatus[joyNum];
   }
 
   #ifndef DISABLE_VDP
@@ -543,7 +573,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     NABU_DisableInterrupts();
     
-    ayWrite(IOPORTA, _ORIGINAL_INT_MASK | INT_MASK_HCCATX);
+    ayWrite(IOPORTA, INT_MASK_HCCATX);
 
     IO_AYLATCH = IOPORTB;
     while (IO_AYDATA & 0x04);
@@ -837,17 +867,17 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
-  void vdp_setSpritePattern(uint8_t number, const uint8_t* sprite) {
+  void vdp_setSpritePattern(uint8_t id, const uint8_t* sprite) {
 
     if (_vdp_sprite_size_sel) {
 
-      vdp_setWriteAddress(_vdp_sprite_pattern_table + 32 * number);
+      vdp_setWriteAddress(_vdp_sprite_pattern_table + 32 * id);
 
       for (uint8_t i = 0; i < 32; i++) 
         IO_VDPDATA = sprite[i];      
     } else {
 
-      vdp_setWriteAddress(_vdp_sprite_pattern_table + 8 * number);
+      vdp_setWriteAddress(_vdp_sprite_pattern_table + 8 * id);
 
       for (uint8_t i = 0; i < 8; i++) 
         IO_VDPDATA = sprite[i];
@@ -865,19 +895,15 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     IO_VDPDATA = ecclr;
   }
 
-  //Sprite_attributes vdp_sprite_get_attributes(uint16_t addr) {
-  //
-  //  Sprite_attributes attrs;
-  //
-  //  setReadAddress(addr);
-  //
-  //  attrs.y = IO_VDPDATA;
-  //  attrs.x = IO_VDPDATA;
-  //  attrs.name_ptr = IO_VDPDATA;
-  //  attrs.ecclr = IO_VDPDATA;
-  //
-  //  return attrs;
-  //}
+  void vdp_getSpriteAttributes(uint16_t addr, SpriteAttributesStruct* s) {
+    
+    vdp_setReadAddress(addr);
+  
+    s->y = IO_VDPDATA;
+    s->x = IO_VDPDATA;
+    s->name_ptr = IO_VDPDATA;
+    s->ecclr = IO_VDPDATA;  
+  }
 
   void vdp_getSpritePosition(uint16_t addr, uint16_t xpos, uint8_t ypos) {
 
@@ -895,7 +921,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       xpos = x + 32;
   }
 
-  uint16_t vdp_spriteInit(uint8_t name, uint8_t priority, uint8_t color) {
+  uint16_t vdp_spriteInit(uint8_t id, uint8_t priority, uint8_t color) {
 
     uint16_t addr = _vdp_sprite_attribute_table + 4 * priority;
 
@@ -904,9 +930,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     IO_VDPDATA = 0;
 
     if (_vdp_sprite_size_sel)
-      IO_VDPDATA = 4 * name;
+      IO_VDPDATA = 4 * id;
     else
-      IO_VDPDATA = 4 * name;
+      IO_VDPDATA = 4 * id;
 
     IO_VDPDATA = 0x80 | (color & 0xF);
 
@@ -987,19 +1013,13 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setCursor2(uint8_t col, uint8_t row) {
 
-    if (col == 255) {
-
-      col = _vdp_crsr_max_x;
-      row--;
-    } else if (col > _vdp_crsr_max_x) {
+    if (col > _vdp_crsr_max_x) {
 
       col = 0;
       row++;
     }
 
-    if (row == 255)
-      row = _vdp_crsr_max_y;
-    else if (row > _vdp_crsr_max_y)
+   if (row > _vdp_crsr_max_y)
       row = 0;
 
     vdp_cursor.x = col;
@@ -1045,7 +1065,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     _vdp_textBuffer[name_offset] = chr;
 
-    if (vdp_cursor.x == 39 && vdp_cursor.y == 23) {
+    if (_autoScroll && vdp_cursor.x == 39 && vdp_cursor.y == 23) {
 
       vdp_scrollTextUp(0, 23);
 
@@ -1148,9 +1168,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   void vdp_writeUInt32(uint32_t v) {
 
     // 4294967295
-    uint8_t tb[11];
+    uint8_t tb[sizeof(uint32_t) * 8 + 1];
 
     utoa(v, tb, 10);
+
+    tb[10] = 0;
 
     vdp_print(tb);
   }
@@ -1158,34 +1180,40 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   void vdp_writeInt32(int32_t v) {
 
     // -2147483648
-    uint8_t tb[12];
+    uint8_t tb[sizeof(int32_t) * 8 + 1];
 
     itoa(v, tb, 10);
+
+    tb[11] = 0;
 
     vdp_print(tb);
   }
 
   void vdp_writeUInt16(uint16_t v) {
 
-    uint8_t tb[6];
+    uint8_t tb[sizeof(uint16_t) * 8 + 1];
 
     utoa(v, tb, 10);
+
+    tb[5] = 0;
 
     vdp_print(tb);
   }
 
   void vdp_writeInt16(int16_t v) {
 
-    uint8_t tb[7];
-
+    uint8_t tb[sizeof(int16_t) * 8 + 1];
+    
     itoa(v, tb, 10);
+
+    tb[6] = 0;
 
     vdp_print(tb);
   }
 
   void vdp_writeUInt8(uint8_t v) {
 
-    uint8_t tb[4];
+    uint8_t tb[sizeof(uint8_t) * 8 + 1] = { 0 };
 
     utoa(v, tb, 10);
 
@@ -1194,9 +1222,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_writeInt8(int8_t v) {
 
-    uint8_t tb[5];
+    uint8_t tb[sizeof(int8_t) * 8 + 1];
 
     itoa(v, tb, 10);
+
+    tb[4] = 0;
 
     vdp_print(tb);
   }
