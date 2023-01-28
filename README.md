@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2023.01.28.00
+Added a G2 graphics mode 2 demo. I'll be rewriting the entire G2 graphics part because the stuff that's in NABULIB is not easy to work with.
+
 ## v2023.01.27.00
 Added joystick support to nabulib. The keyboard interrupt must be left enabled, and up to 4 joysticks can be used.
 
