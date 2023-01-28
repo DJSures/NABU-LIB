@@ -660,7 +660,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     IO_VDPLATCH = (address >> 8) & 0x3f;
   }
 
-  int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll) {
+  void vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll) {
 
     _vdp_mode = mode;
 
@@ -711,7 +711,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       _vdp_pattern_table = 0x00;
       _vdp_sprite_pattern_table = 0x1800;
       _vdp_color_table = 0x2000;
-      _vdp_name_table = 0x3800;
+      _vdp_name_table = 0x3800;     
       _vdp_sprite_attribute_table = 0x3B00;
       _vdp_color_table_size = 0x1800;
 
@@ -719,7 +719,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       vdp_setWriteAddress(_vdp_name_table);
 
       for (uint16_t i = 0; i < 768; i++)
-        IO_VDPDATA = i;
+        IO_VDPDATA = ASCII[i];
 
       break;
 
@@ -765,16 +765,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       for (uint8_t j = 0; j < 24; j++)
         for (uint16_t i = 0; i < 32; i++)
-          IO_VDPDATA = i + 32 * (j / 4);
+          IO_VDPDATA = ASCII[i + 32 * (j / 4)];
 
       break;
-    default:
-      return VDP_ERROR; // Unsupported mode
     }
 
     vdp_setRegister(7, color);
-
-    return VDP_OK;
   }
 
   void vdp_initTextModeFont(uint8_t* font) {
@@ -913,9 +909,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint8_t x = IO_VDPDATA;
 
+    uint8_t t = IO_VDPDATA;
+
     uint8_t eccr = IO_VDPDATA;
 
-    if ((eccr & 0x80) != 0)
+    if (eccr & 0x80)
       xpos = x;
     else
       xpos = x + 32;
@@ -941,7 +939,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   uint8_t vdp_setSpritePosition(uint16_t addr, uint16_t x, uint8_t y) {
 
-    uint8_t ec, xpos;
+    uint8_t ec;
+    uint8_t xpos;
 
     if (x < 144) {
 
@@ -1261,24 +1260,24 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     vdp_print(str);
   }
 
-  int vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll) {
+  void vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll) {
 
-    return vdp_init(VDP_MODE_TEXT, (fgcolor << 4) | (bgcolor & 0x0f), 0, 0, autoScroll);
+    vdp_init(VDP_MODE_TEXT, (fgcolor << 4) | (bgcolor & 0x0f), 0, 0, autoScroll);
   }
 
-  int vdp_initG1Mode(uint8_t fgcolor, uint8_t bgcolor) {
+  void vdp_initG1Mode(uint8_t fgcolor, uint8_t bgcolor) {
 
-    return vdp_init(VDP_MODE_G1, (fgcolor << 4) | (bgcolor & 0x0f), 0, 0, false);
+    vdp_init(VDP_MODE_G1, (fgcolor << 4) | (bgcolor & 0x0f), 0, 0, false);
   }
 
-  int vdp_initG2Mode(bool big_sprites, bool scale_sprites) {
+  void vdp_initG2Mode(bool big_sprites, bool scale_sprites) {
 
-    return vdp_init(VDP_MODE_G2, 0x0, big_sprites, scale_sprites, false);
+    vdp_init(VDP_MODE_G2, 0x0, big_sprites, scale_sprites, false);
   }
 
-  int vdp_initMultiColorMode() {
+  void vdp_initMultiColorMode() {
 
-    return vdp_init(VDP_MODE_MULTICOLOR, 0, 0, 0, false);
+    vdp_init(VDP_MODE_MULTICOLOR, 0, 0, 0, false);
   }
 
 #endif

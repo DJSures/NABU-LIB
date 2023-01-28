@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 27, 2023 (v2023.01.27.00)
+// Last updated on January 28, 2023 (v2023.01.28.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -369,10 +369,6 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
     uint8_t ecclr; //Bit 7: Early clock bit, bit 3:0 color
   } SpriteAttributesStruct;
 
-
-  // VDP Status
-  #define VDP_OK 0
-  #define VDP_ERROR 1
 
   #warning
   #warning VDP has been enabled. If using CPM, you can mix STDOUT and NABU-LIB vdp functions.
@@ -910,7 +906,7 @@ uint8_t ayRead(uint8_t reg);
   /// - big_sprites true: Use 16x16 sprites false : use 8x8 sprites
   /// - magnify true: Scale sprites up by 2
   /// </summary>
-  int vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll);
+  void vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll);
 
   /// <summary>
   /// This will update the vram to the specified font.
@@ -926,7 +922,7 @@ uint8_t ayRead(uint8_t reg);
   /// 
   /// returns VDP_ERROR | VDP_SUCCESS
   /// </summary>
-  int vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll);
+  void vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll);
 
   /// <summary>
   /// Initializes the VDP in Graphic Mode 1. Not really useful if more than 4k Video ram is available
@@ -936,7 +932,7 @@ uint8_t ayRead(uint8_t reg);
   /// 
   /// returns VDP_ERROR | VDP_SUCCESS
   /// </summary>
-  int vdp_initG1Mode(uint8_t fgcolor, uint8_t bgcolor);
+  void vdp_initG1Mode(uint8_t fgcolor, uint8_t bgcolor);
 
   /// <summary>
   /// Initializes the VDP in Graphic Mode 2
@@ -946,14 +942,14 @@ uint8_t ayRead(uint8_t reg);
   /// 
   /// returns VDP_ERROR | VDP_SUCCESS
   /// </summary>
-  int vdp_initG2Mode(bool big_sprites, bool scale_sprites);
+  void vdp_initG2Mode(bool big_sprites, bool scale_sprites);
 
   /// <summary>
   /// Initializes the VDP in 64x48 Multicolor Mode. Not really useful if more than 4k Video ram is available
   ///
   /// returns VDP_ERROR | VDP_SUCCESS
   /// </summary>
-  int vdp_initMultiColorMode();
+  void vdp_initMultiColorMode();
 
   /// <summary>
   /// Set foreground and background color of the pattern at the current cursor position
