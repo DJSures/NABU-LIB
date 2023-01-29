@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+## v2023.01.29.00
+optimized interrupts by reviewing the LIS and only saving registered that are needed. Added new assignable interrupt for vdp (read documentation) vdp_addISR()
+
 ## v2023.01.28.00
 Added a G2 graphics mode 2 demo. I'll be rewriting the entire G2 graphics part because the stuff that's in NABULIB is not easy to work with.
 
