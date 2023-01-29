@@ -53,3 +53,6 @@ Added a new function for keyboard input called readLine(). Also added an example
 ## v2022.12.26.00
 
 This update includes http get features and requires the most recent Internet Adapter from https://nabu.ca. Now NABU HomeBrew applications can query data on the internet and the Internet Adapter will cache it. When the NABU application needs the data, it can request it from the Internet Adapter. Up to 256 queries per application can be stored in the IA for each NABU HomeBrew program. This can include additional code, music, images, etc.. Essentially, this gives a NABU a practically unlimited amount of storage space because it can use the cloud for obtaining resources. 
+
+# LICENSE
+This is a library for a 40 year old computer - so there's no license. The only thing I ask is if you could give me credit if you use it. If you make changes, send them my way. 
