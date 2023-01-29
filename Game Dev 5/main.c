@@ -1,3 +1,17 @@
+// ************************************************************************
+// GAME MAN YEAH!
+// DJ Sures (c)2023
+//
+// This is the progress of a game I'm making for the NABU computer.
+// There are bugs, and I know about them. So you don't need to tell me :)
+// I'm enjoying making it myself, so hope you understand keeping comments to yourself xD
+// I shared the code so others can build their own games and use this as a starting point.
+// If you make something, please let me know! We're a small NABU community and need to stick together.
+//
+// Have fun!
+// - DJ
+// ************************************************************************
+
 #define DISABLE_HCCA_RX_INT
 
 #define BIN_TYPE BIN_CPM
