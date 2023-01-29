@@ -1,0 +1,48 @@
+<msxdevtools app="spriteSX devtool" version="0.9.4.0">
+  <palette name="Default Palette" group="" version="" author="">
+    <color id="0" red="0" green="0" blue="0" />
+    <color id="1" red="0" green="0" blue="0" />
+    <color id="2" red="2" green="5" blue="2" />
+    <color id="3" red="3" green="6" blue="3" />
+    <color id="4" red="2" green="2" blue="5" />
+    <color id="5" red="3" green="3" blue="7" />
+    <color id="6" red="5" green="2" blue="1" />
+    <color id="7" red="2" green="6" blue="7" />
+    <color id="8" red="6" green="2" blue="2" />
+    <color id="9" red="7" green="3" blue="3" />
+    <color id="10" red="6" green="6" blue="3" />
+    <color id="11" red="6" green="6" blue="4" />
+    <color id="12" red="1" green="4" blue="1" />
+    <color id="13" red="5" green="3" blue="5" />
+    <color id="14" red="6" green="6" blue="6" />
+    <color id="15" red="7" green="7" blue="7" />
+  </palette>
+  <sprites name="game5" version="" group="" author="" startDate="638104608000000000" lastUpdate="638104608000000000" mode="2" type="2">
+    <description>
+    </description>
+    <item name="    " order="3" type="2" mode="2" InkColor="15" BGcolor="0">
+      <gfxData>48,119,63,63,31,63,255,255,127,63,63,31,127,127,243,225,112,252,254,254,255,255,254,252,252,248,252,254,255,254,182,20</gfxData>
+      <colorData>15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15</colorData>
+    </item>
+    <item name="    " order="5" type="2" mode="2" InkColor="15" BGcolor="0">
+      <gfxData>6,2,7,13,15,6,3,1,7,9,9,1,2,4,4,12,192,128,192,96,224,192,128,0,192,32,32,0,128,64,64,96</gfxData>
+      <colorData>15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15</colorData>
+    </item>
+    <item name="    " order="2" type="2" mode="2" InkColor="15" BGcolor="0">
+      <gfxData>56,63,63,63,63,127,255,255,63,63,63,127,127,31,63,50,7,206,252,255,254,254,255,255,254,254,254,252,252,222,30,14</gfxData>
+      <colorData>15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15</colorData>
+    </item>
+    <item name="    " order="4" type="2" mode="2" InkColor="15" BGcolor="0">
+      <gfxData>0,0,7,15,31,63,127,127,127,127,127,63,27,12,7,0,0,0,192,224,176,216,220,236,236,252,252,248,240,224,192,0</gfxData>
+      <colorData>15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15</colorData>
+    </item>
+    <item name="    " order="0" type="2" mode="2" InkColor="5" BGcolor="0">
+      <gfxData>0,0,0,3,4,8,40,104,127,63,15,0,0,0,0,0,0,0,0,128,64,32,40,44,252,248,224,0,0,0,0,0</gfxData>
+      <colorData>5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5</colorData>
+    </item>
+    <item name="    " order="1" type="2" mode="2" InkColor="15" BGcolor="0">
+      <gfxData>18,27,31,127,255,255,127,63,63,255,255,223,31,63,124,96,56,56,248,252,255,255,255,253,254,254,252,252,252,190,24,24</gfxData>
+      <colorData>15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15</colorData>
+    </item>
+  </sprites>
+</msxdevtools>
