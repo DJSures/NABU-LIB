@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 29, 2023 (v2023.01.29.00)
+// Last updated on January 29, 2023 (v2023.01.29.01)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -305,7 +305,7 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   // This is used for enabling/disabling interrupts progrmatically because we can't re-read
   // resgister 1 because they are write-only.
   /// </summary>
-  uint8_t _vdpReg1Val = 0;
+  volatile uint8_t _vdpReg1Val = 0;
 
   uint16_t       _vdp_sprite_attribute_table;
   uint16_t       _vdp_sprite_pattern_table;
@@ -916,6 +916,8 @@ uint8_t ayRead(uint8_t reg);
   ///
   /// It is important that the STATUS register (0x01) be read. It is provided in the template below.
   /// 
+  /// When you are done with VDP interrupts (ie presenting a menu or something) call vdp_removeISR() to stop the interrupt
+  ///
   /// See this example to setup a custom vdp interrupt...
   //
   // void myVdpISR() __naked {
@@ -956,39 +958,10 @@ uint8_t ayRead(uint8_t reg);
 
 
   /// <summary>
-  /// Enables the vdp interrupt (not nabu interrupt) so you can synchronously use vdp_waitForScanComplete();
-  /// See the help for vdp_waitForScanComplete() for example on how to use it.
+  /// Removes and stops the VDP interrupt after calling vdp_addISR();
+  /// When you are switching to a menu in text mode or need to stop the game, call this.
   /// </summary>
-  void vdp_enableInterrupt();
-
-  /// <summary>
-  /// This is a synchronous method of waiting for the vdp to have finished drawing the picture to the screen.
-  /// If you call this, make sure you _do_not_enable_ the NABU VDP Interrupt (vdp_addISR)! Otherwise, they will conflict with each
-  /// other and cause problems. That NABU VDP interrupt is different than the vdp_enableInterrupt();
-  ///
-  /// You must first call vdp_enableInterrupt(); to enable this vdp_waitForScanComplete() ability
-  ///
-  /// You would use this in a loop if you have timed the gameplay to the screen refresh rate.
-  ///
-  /// For example...
-  ///
-  /// vdp_enableInterrupt();
-  ///
-  /// while (true) {
-  ///
-  ///   do a bunch of work that calculates player positions and such
-  ///
-  ///   vdp_waitForScanComplete();
-  ///
-  ///   update the screen with the player positions
-  /// }
-  ///
-  /// In that above example, you can be certain the screen has been refreshed before you draw the playfield.
-  /// And after the playfield is done drawing, you can update the player positions. If your code to calculate
-  /// player positions is slow, that's okay because it will simply wait for the next scanline to complete.
-  ///
-  /// </summary>
-  void vdp_waitForScanComplete();
+  void vdp_removeISR();
 
   /// <summary>
   /// initialize the VDP with the default font.

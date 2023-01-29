@@ -670,16 +670,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     IO_VDPLATCH = (address >> 8) & 0x3f;
   }
-
-  void vdp_enableInterrupt() {
-
-    vdp_setRegister(1, _vdpReg1Val | 0b00100000); 
-  }
-
-  inline void vdp_waitForScanComplete() {
-
-    while ((IO_AYLATCH & 0b10000000) == 0);
-  }
       
   void vdp_addISR(void (*isr)()) {
 
@@ -704,6 +694,19 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     vdp_setRegister(1, _vdpReg1Val | 0b00100000 ); 
   }
   
+  void vdp_removeISR() {
+
+    vdp_setRegister(1, _vdpReg1Val);
+
+    NABU_DisableInterrupts();
+
+    _ORIGINAL_INT_MASK ^= INT_MASK_VDP;
+
+    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+
+    NABU_EnableInterrupts();
+  }
+
   void vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll) {
 
     _vdp_mode = mode;
