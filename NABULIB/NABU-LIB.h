@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 28, 2023 (v2023.01.28.00)
+// Last updated on January 29, 2023 (v2023.01.29.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -272,6 +272,7 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   #define VDP_R1_SIZE 0x02
   #define VDP_R1_MAG 0x01
 
+
   /// <summary>
   /// Double buffer for text mode scrolling.
   /// This is because reading and writing the VDP vram is very slow
@@ -279,6 +280,7 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   /// the text mode.
   /// </summary>
   uint8_t _vdp_textBuffer[24 * 40]; // row * col = 960 bytes
+
 
   /// <summary>
   /// The current position of the cursor used by textmode
@@ -290,7 +292,21 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
     uint8_t y;
   } vdp_cursor = { 0, 0 };
 
+
+  /// <summary>
+  // For the customizable vdp scanline interrupt
+  // See the void vdp_addISR(void (*vdpISR)()) function for this
+  /// </summary>
+  void (*_vdp_ISR)();
+
   
+  /// <summary>
+  // The original value of the VDP Register 1 (i.e. graphic mode, memory, and interrupt status).
+  // This is used for enabling/disabling interrupts progrmatically because we can't re-read
+  // resgister 1 because they are write-only.
+  /// </summary>
+  uint8_t _vdpReg1Val = 0;
+
   uint16_t       _vdp_sprite_attribute_table;
   uint16_t       _vdp_sprite_pattern_table;
   uint8_t        _vdp_sprite_size_sel;      // 0: 8x8 sprites 1: 16x16 sprites
@@ -304,6 +320,7 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   uint8_t        _vdp_fgcolor;
   uint8_t        _vdp_bgcolor;
   bool           _autoScroll;
+
 
   /// <summary>
   /// Colors for the VDP fgColor or bgColor settings
@@ -892,6 +909,88 @@ uint8_t ayRead(uint8_t reg);
 #ifndef DISABLE_VDP
 
   /// <summary>
+  /// Add a function to the VDP frame sync interrupt. The function you add should be _naked with a ei and reti. 
+  /// After calling initNABULib(), this can be called if you need the vdp interrupt (i.e. for G2 graphics).
+  /// This function requires that initNABULib() be called first because it will setup the interrupts, and
+  /// specifically, the _ORIGINAL_INT_MASK, which this function will modify.
+  ///
+  /// It is important that the STATUS register (0x01) be read. It is provided in the template below.
+  /// 
+  /// See this example to setup a custom vdp interrupt...
+  //
+  // void myVdpISR() __naked {
+  //
+  //   __asm
+  //     push	hl;      
+  //     push  bc;      
+  //     push  de;      
+  //     push  af;      
+  //     push  iy;
+  //     push  ix;
+  //  __endasm;
+  //
+  //   uint8_t vdpStatus = IO_VDPLATCH;
+  //
+  //   PUT YOUR CODE HERE
+  //
+  //   __asm
+  //     pop ix;
+  //     pop iy;
+  //     pop af;      
+  //     pop de;      
+  //     pop bc;      
+  //     pop hl;      
+  //     ei;
+  //     reti;
+  //   __endasm;
+  // }
+  //
+  // void main() { 
+  //
+  //   initNABULib();
+  //   vdp_addISR(myVdpISR);
+  // }
+  //
+  /// </summary>
+  void vdp_addISR(void (*isr)());
+
+
+  /// <summary>
+  /// Enables the vdp interrupt (not nabu interrupt) so you can synchronously use vdp_waitForScanComplete();
+  /// See the help for vdp_waitForScanComplete() for example on how to use it.
+  /// </summary>
+  void vdp_enableInterrupt();
+
+  /// <summary>
+  /// This is a synchronous method of waiting for the vdp to have finished drawing the picture to the screen.
+  /// If you call this, make sure you _do_not_enable_ the NABU VDP Interrupt (vdp_addISR)! Otherwise, they will conflict with each
+  /// other and cause problems. That NABU VDP interrupt is different than the vdp_enableInterrupt();
+  ///
+  /// You must first call vdp_enableInterrupt(); to enable this vdp_waitForScanComplete() ability
+  ///
+  /// You would use this in a loop if you have timed the gameplay to the screen refresh rate.
+  ///
+  /// For example...
+  ///
+  /// vdp_enableInterrupt();
+  ///
+  /// while (true) {
+  ///
+  ///   do a bunch of work that calculates player positions and such
+  ///
+  ///   vdp_waitForScanComplete();
+  ///
+  ///   update the screen with the player positions
+  /// }
+  ///
+  /// In that above example, you can be certain the screen has been refreshed before you draw the playfield.
+  /// And after the playfield is done drawing, you can update the player positions. If your code to calculate
+  /// player positions is slow, that's okay because it will simply wait for the next scanline to complete.
+  ///
+  /// </summary>
+  void vdp_waitForScanComplete();
+
+  /// <summary>
   /// initialize the VDP with the default font.
   /// Add one of these #define's into your main.c program before the #include "nabu-lib.h"
   /// If you with to use your own font, specify the font as a const uint8_t[768] ASCII = {} before the #include "nabu-lib.h" in your code
@@ -1093,7 +1192,7 @@ uint8_t ayRead(uint8_t reg);
   /// - xpos Reference to x-position
   /// - ypos Reference to y-position
   /// </summary>
-  void vdp_getSpritePosition(uint16_t handle, uint16_t xpos, uint8_t ypos);
+  void vdp_getSpritePosition(uint16_t handle, uint8_t xpos, uint8_t ypos);
 
   /// <summary>
   ///  Set position of a sprite
@@ -1103,7 +1202,7 @@ uint8_t ayRead(uint8_t reg);
   /// - y
   /// Returnss     true: In case of a collision with other sprites
   /// </summary>
-  uint8_t vdp_setSpritePosition(uint16_t handle, uint16_t x, uint8_t y);
+  uint8_t vdp_setSpritePosition(uint16_t handle, uint8_t x, uint8_t y);
 
   /// <summary>
   /// Add a new line (move down and to line start)

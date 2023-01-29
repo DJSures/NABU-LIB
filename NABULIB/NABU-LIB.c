@@ -70,11 +70,13 @@ void initNABULib() {
   __endasm;
 
   #if BIN_TYPE == BIN_HOMEBREW
+
+    // A homebrew would not have existing interupts, so we start with a nice clean 0
     _ORIGINAL_INT_MASK = 0;
   #elif BIN_TYPE == BIN_CPM
-    // if cpm, we get the previous interrupt settings because we only override what we want
-    // other stuff, like keyboard, might still need to be used by cpm if this user's
-    // program is gonna use fget and stuff
+
+    // if cpm, we get the previous interrupt settings that the BIOS set because we only override 
+    // what we want to use in NABULib. 
     _ORIGINAL_INT_MASK = ayRead(IOPORTA);
   #endif
 
@@ -105,21 +107,21 @@ void initNABULib() {
 inline void nop() {
   __asm
     NOP
-    __endasm;
+  __endasm;
 }
 
 inline void NABU_DisableInterrupts() {
 
   __asm
     di
-    __endasm;
+  __endasm;
 }
 
 inline void NABU_EnableInterrupts() {
 
   __asm
     ei
-    __endasm;
+  __endasm;
 }
 
 
@@ -133,10 +135,10 @@ inline void NABU_EnableInterrupts() {
 #ifndef DISABLE_HCCA_RX_INT
   void isrHCCARX() __naked {
 
+    // review LIS and only bc, hl, a registers are used for this function
     __asm
       push af;
       push bc;
-      push de;
       push hl;
     __endasm;
 
@@ -149,7 +151,6 @@ inline void NABU_EnableInterrupts() {
 
     __asm
       pop hl;
-      pop de;
       pop bc;
       pop af;
       ei;
@@ -166,50 +167,41 @@ inline void NABU_EnableInterrupts() {
       push bc;
       push de;
       push hl;
+      push iy;
     __endasm;
 
     uint8_t inKey = IO_KEYBOARD;
 
-    switch (inKey) {
-      case 0x90: // statuses
-      case 0x91: // statuses
-      case 0x92: // statuses
-      case 0x93: // statuses
-      case 0x94: // statuses
-      case 0x95: // statuses
-        break;
-      case 0x80: // j1
-      case 0x81: // j2
-      case 0x82: // j3
-      case 0x83: // j4
-        _lastKeyboardIntVal = inKey;
-        break;
-      default:
+    if (inKey >= 0x80 && inKey <= 0x83) {
 
-        switch (_lastKeyboardIntVal) {
-          case 0x80:
-            _lastKeyboardIntVal = 0;
-            _joyStatus[0] = inKey;
-            break;
-          case 0x81:
-            _lastKeyboardIntVal = 0;
-            _joyStatus[1] = inKey;
-            break;
-          case 0x82:
-            _lastKeyboardIntVal = 0;
-            _joyStatus[2] = inKey;
-            break;
-          case 0x83:
-            _lastKeyboardIntVal = 0;
-            _joyStatus[3] = inKey;
-            break;
-          default:
-            _kbdBuffer[_kbdBufferWritePos] = inKey;
-            _kbdBufferWritePos++;
-        }
+        _lastKeyboardIntVal = inKey;
+    } else if (inKey < 0x90 || inKey > 0x95) {
+
+      switch (_lastKeyboardIntVal) {
+        case 0x80:
+          _lastKeyboardIntVal = 0;
+          _joyStatus[0] = inKey;
+          break;
+        case 0x81:
+          _lastKeyboardIntVal = 0;
+          _joyStatus[1] = inKey;
+          break;
+        case 0x82:
+          _lastKeyboardIntVal = 0;
+          _joyStatus[2] = inKey;
+          break;
+        case 0x83:
+          _lastKeyboardIntVal = 0;
+          _joyStatus[3] = inKey;
+          break;
+        default:
+          _kbdBuffer[_kbdBufferWritePos] = inKey;
+          _kbdBufferWritePos++;
+      }
     }
 
     __asm
+      pop iy;
       pop hl;
       pop de;
       pop bc;
@@ -345,6 +337,9 @@ inline void NABU_EnableInterrupts() {
 
 #endif
 
+
+
+
 // **************************************************************************
 // Sound
 // -----
@@ -370,24 +365,40 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   ayWrite(11, delayLength >> 8);
   ayWrite(12, delayLength & 0xff);
 
-  if (channel == 0) {
+  switch (channel) {
+    case 0:
 
-    ayWrite(0x00, _NOTES_FINE[note]);
-    ayWrite(0x01, _NOTES_COURSE[note]);
+      ayWrite(8, 0b00010000);
+      ayWrite(9, 0b00000000);
+      ayWrite(10, 0b00000000);
 
-    ayWrite(13, 0b00000000);
-  } else if (channel == 1) {
+      ayWrite(0x00, _NOTES_FINE[note]);
+      ayWrite(0x01, _NOTES_COURSE[note]);
 
-    ayWrite(0x02, _NOTES_FINE[note]);
-    ayWrite(0x03, _NOTES_COURSE[note]);
+      ayWrite(13, 0b00000000);
+      break;
+    case 1:
 
-    ayWrite(13, 0b00000000);
-  } else {
+      ayWrite(8, 0b00000000);
+      ayWrite(9, 0b00010000);
+      ayWrite(10, 0b00000000);
 
-    ayWrite(0x04, _NOTES_FINE[note]);
-    ayWrite(0x05, _NOTES_COURSE[note]);
+      ayWrite(0x02, _NOTES_FINE[note]);
+      ayWrite(0x03, _NOTES_COURSE[note]);
 
-    ayWrite(13, 0b00000000);
+      ayWrite(13, 0b00000000);
+      break;
+    case 2:
+
+      ayWrite(8, 0b00000000);
+      ayWrite(9, 0b00000000);
+      ayWrite(10, 0b00010000);
+
+      ayWrite(0x04, _NOTES_FINE[note]);
+      ayWrite(0x05, _NOTES_COURSE[note]);
+
+      ayWrite(13, 0b00000000);
+      break;
   }
 }
 
@@ -660,6 +671,39 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     IO_VDPLATCH = (address >> 8) & 0x3f;
   }
 
+  void vdp_enableInterrupt() {
+
+    vdp_setRegister(1, _vdpReg1Val | 0b00100000); 
+  }
+
+  inline void vdp_waitForScanComplete() {
+
+    while ((IO_AYLATCH & 0b10000000) == 0);
+  }
+      
+  void vdp_addISR(void (*isr)()) {
+
+    _vdp_ISR = isr;
+
+    NABU_DisableInterrupts();
+
+    __asm
+
+      // Video Frame Sync
+      ld hl, (__vdp_ISR);
+      ld (INTERUPT_VECTOR_MAP_ADDRESS + 6), hl;
+
+    __endasm;
+
+    _ORIGINAL_INT_MASK |= INT_MASK_VDP;
+
+    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+
+    NABU_EnableInterrupts();
+
+    vdp_setRegister(1, _vdpReg1Val | 0b00100000 ); 
+  }
+  
   void vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll) {
 
     _vdp_mode = mode;
@@ -678,7 +722,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     case VDP_MODE_G1:
 
       vdp_setRegister(0, 0x00);
-      vdp_setRegister(1, 0xC0 | (big_sprites << 1) | magnify); // Ram size 16k, activate video output
+      _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; // Ram size 16k, activate video output
+      vdp_setRegister(1, _vdpReg1Val); 
       vdp_setRegister(2, 0x05); // Name table at 0x1400
       vdp_setRegister(3, 0x80); // Color, start at 0x2000
       vdp_setRegister(4, 0x01); // Pattern generator start at 0x800
@@ -702,7 +747,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     case VDP_MODE_G2:
 
       vdp_setRegister(0, 0x02);
-      vdp_setRegister(1, 0xC0 | (big_sprites << 1) | magnify); // Ram size 16k, Disable Int, 16x16 Sprites, mag off, activate video output
+
+      _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; // Ram size 16k, Disable Int, 16x16 Sprites, mag off, activate video output
+      vdp_setRegister(1, _vdpReg1Val); 
       vdp_setRegister(2, 0x0E); // Name table at 0x3800
       vdp_setRegister(3, 0xFF); // Color, start at 0x2000
       vdp_setRegister(4, 0x03); // Pattern generator start at 0x0
@@ -726,7 +773,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     case VDP_MODE_TEXT:
 
       vdp_setRegister(0, 0x00);
-      vdp_setRegister(1, 0xD2); // Ram size 16k, Disable Int
+      _vdpReg1Val = 0b11010010; // Ram size 16k, Disable Int
+      vdp_setRegister(1, _vdpReg1Val);       
       vdp_setRegister(2, 0x02); // Name table at 0x800
       vdp_setRegister(4, 0x00); // Pattern table start at 0x0
       _vdp_pattern_table = 0x00;
@@ -749,7 +797,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     case VDP_MODE_MULTICOLOR:
 
       vdp_setRegister(0, 0x00);
-      vdp_setRegister(1, 0xC8 | (big_sprites << 1) | magnify); // Ram size 16k, Multicolor
+      _vdpReg1Val = 0b11001000 | (big_sprites << 1) | magnify; // Ram size 16k, Multicolor
+      vdp_setRegister(1, _vdpReg1Val); 
       vdp_setRegister(2, 0x05); // Name table at 0x1400
       // setRegister(3, 0xFF); // Color table not available
       vdp_setRegister(4, 0x01); // Pattern table start at 0x800
@@ -901,7 +950,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     s->ecclr = IO_VDPDATA;  
   }
 
-  void vdp_getSpritePosition(uint16_t addr, uint16_t xpos, uint8_t ypos) {
+  void vdp_getSpritePosition(uint16_t addr, uint8_t xpos, uint8_t ypos) {
 
     vdp_setReadAddress(addr);
 
@@ -937,7 +986,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     return addr;
   }
 
-  uint8_t vdp_setSpritePosition(uint16_t addr, uint16_t x, uint8_t y) {
+  uint8_t vdp_setSpritePosition(uint16_t addr, uint8_t x, uint8_t y) {
 
     uint8_t ec;
     uint8_t xpos;
