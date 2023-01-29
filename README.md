@@ -23,7 +23,7 @@ That commandline will create a MYAPP.COM file, which you can simply copy directl
 # Sample Cloud CP/M BUILD.BAT
 Because NABULIB is created for z88dk and I use Windows, this is a batch file. I always put the latest (nightly build) of z88dk in C:\Z88DK folder so it's easy to find and works with all my BUILD.BAT files. Another thing is that I name all my programs main.c, so that's a thing you'll notice. I put a pause at the end of the batch file so I can see if there were any errors. I also have a DIR *.COM because I like to see the file size of my program when optimizing. The parameters that are used for z88dk will create a LST and MAP file for you, as well.
 
-``
+```
 @echo off
 
 SET Z88DK_DIR=c:\z88dk\
@@ -39,7 +39,7 @@ cpmcp -f naburn    "C:\My Documents\NABU Internet Adapter\Store\b.dsk" YOURAPP.c
 dir *.com
 
 pause
-``
+```
 
 # Version Notes
 
