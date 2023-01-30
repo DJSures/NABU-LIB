@@ -43,6 +43,9 @@ pause
 
 # Version Notes
 
+## v2023.01.30.00
+Fixed a bunch of sprite stuff.
+
 ## v2023.01.29.00
 optimized interrupts by reviewing the LIS and only saving registered that are needed. Added new assignable interrupt for vdp (read documentation) vdp_addISR()
 
