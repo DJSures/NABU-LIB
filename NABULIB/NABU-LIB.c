@@ -2,11 +2,11 @@
 // NABU-LIB C Library
 // DJ Sures (c) 2023
 // https://nabu.ca
+// https://github.com/DJSures/NABU-LIB
 // 
 // Read the NABU-LIB.h file for details of each function in this file.
 // 
-// *Note: Some TMS9918 graphic functions were from: https://github.com/michalin/TMS9918_Arduino/tree/main/examples
-//        Modified by DJ Sures 2022 for NABU PC
+// *Note: Some TMS9918 graphic functions were inspired, fixed and heavily modified from: https://github.com/michalin/TMS9918_Arduino/tree/main/examples
 //
 // **********************************************************************************************
 
@@ -23,6 +23,15 @@ void initNABULib() {
   IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF;
 
   NABU_DisableInterrupts();
+
+  __asm
+    push af;
+    ld a, r;
+    ld (__randomSeed), a;
+    pop af;
+  __endasm;
+
+  srand(_randomSeed);
 
   __asm
 
@@ -123,8 +132,6 @@ inline void NABU_EnableInterrupts() {
     ei
   __endasm;
 }
-
-
 
 
 // **************************************************************************
@@ -691,16 +698,23 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     NABU_EnableInterrupts();
 
+    // clear any existing interrupts status
+    uint8_t tmp = IO_AYLATCH;
+
     vdp_setRegister(1, _vdpReg1Val | 0b00100000 ); 
   }
   
   void vdp_removeISR() {
 
-    vdp_setRegister(1, _vdpReg1Val);
-
     NABU_DisableInterrupts();
 
-    _ORIGINAL_INT_MASK ^= INT_MASK_VDP;
+    vdp_setRegister(1, _vdpReg1Val);
+
+    // clear any existing interrupts status
+    uint8_t tmp = IO_AYLATCH;
+
+    if (_ORIGINAL_INT_MASK & INT_MASK_VDP)
+      _ORIGINAL_INT_MASK ^= INT_MASK_VDP;
 
     ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
 
@@ -915,14 +929,32 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
-  void vdp_setSpritePattern(uint8_t id, const uint8_t* sprite) {
+  uint8_t vdp_spriteInit(uint8_t id, uint8_t color) {
+
+    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
+
+    vdp_setWriteAddress(addr);
+    
+    IO_VDPDATA = 0; // y
+    
+    IO_VDPDATA = 0; // x
+
+    IO_VDPDATA = id; // name
+
+    // early clock bit + color. We do not use early clock bit
+    IO_VDPDATA = color & 0xF; 
+
+    return id;
+  }
+
+  void vdp_setSpritePattern(uint8_t id, uint8_t* sprite) {
 
     if (_vdp_sprite_size_sel) {
 
       vdp_setWriteAddress(_vdp_sprite_pattern_table + 32 * id);
 
       for (uint8_t i = 0; i < 32; i++) 
-        IO_VDPDATA = sprite[i];      
+        IO_VDPDATA = sprite[i];
     } else {
 
       vdp_setWriteAddress(_vdp_sprite_pattern_table + 8 * id);
@@ -932,89 +964,44 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
-  void vdp_setSpriteColor(uint16_t addr, uint8_t color) {
+  void vdp_setSpriteColor(uint8_t id, uint8_t color) {
 
-    vdp_setReadAddress(addr + 3);
-
-    uint8_t ecclr = IO_VDPDATA & 0x80 | (color & 0x0F);
+    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
 
     vdp_setWriteAddress(addr + 3);
 
-    IO_VDPDATA = ecclr;
+    IO_VDPDATA = color & 0x0f;
   }
 
-  void vdp_getSpriteAttributes(uint16_t addr, SpriteAttributesStruct* s) {
-    
-    vdp_setReadAddress(addr);
-  
-    s->y = IO_VDPDATA;
-    s->x = IO_VDPDATA;
-    s->name_ptr = IO_VDPDATA;
-    s->ecclr = IO_VDPDATA;  
-  }
+  void vdp_setSpritePosition(uint8_t id, uint8_t x, uint8_t y) {
 
-  void vdp_getSpritePosition(uint16_t addr, uint8_t xpos, uint8_t ypos) {
-
-    vdp_setReadAddress(addr);
-
-    ypos = IO_VDPDATA;
-
-    uint8_t x = IO_VDPDATA;
-
-    uint8_t t = IO_VDPDATA;
-
-    uint8_t eccr = IO_VDPDATA;
-
-    if (eccr & 0x80)
-      xpos = x;
-    else
-      xpos = x + 32;
-  }
-
-  uint16_t vdp_spriteInit(uint8_t id, uint8_t priority, uint8_t color) {
-
-    uint16_t addr = _vdp_sprite_attribute_table + 4 * priority;
-
-    vdp_setWriteAddress(addr);
-    IO_VDPDATA = 0;
-    IO_VDPDATA = 0;
-
-    if (_vdp_sprite_size_sel)
-      IO_VDPDATA = 4 * id;
-    else
-      IO_VDPDATA = 4 * id;
-
-    IO_VDPDATA = 0x80 | (color & 0xF);
-
-    return addr;
-  }
-
-  uint8_t vdp_setSpritePosition(uint16_t addr, uint8_t x, uint8_t y) {
-
-    uint8_t ec;
-    uint8_t xpos;
-
-    if (x < 144) {
-
-      ec = 1;
-      xpos = x;
-    } else {
-
-      ec = 0;
-      xpos = x - 32;
-    }
-
-    vdp_setReadAddress(addr + 3);
-    uint8_t color = IO_VDPDATA & 0x0f;
+    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
 
     vdp_setWriteAddress(addr);
     IO_VDPDATA = y;
-    IO_VDPDATA = xpos;
+    IO_VDPDATA = x;
+  }
 
-    vdp_setWriteAddress(addr + 3);
-    IO_VDPDATA = (ec << 7) | color;
+  void vdp_setSpritePositionAndColor(uint8_t id, uint8_t x, uint8_t y, uint8_t color) {
 
-    return IO_VDPLATCH;
+    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
+
+    vdp_setWriteAddress(addr);
+    IO_VDPDATA = y;
+    IO_VDPDATA = x;
+    IO_VDPDATA = id;
+    IO_VDPDATA = color & 0x0f;
+  }
+
+  void vdp_getSpritePosition(uint8_t id, uint8_t *xpos, uint8_t *ypos) {
+
+    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
+
+    vdp_setReadAddress(addr);
+
+    *ypos = IO_VDPDATA;
+
+    *xpos = IO_VDPDATA;
   }
 
   void vdp_print(uint8_t* text) {

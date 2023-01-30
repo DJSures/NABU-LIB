@@ -3,9 +3,9 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 29, 2023 (v2023.01.29.01)
+// Last updated on January 30, 2023 (v2023.01.30.00)
 // 
-// Get latest copy from: https://github.com/DJSures/NABU-LIB
+// Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
 // This is a z88dk C library for the NABU Personal Computer. This is a large library
 // with many functions for the VDP, Sound, HCCA, and Keyboard. The functions are split
@@ -15,7 +15,8 @@
 // 
 // **********************************************************************************************
 
-
+// No touch
+// -----------------------
 #ifndef NABU_H
 #define NABU_H
 #define BIN_HOMEBREW 100
@@ -23,6 +24,10 @@
 
 
 /// **************************************************************************
+/// 
+/// CONFIGURE FONT
+/// --------------
+/// 
 /// If you will be using the VDP, choose the default font.
 /// Add one of these #define's into your main.c program before the #include "nabu-lib.h"
 /// If you with to use your own font, specify the font as:
@@ -30,8 +35,11 @@
 ///    const uint8_t[768] ASCII = {} 
 ///
 /// before the #include "nabu-lib.h" in your code. You can look at the included
-/// patterns.h for the array format. The default font with case sensitive letters
-/// is FONT_LM80C
+/// patterns.h for the array format. The default popular font with case sensitive 
+/// characters is FONT_LM80C
+///
+/// *Note: You do not need to include a font if DISABLE_VDP is set and you're
+///        building a text-only cp/m program.
 /// **************************************************************************
 /// #define FONT_AMIGA
 /// #define FONT_SET1
@@ -40,6 +48,10 @@
 
 
 /// **************************************************************************
+/// 
+/// BINARY TYPE
+/// -----------
+/// 
 /// It is important to define what kind of binary we are going to be creating.
 /// Add one of these two options to the top of your main.c before the #include
 /// statements.
@@ -58,6 +70,10 @@
 
 
 /// **************************************************************************
+/// 
+/// KEYBOARD INPUT TYPE
+/// -------------------
+/// 
 /// If you are using CPM stdio, such as gets, you will need to disable the keyboard
 /// interupt in NABULIB. Add this #define above your #include in the main.c
 /// If you disable the keyboard interrupt, you cannot use any NABULIB keyboard
@@ -69,6 +85,10 @@
 
 
 /// **************************************************************************
+/// 
+/// HCCA (SERIAL)
+/// -------------
+/// 
 /// If your program is not using the file store or HCCA for retronet, you can
 /// disable the RX interrupt to save filesize.
 ///
@@ -82,6 +102,10 @@
 
 
 /// **************************************************************************
+/// 
+/// VDP GRAPHICS
+/// ------------
+/// 
 /// You can disable the vdp functions if you're just using the cpm built-in
 /// console stuff, like puts() or printf(), etc.
 ///
@@ -192,6 +216,9 @@ __sfr __at 0x00 IO_CONTROL;
 
 #define IOPORTA  0x0e
 #define IOPORTB  0x0f
+
+// Used for getting the r register from the z80 to seed srand()
+volatile uint8_t _randomSeed = 0;
 
 #ifndef DISABLE_HCCA_RX_INT
   uint8_t _rxBuffer[RX_BUFFER_SIZE] = { 0 };
@@ -374,17 +401,6 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
 
   // 5th sprite flag, set when more than 4 sprite per line 
   #define VDP_FLAG_S5 0x40  
-
-
-  /// <summary>
-  /// 4-Byte record defining sprite attributes
-  /// </summary>
-  typedef struct {
-    uint8_t x; //Sprite X position
-    uint8_t y; //Sprite Y position
-    uint8_t name_ptr; //Sprite name in pattern table
-    uint8_t ecclr; //Bit 7: Early clock bit, bit 3:0 color
-  } SpriteAttributesStruct;
 
 
   #warning
@@ -592,8 +608,9 @@ const uint8_t _NOTES_FINE[] = {
 // **************************************************************************
 
 /// <summary>
-/// Initialize the NABU-LIB. This should be the very first thing in your program!
-/// This will enable the HCCA RX Interupt, the Keyboard Interupt, and disable the ROM
+/// Initialize the NABU-LIB. This should be the very first thing in your program.
+/// Based on your configuration, this will initialize what you have not "#define DISABLE_X"
+/// This will enable the audio, HCCA RX & keyboard Interupts, seed random generator, and disable the ROM
 /// </summary>
 void initNABULib();
 
@@ -611,8 +628,6 @@ void NABU_EnableInterrupts();
 /// Perform one NOP
 /// </summary>
 void nop();
-
-
 
 
 
@@ -973,12 +988,15 @@ uint8_t ayRead(uint8_t reg);
   /// #define FONT_STANDARD
   /// #define FONT_LM80C
   /// 
-  /// - mode VDP_MODE_G1 | VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT
-  /// - color
-  /// - big_sprites true: Use 16x16 sprites false : use 8x8 sprites
-  /// - magnify true: Scale sprites up by 2
+  /// mode:         One of the graphic modes (VDP_MODE_G1 | VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT)
+  /// color:        Color of the background
+  /// spriteSize:   true for 16x16 sprites, or false for 8x8 sprites
+  /// scaleSprites: use software to scale the sprites by 2.
+  ///               You will still provide the sprite size specified from 'spriteSize' but
+  ///               they will be double the size when put on the screen 
+  ///  autoScroll:  Scrolls textmode vertically when your text is at the bottom of the screen 
   /// </summary>
-  void vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll);
+  void vdp_init(uint8_t mode, uint8_t color, bool spriteSize, bool scaleSprites, bool autoScroll);
 
   /// <summary>
   /// This will update the vram to the specified font.
@@ -989,8 +1007,8 @@ uint8_t ayRead(uint8_t reg);
   /// <summary>
   /// Initializes the VDP in text mode
   /// 
-  /// - fgcolor Text color default: default black
-  /// - bgcolor Background color : default white
+  /// - fgcolor Text color 
+  /// - bgcolor Background 
   /// 
   /// returns VDP_ERROR | VDP_SUCCESS
   /// </summary>
@@ -1009,12 +1027,14 @@ uint8_t ayRead(uint8_t reg);
   /// <summary>
   /// Initializes the VDP in Graphic Mode 2
   /// 
-  /// - big_sprites true: use 16x16 sprites false : use 8x8 sprites
-  /// - scale_sprites Scale sprites up by 2
+  /// spriteSize:   true for 16x16 sprites, or false for 8x8 sprites
+  /// scaleSprites: use software to scale the sprites by 2.
+  ///               You will still provide the sprite size specified from 'spriteSize' but
+  ///               they will be double the size when put on the screen 
   /// 
   /// returns VDP_ERROR | VDP_SUCCESS
   /// </summary>
-  void vdp_initG2Mode(bool big_sprites, bool scale_sprites);
+  void vdp_initG2Mode(bool spriteSize, bool scaleSprites);
 
   /// <summary>
   /// Initializes the VDP in 64x48 Multicolor Mode. Not really useful if more than 4k Video ram is available
@@ -1124,6 +1144,12 @@ uint8_t ayRead(uint8_t reg);
   void vdp_writeG2(uint8_t chr);
 
   /// <summary>
+  ///  Initialize a sprite by the ID with the specified COLOR
+  ///  Returns the sprite ID (the id that was passed as a parameter)
+  /// </summary>
+  uint8_t vdp_spriteInit(uint8_t id, uint8_t color);
+
+  /// <summary>
   ///  Write a sprite into the sprite pattern table
   ///
   /// - id: Reference of sprite 0-255 for 8x8 sprites, 0-63 for 16x16 sprites
@@ -1132,50 +1158,40 @@ uint8_t ayRead(uint8_t reg);
   void vdp_setSpritePattern(uint8_t id, const uint8_t* sprite);
 
   /// <summary>
-  ///  Set the sprite color
+  ///  Set the sprite color by id
   ///
-  /// - handle Sprite Handle returned by vdp_sprite_init()
+  /// - id of sprite
   /// - color
   /// </summary>
-  void vdp_setSpriteColor(uint16_t handle, uint8_t color);
-
-  /// <summary>
-  ///  Get the sprite attributes
-  ///
-  /// - handle Sprite Handle returned by vdp_sprite_init()
-  /// 
-  /// Returns Sprite_attributes
-  /// </summary>
-  void vdp_getSpriteeAttributes(uint16_t addr, SpriteAttributesStruct* s);
-
-  /// <summary>
-  ///  Activate a sprite
-  ///
-  /// - name Number of the sprite as defined in vdp_set_sprite()
-  /// - priority 0: Highest priority; 31: Lowest priority
-  /// - color
-  /// Returnss     Sprite Handle
-  /// </summary>
-  uint16_t vdp_spriteInit(uint8_t name, uint8_t priority, uint8_t color);
-
-  /// <summary>
-  ///  Get the current position of a sprite
-  ///
-  /// - handle Sprite Handle returned by vdp_spriteInit()
-  /// - xpos Reference to x-position
-  /// - ypos Reference to y-position
-  /// </summary>
-  void vdp_getSpritePosition(uint16_t handle, uint8_t xpos, uint8_t ypos);
+  void vdp_setSpriteColor(uint8_t id, uint8_t color);
 
   /// <summary>
   ///  Set position of a sprite
   ///
-  /// - handle  Sprite Handle returned by vdp_sprite_init()
+  /// - id of sprite
   /// - x
   /// - y
-  /// Returnss     true: In case of a collision with other sprites
   /// </summary>
-  uint8_t vdp_setSpritePosition(uint16_t handle, uint8_t x, uint8_t y);
+  void vdp_setSpritePosition(uint8_t id, uint8_t x, uint8_t y);
+
+  /// <summary>
+  ///  Set position of a sprite
+  ///
+  /// - id of sprite
+  /// - x
+  /// - y
+  /// - color
+  /// </summary>
+  void vdp_setSpritePositionAndColor(uint8_t id, uint8_t x, uint8_t y, uint8_t color);
+
+  /// <summary>
+  ///  Get the current position of a sprite
+  ///
+  /// - id of sprite to get position of
+  /// - xpos Reference to x-position
+  /// - ypos Reference to y-position
+  /// </summary>
+  void vdp_getSpritePosition(uint8_t id, uint8_t * xpos, uint8_t * ypos);
 
   /// <summary>
   /// Add a new line (move down and to line start)
