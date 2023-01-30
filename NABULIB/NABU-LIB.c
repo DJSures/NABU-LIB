@@ -759,6 +759,10 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       for (uint16_t i = 0; i < 768; i++)
         IO_VDPDATA = ASCII[i];
 
+      // init sprites and put them off screen 
+      for (uint8_t i = 0; i < 32; i++)
+        vdp_spriteInit(i);
+
       break;
 
     case VDP_MODE_G2:
@@ -785,6 +789,10 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       for (uint16_t i = 0; i < 768; i++)
         IO_VDPDATA = ASCII[i];
 
+      // init sprites and put them off screen 
+      for (uint8_t i = 0; i < 32; i++)
+        vdp_spriteInit(i);
+
       break;
 
     case VDP_MODE_TEXT:
@@ -801,11 +809,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       // Initialize pattern table with ASCII patterns
       vdp_setWriteAddress(_vdp_pattern_table + 0x100);
 
-      for (uint16_t i = 0; i < 24 * 40; i++)
-        _vdp_textBuffer[i] = 0x20;
-
       for (uint16_t i = 0; i < 768; i++)
         IO_VDPDATA = ASCII[i];
+
+      for (uint16_t i = 0; i < 24 * 40; i++)
+        _vdp_textBuffer[i] = 0x20;
 
       vdp_setCursor2(0, 0);
 
@@ -929,25 +937,28 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
-  uint8_t vdp_spriteInit(uint8_t id, uint8_t color) {
+  uint8_t vdp_spriteInit(uint8_t id) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
+    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
 
     vdp_setWriteAddress(addr);
     
-    IO_VDPDATA = 0; // y
+    IO_VDPDATA = 191; // y
     
     IO_VDPDATA = 0; // x
 
-    IO_VDPDATA = id; // name
+    if (_vdp_sprite_size_sel)
+      IO_VDPDATA = id * 4; // 16x16 sprite location (name). big sprites take 4 8x8 blocks (datasheet 2-34)
+    else
+      IO_VDPDATA = id; // 8x8 sprite location (name
 
-    // early clock bit + color. We do not use early clock bit
-    IO_VDPDATA = color & 0xF; 
+    // Set bit 7 to hide the sprite since we're not using it yet
+    IO_VDPDATA = 0b10000000; 
 
     return id;
   }
 
-  void vdp_setSpritePattern(uint8_t id, uint8_t* sprite) {
+  void vdp_setSpritePattern(uint8_t id, const uint8_t* sprite) {
 
     if (_vdp_sprite_size_sel) {
 
@@ -964,9 +975,20 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
+  void vdp_showSprite(uint8_t id, uint8_t x, uint8_t y, uint8_t color) {
+
+    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
+
+    vdp_setWriteAddress(addr);
+    IO_VDPDATA = y;
+    IO_VDPDATA = x;
+    IO_VDPDATA = id * 4;
+    IO_VDPDATA = color & 0x0f;
+  }
+
   void vdp_setSpriteColor(uint8_t id, uint8_t color) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
+    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
 
     vdp_setWriteAddress(addr + 3);
 
@@ -975,7 +997,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setSpritePosition(uint8_t id, uint8_t x, uint8_t y) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
+    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
 
     vdp_setWriteAddress(addr);
     IO_VDPDATA = y;
@@ -984,7 +1006,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setSpritePositionAndColor(uint8_t id, uint8_t x, uint8_t y, uint8_t color) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
+    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
 
     vdp_setWriteAddress(addr);
     IO_VDPDATA = y;
@@ -995,13 +1017,24 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_getSpritePosition(uint8_t id, uint8_t *xpos, uint8_t *ypos) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + (4 * id);
+    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
 
     vdp_setReadAddress(addr);
 
     *ypos = IO_VDPDATA;
 
     *xpos = IO_VDPDATA;
+  }
+
+  void vdp_hideSprite(uint8_t id) {
+
+    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
+
+    vdp_setWriteAddress(addr);
+    IO_VDPDATA = 191;
+    IO_VDPDATA = 0;
+    IO_VDPDATA = id;
+    IO_VDPDATA = 0b10000000;
   }
 
   void vdp_print(uint8_t* text) {

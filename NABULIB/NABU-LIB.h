@@ -1144,18 +1144,40 @@ uint8_t ayRead(uint8_t reg);
   void vdp_writeG2(uint8_t chr);
 
   /// <summary>
-  ///  Initialize a sprite by the ID with the specified COLOR
+  ///  Initialize a sprite by the ID
+  ///
+  ///  1) call vdp_spriteInit() to assign a sprite id
+  ///  2) call vdp_setSpritePattern() to give the sprite id a pattern
+  ///  3) call vdp_showSprite() to make it visible
+  ///  4) Now you can call vdp_setSpritePosition() to move it around in a vdp interrupt
+  ///
   ///  Returns the sprite ID (the id that was passed as a parameter)
   /// </summary>
-  uint8_t vdp_spriteInit(uint8_t id, uint8_t color);
+  uint8_t vdp_spriteInit(uint8_t id);
 
   /// <summary>
   ///  Write a sprite into the sprite pattern table
   ///
-  /// - id: Reference of sprite 0-255 for 8x8 sprites, 0-63 for 16x16 sprites
+  ///  1) call vdp_spriteInit() to assign a sprite id
+  ///  2) call vdp_setSpritePattern() to give the sprite id a pattern
+  ///  3) call vdp_showSprite() to make it visible
+  ///  4) Now you can call vdp_setSpritePosition() to move it around in a vdp interrupt
+  ///
+  /// - id: Reference of sprite 0-31 for 8x8 sprites, 0-31 for 16x16 sprites
   /// - sprite: Array with sprite data. Type uint8_t[8] for 8x8 sprites, uint8_t[32] for 16x16 sprites
   /// </summary>
   void vdp_setSpritePattern(uint8_t id, const uint8_t* sprite);
+
+  /// <summary>
+  ///  show a sprite that has just been initialized or hidden from vdp_hideSprite()
+  ///
+  ///  1) call vdp_spriteInit() to assign a sprite id
+  ///  2) call vdp_setSpritePattern() to give the sprite id a pattern
+  ///  3) call vdp_showSprite() to make it visible
+  ///  4) Now you can call vdp_setSpritePosition() to move it around in a vdp interrupt
+  ///
+  /// </summary>
+  void vdp_showSprite(uint8_t id, uint8_t x, uint8_t y, uint8_t color);
 
   /// <summary>
   ///  Set the sprite color by id
@@ -1175,7 +1197,7 @@ uint8_t ayRead(uint8_t reg);
   void vdp_setSpritePosition(uint8_t id, uint8_t x, uint8_t y);
 
   /// <summary>
-  ///  Set position of a sprite
+  ///  Set position and color of a sprite
   ///
   /// - id of sprite
   /// - x
@@ -1192,6 +1214,12 @@ uint8_t ayRead(uint8_t reg);
   /// - ypos Reference to y-position
   /// </summary>
   void vdp_getSpritePosition(uint8_t id, uint8_t * xpos, uint8_t * ypos);
+
+  /// <summary>
+  ///  Hide the sprite by the ID
+  ///  To restore the sprite, use the restoreSprite()
+  /// </summary>
+  void vdp_hideSprite(uint8_t id);
 
   /// <summary>
   /// Add a new line (move down and to line start)
