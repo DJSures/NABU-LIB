@@ -759,10 +759,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       for (uint16_t i = 0; i < 768; i++)
         IO_VDPDATA = ASCII[i];
 
-      // init sprites and put them off screen 
-      for (uint8_t i = 0; i < 32; i++)
-        vdp_spriteInit(i);
-
       break;
 
     case VDP_MODE_G2:
@@ -788,10 +784,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       for (uint16_t i = 0; i < 768; i++)
         IO_VDPDATA = ASCII[i];
-
-      // init sprites and put them off screen 
-      for (uint8_t i = 0; i < 32; i++)
-        vdp_spriteInit(i);
 
       break;
 
@@ -937,53 +929,56 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
-  uint8_t vdp_spriteInit(uint8_t id) {
+  void vdp_disableSprite(uint8_t id) {
 
     uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
 
     vdp_setWriteAddress(addr);
-    
-    IO_VDPDATA = 191; // y
-    
-    IO_VDPDATA = 0; // x
-
-    if (_vdp_sprite_size_sel)
-      IO_VDPDATA = id * 4; // 16x16 sprite location (name). big sprites take 4 8x8 blocks (datasheet 2-34)
-    else
-      IO_VDPDATA = id; // 8x8 sprite location (name
-
-    // Set bit 7 to hide the sprite since we're not using it yet
-    IO_VDPDATA = 0b10000000; 
-
-    return id;
+    IO_VDPDATA = 191;        // y
+    IO_VDPDATA = 0;          // x
+    IO_VDPDATA = 0;          // pattern name #0 (should always be empty so no false collisions)
+    IO_VDPDATA = 0b10000000; // early clock to hide behind border
   }
 
-  void vdp_setSpritePattern(uint8_t id, const uint8_t* sprite) {
+  void vdp_loadSpritePatternNameTable(uint16_t numSprites, const uint8_t* sprite) {
+
+    for (uint8_t i = 0; i < 32; i++)
+      vdp_disableSprite(i);
 
     if (_vdp_sprite_size_sel) {
 
-      vdp_setWriteAddress(_vdp_sprite_pattern_table + 32 * id);
+      vdp_setWriteAddress(_vdp_sprite_pattern_table);
 
-      for (uint8_t i = 0; i < 32; i++) 
+      for (uint16_t i = 0; i < numSprites * 32; i++) 
         IO_VDPDATA = sprite[i];
     } else {
 
-      vdp_setWriteAddress(_vdp_sprite_pattern_table + 8 * id);
+      vdp_setWriteAddress(_vdp_sprite_pattern_table);
 
-      for (uint8_t i = 0; i < 8; i++) 
+      for (uint16_t i = 0; i < numSprites * 8; i++) 
         IO_VDPDATA = sprite[i];
     }
   }
 
-  void vdp_showSprite(uint8_t id, uint8_t x, uint8_t y, uint8_t color) {
+  uint8_t vdp_spriteInit(uint8_t id, uint8_t spritePatternNameId, uint8_t x, uint8_t y, uint8_t color) {
 
     uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
 
     vdp_setWriteAddress(addr);
-    IO_VDPDATA = y;
-    IO_VDPDATA = x;
-    IO_VDPDATA = id * 4;
+    
+    IO_VDPDATA = y; // y
+    
+    IO_VDPDATA = x; // x
+
+    if (_vdp_sprite_size_sel)
+      IO_VDPDATA = spritePatternNameId * 4; // 16x16 sprite location (name). big sprites take 4 8x8 blocks (datasheet 2-34)
+    else
+      IO_VDPDATA = spritePatternNameId;     // 8x8 sprite location (name
+
+    // Set bit 7 to hide the sprite since we're not using it yet
     IO_VDPDATA = color & 0x0f;
+
+    return id;
   }
 
   void vdp_setSpriteColor(uint8_t id, uint8_t color) {
@@ -1024,17 +1019,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     *ypos = IO_VDPDATA;
 
     *xpos = IO_VDPDATA;
-  }
-
-  void vdp_hideSprite(uint8_t id) {
-
-    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
-
-    vdp_setWriteAddress(addr);
-    IO_VDPDATA = 191;
-    IO_VDPDATA = 0;
-    IO_VDPDATA = id;
-    IO_VDPDATA = 0b10000000;
   }
 
   void vdp_print(uint8_t* text) {

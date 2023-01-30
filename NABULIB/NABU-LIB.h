@@ -1144,40 +1144,62 @@ uint8_t ayRead(uint8_t reg);
   void vdp_writeG2(uint8_t chr);
 
   /// <summary>
-  ///  Initialize a sprite by the ID
-  ///
-  ///  1) call vdp_spriteInit() to assign a sprite id
-  ///  2) call vdp_setSpritePattern() to give the sprite id a pattern
-  ///  3) call vdp_showSprite() to make it visible
-  ///  4) Now you can call vdp_setSpritePosition() to move it around in a vdp interrupt
-  ///
-  ///  Returns the sprite ID (the id that was passed as a parameter)
+  ///  Disable a sprite
   /// </summary>
-  uint8_t vdp_spriteInit(uint8_t id);
+  void vdp_disableSprite(uint8_t id);
 
   /// <summary>
   ///  Write a sprite into the sprite pattern table
   ///
-  ///  1) call vdp_spriteInit() to assign a sprite id
-  ///  2) call vdp_setSpritePattern() to give the sprite id a pattern
-  ///  3) call vdp_showSprite() to make it visible
-  ///  4) Now you can call vdp_setSpritePosition() to move it around in a vdp interrupt
+  ///  1) the first sprite in the sprite table that you make must be completely empty
+  ///     this is because sprites have a default id of 0 when not initialized. So if you
+  ///     your first entry is not empty, you will always have a collision. Unused
+  ///     sprites will get a pattern name of 0.
   ///
-  /// - id: Reference of sprite 0-31 for 8x8 sprites, 0-31 for 16x16 sprites
-  /// - sprite: Array with sprite data. Type uint8_t[8] for 8x8 sprites, uint8_t[32] for 16x16 sprites
+  ///  2) call vdp_loadSpritePatternNameTable() to load all of the sprite patterns into vdp ram
+  ///
+  ///  3) vdp_spriteInit() to assign a pattern name to a sprite id
+  ///  
+  ///  4) Now you can call vdp_setSpritePosition() to move the spriteId around in a vdp interrupt
+  ///
+  ///  5) You can disable sprites that you don't shown with vdp_disableSprite()
+  ///
   /// </summary>
-  void vdp_setSpritePattern(uint8_t id, const uint8_t* sprite);
+  void vdp_loadSpritePatternNameTable(uint16_t numSprites, const uint8_t* sprite);
 
   /// <summary>
-  ///  show a sprite that has just been initialized or hidden from vdp_hideSprite()
+  ///  Initialize a sprite by the ID
   ///
-  ///  1) call vdp_spriteInit() to assign a sprite id
-  ///  2) call vdp_setSpritePattern() to give the sprite id a pattern
-  ///  3) call vdp_showSprite() to make it visible
-  ///  4) Now you can call vdp_setSpritePosition() to move it around in a vdp interrupt
+  ///  Parameters:
   ///
+  ///                   id: The unique ID that you assign to this sprite between 0-31. 
+  ///                       Higher number layers the sprites on top of lower numbers
+  ///
+  ///  spritePatternNameId: The ID of the pattern that you assign to this sprite. You get this from
+  ///                       the pattern table that you created and loaded.
+  ///
+  ///                    x: The X cordinate to place the sprite on the screen.
+  ///
+  ///                    y: The y cordinate to place the sprite on the screen.
+  ///
+  ///                color: The color of the sprite
+  ///
+  ///  1) the first sprite in the sprite table that you make must be completely empty
+  ///     this is because sprites have a default id of 0 when not initialized. So if you
+  ///     your first entry is not empty, you will always have a collision. Unused
+  ///     sprites will get a pattern name of 0.
+  ///
+  ///  2) call vdp_loadSpritePatternNameTable() to load all of the sprite patterns into vdp ram
+  ///
+  ///  3) vdp_spriteInit() to assign a pattern name to a sprite id
+  ///  
+  ///  4) Now you can call vdp_setSpritePosition() to move the spriteId around in a vdp interrupt
+  ///
+  ///  5) You can disable sprites that you don't shown with vdp_disableSprite()
+  ///
+  ///  Returns the sprite ID (the id that was passed as a parameter)
   /// </summary>
-  void vdp_showSprite(uint8_t id, uint8_t x, uint8_t y, uint8_t color);
+  uint8_t vdp_spriteInit(uint8_t id, uint8_t spritePatternNameId, uint8_t x, uint8_t y, uint8_t color);
 
   /// <summary>
   ///  Set the sprite color by id
@@ -1214,12 +1236,6 @@ uint8_t ayRead(uint8_t reg);
   /// - ypos Reference to y-position
   /// </summary>
   void vdp_getSpritePosition(uint8_t id, uint8_t * xpos, uint8_t * ypos);
-
-  /// <summary>
-  ///  Hide the sprite by the ID
-  ///  To restore the sprite, use the restoreSprite()
-  /// </summary>
-  void vdp_hideSprite(uint8_t id);
 
   /// <summary>
   /// Add a new line (move down and to line start)
