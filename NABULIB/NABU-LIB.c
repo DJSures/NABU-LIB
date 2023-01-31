@@ -147,16 +147,38 @@ inline void NABU_EnableInterrupts() {
       push af;
       push bc;
       push hl;
+      push iy;
     __endasm;
 
-    _rxBuffer[_rxBufferWritePos] = IO_HCCA;
+    // _rxBuffer[_rxBufferWritePos] = IO_HCCA;
 
-    _rxBufferWritePos++;
+    // _rxBufferWritePos++;
 
-    if (_rxBufferWritePos == RX_BUFFER_SIZE)
-      _rxBufferWritePos = 0;
+    // if (_rxBufferWritePos == RX_BUFFER_SIZE)
+    //   _rxBufferWritePos = 0;
+
+    // put the assembly in here for above code incase the compiler decides to change what registers it uses for what we save to stack
+    __asm
+      ld	bc,__rxBuffer+0
+      ld	hl, (__rxBufferWritePos)
+      add	hl, bc
+      in	a, (_IO_HCCA)
+      ld	(hl), a
+      ld	hl, (__rxBufferWritePos)
+      inc	hl
+      ld	(__rxBufferWritePos), hl
+      ld	a, (__rxBufferWritePos+0)
+      sub	a, RX_BUFFER_SIZE
+      ld	iy,__rxBufferWritePos
+      or	a,(iy+1)
+      jr	NZ,l_isrHCCARX_00102
+      ld	hl,0x0000
+      ld	(__rxBufferWritePos), hl
+      l_isrHCCARX_00102:
+    __endasm;
 
     __asm
+      pop iy;
       pop hl;
       pop bc;
       pop af;
@@ -177,35 +199,101 @@ inline void NABU_EnableInterrupts() {
       push iy;
     __endasm;
 
-    uint8_t inKey = IO_KEYBOARD;
+    // uint8_t inKey = IO_KEYBOARD;
 
-    if (inKey >= 0x80 && inKey <= 0x83) {
+    // if (inKey >= 0x80 && inKey <= 0x83) {
 
-        _lastKeyboardIntVal = inKey;
-    } else if (inKey < 0x90 || inKey > 0x95) {
+    //     _lastKeyboardIntVal = inKey;
+    // } else if (inKey < 0x90 || inKey > 0x95) {
 
-      switch (_lastKeyboardIntVal) {
-        case 0x80:
-          _lastKeyboardIntVal = 0;
-          _joyStatus[0] = inKey;
-          break;
-        case 0x81:
-          _lastKeyboardIntVal = 0;
-          _joyStatus[1] = inKey;
-          break;
-        case 0x82:
-          _lastKeyboardIntVal = 0;
-          _joyStatus[2] = inKey;
-          break;
-        case 0x83:
-          _lastKeyboardIntVal = 0;
-          _joyStatus[3] = inKey;
-          break;
-        default:
-          _kbdBuffer[_kbdBufferWritePos] = inKey;
-          _kbdBufferWritePos++;
-      }
-    }
+    //   switch (_lastKeyboardIntVal) {
+    //     case 0x80:
+    //       _lastKeyboardIntVal = 0;
+    //       _joyStatus[0] = inKey;
+    //       break;
+    //     case 0x81:
+    //       _lastKeyboardIntVal = 0;
+    //       _joyStatus[1] = inKey;
+    //       break;
+    //     case 0x82:
+    //       _lastKeyboardIntVal = 0;
+    //       _joyStatus[2] = inKey;
+    //       break;
+    //     case 0x83:
+    //       _lastKeyboardIntVal = 0;
+    //       _joyStatus[3] = inKey;
+    //       break;
+    //     default:
+    //       _kbdBuffer[_kbdBufferWritePos] = inKey;
+    //       _kbdBufferWritePos++;
+    //   }
+    // }
+
+    // put the assembly in here for above code incase the compiler decides to change what registers it uses for what we save to stack
+    __asm
+      in	a, (_IO_KEYBOARD)
+      ld	c,a
+      sub	a,0x80
+      jr	C,l_isrKeyboard_00111
+      ld	a,0x83
+      sub	a, c
+      jr	C,l_isrKeyboard_00111
+      ld	iy,__lastKeyboardIntVal
+      ld	(iy+0),c
+      jr	l_isrKeyboard_00112
+      l_isrKeyboard_00111:
+      ld	a, c
+      sub	a,0x90
+      jr	C,l_isrKeyboard_00107
+      ld	a,0x95
+      sub	a, c
+      jr	NC,l_isrKeyboard_00112
+      l_isrKeyboard_00107:
+      ld	a, (__lastKeyboardIntVal+0)
+      cp	a,0x80
+      jr	Z,l_isrKeyboard_00101
+      cp	a,0x81
+      jr	Z,l_isrKeyboard_00102
+      cp	a,0x82
+      jr	Z,l_isrKeyboard_00103
+      sub	a,0x83
+      jr	Z,l_isrKeyboard_00104
+      jr	l_isrKeyboard_00105
+      l_isrKeyboard_00101:
+      ld	iy,__lastKeyboardIntVal
+      ld	(iy+0),0x00
+      ld	hl,__joyStatus
+      ld	(hl), c
+      jr	l_isrKeyboard_00112
+      l_isrKeyboard_00102:
+      ld	iy,__lastKeyboardIntVal
+      ld	(iy+0),0x00
+      ld	hl, +(__joyStatus + 1)
+      ld	(hl), c
+      jr	l_isrKeyboard_00112
+      l_isrKeyboard_00103:
+      ld	iy,__lastKeyboardIntVal
+      ld	(iy+0),0x00
+      ld	hl, +(__joyStatus + 2)
+      ld	(hl), c
+      jr	l_isrKeyboard_00112
+      l_isrKeyboard_00104:
+      ld	iy,__lastKeyboardIntVal
+      ld	(iy+0),0x00
+      ld	hl, +(__joyStatus + 3)
+      ld	(hl), c
+      jr	l_isrKeyboard_00112
+      l_isrKeyboard_00105:
+      ld	hl,__kbdBuffer+0
+      ld	de, (__kbdBufferWritePos)
+      ld	d,0x00
+      add	hl, de
+      ld	(hl), c
+      ld	a, (__kbdBufferWritePos+0)
+      inc	a
+      ld	(__kbdBufferWritePos+0), a
+      l_isrKeyboard_00112:
+    __endasm;
 
     __asm
       pop iy;
@@ -723,9 +811,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_init(uint8_t mode, uint8_t color, bool big_sprites, bool magnify, bool autoScroll) {
 
-    _vdp_mode = mode;
+    _vdpMode = mode;
 
-    _vdp_sprite_size_sel = big_sprites;
+    _vdpSpriteSizeSelected = big_sprites;
 
     _autoScroll = autoScroll;
 
@@ -739,22 +827,29 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     case VDP_MODE_G1:
 
       vdp_setRegister(0, 0x00);
+      
       _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; // Ram size 16k, activate video output
       vdp_setRegister(1, _vdpReg1Val); 
+
       vdp_setRegister(2, 0x05); // Name table at 0x1400
+      _vdpNameTableAddr = 0x1400;
+
       vdp_setRegister(3, 0x80); // Color, start at 0x2000
+      _vdpColorTableAddr = 0x2000;
+      _vdpColorTableSize = 32;
+
       vdp_setRegister(4, 0x01); // Pattern generator start at 0x800
-      vdp_setRegister(5, 0x20); // Sprite attriutes start at 0x1000
+      _vdpPatternTableAddr = 0x800;
+
+      vdp_setRegister(5, 0x20); // Sprite attributes start at 0x1000
+      _vdpSpriteAttributeTableAddr = 0x1000;
       vdp_setRegister(6, 0x00); // Sprite pattern table at 0x000
-      _vdp_sprite_pattern_table = 0;
-      _vdp_pattern_table = 0x800;
-      _vdp_sprite_attribute_table = 0x1000;
-      _vdp_name_table = 0x1400;
-      _vdp_color_table = 0x2000;
-      _vdp_color_table_size = 32;
+      _vdpSpritePatternTableAddr = 0;
+
+      _vdpCursorMaxX = 31;
 
       // Initialize pattern table with ASCII patterns
-      vdp_setWriteAddress(_vdp_pattern_table + 0x100);
+      vdp_setWriteAddress(_vdpPatternTableAddr + 0x100);
 
       for (uint16_t i = 0; i < 768; i++)
         IO_VDPDATA = ASCII[i];
@@ -767,20 +862,27 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; // Ram size 16k, Disable Int, 16x16 Sprites, mag off, activate video output
       vdp_setRegister(1, _vdpReg1Val); 
+
       vdp_setRegister(2, 0x0E); // Name table at 0x3800
-      vdp_setRegister(3, 0xFF); // Color, start at 0x2000
+      _vdpNameTableAddr = 0x3800;     
+
+      vdp_setRegister(3, 0xFF); // Color table, start at 0x2000
+      _vdpColorTableAddr = 0x2000;
+      _vdpColorTableSize = 0x1800;
+
       vdp_setRegister(4, 0x03); // Pattern generator start at 0x0
-      vdp_setRegister(5, 0x76); // Sprite attriutes start at 0x3800
+      _vdpPatternTableAddr = 0x00;
+
+      vdp_setRegister(5, 0x76); // Sprite attributes start at 0x3800
+      _vdpSpriteAttributeTableAddr = 0x3B00;
+
       vdp_setRegister(6, 0x03); // Sprite pattern table at 0x1800
-      _vdp_pattern_table = 0x00;
-      _vdp_sprite_pattern_table = 0x1800;
-      _vdp_color_table = 0x2000;
-      _vdp_name_table = 0x3800;     
-      _vdp_sprite_attribute_table = 0x3B00;
-      _vdp_color_table_size = 0x1800;
+      _vdpSpritePatternTableAddr = 0x1800;
+
+      _vdpCursorMaxX = 31;
 
       // Initialize pattern table with ASCII patterns
-      vdp_setWriteAddress(_vdp_name_table);
+      vdp_setWriteAddress(_vdpNameTableAddr);
 
       for (uint16_t i = 0; i < 768; i++)
         IO_VDPDATA = ASCII[i];
@@ -790,16 +892,20 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     case VDP_MODE_TEXT:
 
       vdp_setRegister(0, 0x00);
+
       _vdpReg1Val = 0b11010010; // Ram size 16k, Disable Int
       vdp_setRegister(1, _vdpReg1Val);       
+
       vdp_setRegister(2, 0x02); // Name table at 0x800
+      _vdpNameTableAddr = 0x800;
+
       vdp_setRegister(4, 0x00); // Pattern table start at 0x0
-      _vdp_pattern_table = 0x00;
-      _vdp_name_table = 0x800;
-      _vdp_crsr_max_x = 39;
+      _vdpPatternTableAddr = 0x00;
+
+      _vdpCursorMaxX = 39;
 
       // Initialize pattern table with ASCII patterns
-      vdp_setWriteAddress(_vdp_pattern_table + 0x100);
+      vdp_setWriteAddress(_vdpPatternTableAddr + 0x100);
 
       for (uint16_t i = 0; i < 768; i++)
         IO_VDPDATA = ASCII[i];
@@ -814,20 +920,26 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     case VDP_MODE_MULTICOLOR:
 
       vdp_setRegister(0, 0x00);
+
       _vdpReg1Val = 0b11001000 | (big_sprites << 1) | magnify; // Ram size 16k, Multicolor
       vdp_setRegister(1, _vdpReg1Val); 
-      vdp_setRegister(2, 0x05); // Name table at 0x1400
-      // setRegister(3, 0xFF); // Color table not available
-      vdp_setRegister(4, 0x01); // Pattern table start at 0x800
-      vdp_setRegister(5, 0x76); // Sprite Attribute table at 0x1000
-      vdp_setRegister(6, 0x03); // Sprites Pattern Table at 0x0
-      _vdp_pattern_table = 0x800;
-      _vdp_name_table = 0x1400;
-      _vdp_sprite_attribute_table = 0x3b00;
-      _vdp_sprite_pattern_table = 0x1800;
       
+      vdp_setRegister(2, 0x05); // Name table at 0x1400
+      _vdpNameTableAddr = 0x1400;
+            
+      vdp_setRegister(4, 0x01); // Pattern table start at 0x800
+      _vdpPatternTableAddr = 0x800;
+      
+      vdp_setRegister(5, 0x76); // Sprite Attribute table at 0x1000
+      _vdpSpritePatternTableAddr = 0x1800;
+      
+      vdp_setRegister(6, 0x03); // Sprites Pattern Table at 0x0
+      _vdpSpriteAttributeTableAddr = 0x3b00;
+      
+      _vdpCursorMaxX = 31;
+
       // Initialize pattern table with ASCII patterns
-      vdp_setWriteAddress(_vdp_name_table);
+      vdp_setWriteAddress(_vdpNameTableAddr);
 
       for (uint8_t j = 0; j < 24; j++)
         for (uint16_t i = 0; i < 32; i++)
@@ -841,7 +953,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_initTextModeFont(uint8_t* font) {
 
-    vdp_setWriteAddress(_vdp_pattern_table + 0x100);
+    vdp_setWriteAddress(_vdpPatternTableAddr + 0x100);
 
     for (uint16_t i = 0; i < 768; i++)
       IO_VDPDATA = font[i];
@@ -849,12 +961,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_colorize(uint8_t fg, uint8_t bg) {
 
-    if (_vdp_mode != VDP_MODE_G2)
+    if (_vdpMode != VDP_MODE_G2)
       return;
 
-    uint16_t name_offset = vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x; // Position in name table
+    uint16_t name_offset = vdp_cursor.y * (_vdpCursorMaxX + 1) + vdp_cursor.x; // Position in name table
     uint16_t color_offset = name_offset << 3;                                   // Offset of pattern in pattern table
-    vdp_setWriteAddress(_vdp_color_table + color_offset);
+    vdp_setWriteAddress(_vdpColorTableAddr + color_offset);
 
     for (uint8_t i = 0; i < 8; i++)
       IO_VDPDATA = (fg << 4) + bg;
@@ -864,10 +976,10 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint16_t offset = 8 * (x / 8) + y % 8 + 256 * (y / 8);
 
-    vdp_setReadAddress(_vdp_pattern_table + offset);
+    vdp_setReadAddress(_vdpPatternTableAddr + offset);
     uint8_t pixel = IO_VDPDATA;
 
-    vdp_setReadAddress(_vdp_color_table + offset);
+    vdp_setReadAddress(_vdpColorTableAddr + offset);
     uint8_t color = IO_VDPDATA;
 
     if (color1 != NULL) {
@@ -880,18 +992,18 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       color = (color & 0xF0) | (color2 & 0x0F);
     }
 
-    vdp_setWriteAddress(_vdp_pattern_table + offset);
+    vdp_setWriteAddress(_vdpPatternTableAddr + offset);
     IO_VDPDATA = pixel;
 
-    vdp_setWriteAddress(_vdp_color_table + offset);
+    vdp_setWriteAddress(_vdpColorTableAddr + offset);
     IO_VDPDATA = color;
   }
 
   void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color) {
 
-    if (_vdp_mode == VDP_MODE_MULTICOLOR) {
+    if (_vdpMode == VDP_MODE_MULTICOLOR) {
 
-      uint16_t addr = _vdp_pattern_table + 8 * (x / 2) + y % 8 + 256 * (y / 8);
+      uint16_t addr = _vdpPatternTableAddr + 8 * (x / 2) + y % 8 + 256 * (y / 8);
 
       vdp_setReadAddress(addr);
       uint8_t dot = IO_VDPDATA;
@@ -902,12 +1014,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         IO_VDPDATA = (dot & 0xF0) + (color & 0x0f);
       else
         IO_VDPDATA = (dot & 0x0F) + (color << 4);
-    } else if (_vdp_mode == VDP_MODE_G2) {
+    } else if (_vdpMode == VDP_MODE_G2) {
 
       // Draw bitmap
       uint16_t offset = 8 * (x / 2) + y % 8 + 256 * (y / 8);
 
-      vdp_setReadAddress(_vdp_color_table + offset);
+      vdp_setReadAddress(_vdpColorTableAddr + offset);
       uint8_t color_ = IO_VDPDATA;
 
       if ((x & 1) == 0) {
@@ -921,20 +1033,20 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         color_ |= color & 0x0F;
       }
 
-      vdp_setWriteAddress(_vdp_pattern_table + offset);
+      vdp_setWriteAddress(_vdpPatternTableAddr + offset);
       IO_VDPDATA = 0xF0;
 
-      vdp_setWriteAddress(_vdp_color_table + offset);
+      vdp_setWriteAddress(_vdpColorTableAddr + offset);
       IO_VDPDATA = color_;
     }
   }
 
   void vdp_disableSprite(uint8_t id) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
+    uint16_t addr = _vdpSpriteAttributeTableAddr + 4 * id;
 
     vdp_setWriteAddress(addr);
-    IO_VDPDATA = 191;        // y
+    IO_VDPDATA = 192;        // y
     IO_VDPDATA = 0;          // x
     IO_VDPDATA = 0;          // pattern name #0 (should always be empty so no false collisions)
     IO_VDPDATA = 0b10000000; // early clock to hide behind border
@@ -945,15 +1057,15 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     for (uint8_t i = 0; i < 32; i++)
       vdp_disableSprite(i);
 
-    if (_vdp_sprite_size_sel) {
+    if (_vdpSpriteSizeSelected) {
 
-      vdp_setWriteAddress(_vdp_sprite_pattern_table);
+      vdp_setWriteAddress(_vdpSpritePatternTableAddr);
 
       for (uint16_t i = 0; i < numSprites * 32; i++) 
         IO_VDPDATA = sprite[i];
     } else {
 
-      vdp_setWriteAddress(_vdp_sprite_pattern_table);
+      vdp_setWriteAddress(_vdpSpritePatternTableAddr);
 
       for (uint16_t i = 0; i < numSprites * 8; i++) 
         IO_VDPDATA = sprite[i];
@@ -962,7 +1074,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   uint8_t vdp_spriteInit(uint8_t id, uint8_t spritePatternNameId, uint8_t x, uint8_t y, uint8_t color) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
+    uint16_t addr = _vdpSpriteAttributeTableAddr + 4 * id;
 
     vdp_setWriteAddress(addr);
     
@@ -970,7 +1082,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     
     IO_VDPDATA = x; // x
 
-    if (_vdp_sprite_size_sel)
+    if (_vdpSpriteSizeSelected)
       IO_VDPDATA = spritePatternNameId * 4; // 16x16 sprite location (name). big sprites take 4 8x8 blocks (datasheet 2-34)
     else
       IO_VDPDATA = spritePatternNameId;     // 8x8 sprite location (name
@@ -983,7 +1095,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setSpriteColor(uint8_t id, uint8_t color) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
+    uint16_t addr = _vdpSpriteAttributeTableAddr + 4 * id;
 
     vdp_setWriteAddress(addr + 3);
 
@@ -992,7 +1104,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setSpritePosition(uint8_t id, uint8_t x, uint8_t y) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
+    uint16_t addr = _vdpSpriteAttributeTableAddr + 4 * id;
 
     vdp_setWriteAddress(addr);
     IO_VDPDATA = y;
@@ -1001,7 +1113,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setSpritePositionAndColor(uint8_t id, uint8_t x, uint8_t y, uint8_t color) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
+    uint16_t addr = _vdpSpriteAttributeTableAddr + 4 * id;
 
     vdp_setWriteAddress(addr);
     IO_VDPDATA = y;
@@ -1012,7 +1124,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_getSpritePosition(uint8_t id, uint8_t *xpos, uint8_t *ypos) {
 
-    uint16_t addr = _vdp_sprite_attribute_table + 4 * id;
+    uint16_t addr = _vdpSpriteAttributeTableAddr + 4 * id;
 
     vdp_setReadAddress(addr);
 
@@ -1059,22 +1171,22 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setPatternColor(uint16_t index, uint8_t fg, uint8_t bg) {
 
-    if (_vdp_mode == VDP_MODE_G1)
+    if (_vdpMode == VDP_MODE_G1)
       index &= 31;
 
-    vdp_setWriteAddress(_vdp_color_table + index);
+    vdp_setWriteAddress(_vdpColorTableAddr + index);
     IO_VDPDATA = (fg << 4) + bg;
   }
 
   void vdp_setCursor2(uint8_t col, uint8_t row) {
 
-    if (col > _vdp_crsr_max_x) {
+    if (col > _vdpCursorMaxX) {
 
       col = 0;
       row++;
     }
 
-   if (row > _vdp_crsr_max_y)
+   if (row > _vdpCursorMaxY)
       row = 0;
 
     vdp_cursor.x = col;
@@ -1101,20 +1213,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setTextColor(uint8_t fg, uint8_t bg) {
 
-    _vdp_fgcolor = fg;
-
-    _vdp_bgcolor = bg;
-
-    if (_vdp_mode == VDP_MODE_TEXT)
+    if (_vdpMode == VDP_MODE_TEXT)
       vdp_setRegister(7, (fg << 4) + bg);
   }
 
   void vdp_write(uint8_t chr) {
 
     // Position in name table
-    uint16_t name_offset = vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x;
+    uint16_t name_offset = vdp_cursor.y * (_vdpCursorMaxX + 1) + vdp_cursor.x;
 
-    vdp_setWriteAddress(_vdp_name_table + name_offset);
+    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
 
     IO_VDPDATA = chr;
 
@@ -1135,10 +1243,10 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     if (chr < 0x20 || chr > 0x7d)
       return;
 
-    uint16_t name_offset = vdp_cursor.y * (_vdp_crsr_max_x + 1) + vdp_cursor.x; // Position in name table
+    uint16_t name_offset = vdp_cursor.y * (_vdpCursorMaxX + 1) + vdp_cursor.x; // Position in name table
     uint16_t pattern_offset = name_offset << 3;                                 // Offset of pattern in pattern table
 
-    vdp_setWriteAddress(_vdp_pattern_table + pattern_offset);
+    vdp_setWriteAddress(_vdpPatternTableAddr + pattern_offset);
 
     for (uint8_t i = 0; i < 8; i++)
       IO_VDPDATA = ASCII[((chr - 32) << 3) + i];
@@ -1148,51 +1256,51 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c) {
 
-    uint16_t name_offset = y * (_vdp_crsr_max_x + 1) + x; 
+    uint16_t name_offset = y * (_vdpCursorMaxX + 1) + x; 
 
     _vdp_textBuffer[name_offset] = c;
 
-    vdp_setWriteAddress(_vdp_name_table + name_offset);
+    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
 
     IO_VDPDATA = c;
   }
 
   uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y) {
 
-    uint16_t name_offset = y * (_vdp_crsr_max_x + 1) + x; 
+    uint16_t name_offset = y * (_vdpCursorMaxX + 1) + x; 
 
-    vdp_setReadAddress(_vdp_name_table + name_offset);
+    vdp_setReadAddress(_vdpNameTableAddr + name_offset);
 
     return IO_VDPDATA;
   }
 
   inline uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y) {
 
-    return _vdp_textBuffer[y * (_vdp_crsr_max_x + 1) + x];
+    return _vdp_textBuffer[y * (_vdpCursorMaxX + 1) + x];
   }
 
   inline void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c) {
 
-    _vdp_textBuffer[y * (_vdp_crsr_max_x + 1) + x] = c;
+    _vdp_textBuffer[y * (_vdpCursorMaxX + 1) + x] = c;
   }
 
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow) {
 
-    uint16_t name_offset = topRow * (_vdp_crsr_max_x + 1);
+    uint16_t name_offset = topRow * (_vdpCursorMaxX + 1);
 
-    vdp_setWriteAddress(_vdp_name_table + name_offset);
+    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
 
     for (uint8_t y = topRow; y < bottomRow; y++)
       for (uint8_t x = 0; x < 40; x++) {
 
-        _vdp_textBuffer[name_offset] = _vdp_textBuffer[name_offset + _vdp_crsr_max_x + 1];
+        _vdp_textBuffer[name_offset] = _vdp_textBuffer[name_offset + _vdpCursorMaxX + 1];
 
         IO_VDPDATA = _vdp_textBuffer[name_offset];
 
         name_offset++;
       }
 
-    if (bottomRow <= _vdp_crsr_max_y)
+    if (bottomRow <= _vdpCursorMaxY)
       for (uint8_t x = 0; x < 40; x++) {
 
         _vdp_textBuffer[name_offset] = 0x20;
@@ -1205,9 +1313,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_clearRows(uint8_t topRow, uint8_t bottomRow) {
 
-    uint16_t name_offset = topRow * (_vdp_crsr_max_x + 1);
+    uint16_t name_offset = topRow * (_vdpCursorMaxX + 1);
 
-    vdp_setWriteAddress(_vdp_name_table + name_offset);
+    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
 
     for (uint8_t y = topRow; y < bottomRow; y++)
       for (uint8_t x = 0; x < 40; x++) {

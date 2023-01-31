@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 30, 2023 (v2023.01.30.00)
+// Last updated on January 30, 2031 (v2023.01.31.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -95,6 +95,10 @@
 /// Note that there are a few VDP commands in the HCCA functions, so you cannot
 /// disable VDP and enable HCCA RX. You can disable HCCA RX and keep VDP, but 
 /// you cannot disable VDP and keep HCCA.
+///
+/// If you are keeping the HCCA, you can customize the buffer size further down
+/// in this file by adding the #define RX_BUFFER_SIZE XXX to your main.c above
+/// the #includes. That allows you to lower the reserved buffer if needed.
 ///
 /// Add this #define above your #include in the main.c to disable the HCCA RX INT
 /// **************************************************************************
@@ -334,18 +338,16 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   /// </summary>
   volatile uint8_t _vdpReg1Val = 0;
 
-  uint16_t       _vdp_sprite_attribute_table;
-  uint16_t       _vdp_sprite_pattern_table;
-  uint8_t        _vdp_sprite_size_sel;      // 0: 8x8 sprites 1: 16x16 sprites
-  uint16_t       _vdp_name_table;
-  uint16_t       _vdp_color_table_size = 0;
-  uint16_t       _vdp_color_table;
-  uint16_t       _vdp_pattern_table;
-  uint8_t        _vdp_crsr_max_x = 31;      // max number of colums (Overwritten in Text mode)
-  const uint8_t  _vdp_crsr_max_y = 23;      // max number of rows
-  uint8_t        _vdp_mode;
-  uint8_t        _vdp_fgcolor;
-  uint8_t        _vdp_bgcolor;
+  uint16_t       _vdpSpriteAttributeTableAddr;
+  uint16_t       _vdpSpritePatternTableAddr;
+  uint8_t        _vdpSpriteSizeSelected;
+  uint16_t       _vdpNameTableAddr;
+  uint16_t       _vdpColorTableSize = 0;
+  uint16_t       _vdpColorTableAddr;
+  uint16_t       _vdpPatternTableAddr;
+  uint8_t        _vdpCursorMaxX;
+  const uint8_t  _vdpCursorMaxY = 23;
+  uint8_t        _vdpMode;
   bool           _autoScroll;
 
 
