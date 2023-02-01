@@ -19,9 +19,34 @@
 // ------------
 // **************************************************************************
 
+void rn_focusInterrupts() {
+
+  // temporarily disable all other interrupts while we perform an expensive hcca read
+  // we let hcca_writeByte set the interrupt for us
+
+  NABU_DisableInterrupts();
+
+  _rn_TmpOriginalInterrupt = _ORIGINAL_INT_MASK;  
+  _ORIGINAL_INT_MASK = INT_MASK_HCCARX;
+
+  NABU_EnableInterrupts();
+}
+
+void rn_restoreInterrupts() {
+
+  NABU_DisableInterrupts();
+
+  _ORIGINAL_INT_MASK = _rn_TmpOriginalInterrupt;  
+  ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+
+  NABU_EnableInterrupts();
+}
+
 uint8_t rn_fileOpen(uint8_t filenameLen, uint8_t* filename, uint16_t fileFlag, uint8_t fileHandle) {
 
   //0xa3
+
+  rn_focusInterrupts();
 
   hcca_writeByte(0xa3);
 
@@ -33,7 +58,11 @@ uint8_t rn_fileOpen(uint8_t filenameLen, uint8_t* filename, uint16_t fileFlag, u
 
   hcca_writeByte(fileHandle);
 
-  return hcca_readByte();
+  uint8_t t = hcca_readByte();
+
+  rn_restoreInterrupts();
+
+  return t;
 }
 
 void rn_fileHandleClose(uint8_t fileHandle) {
@@ -49,29 +78,43 @@ int32_t rn_fileSize(uint8_t filenameLen, uint8_t* filename) {
 
   //0xa8
 
+  rn_focusInterrupts();
+
   hcca_writeByte(0xa8);
 
   hcca_writeByte(filenameLen);
 
   hcca_writeBytes(0, filenameLen, filename);
 
-  return hcca_readInt32();
+  int32_t t = hcca_readInt32();
+
+  rn_restoreInterrupts();
+
+  return t;
 }
 
 int32_t rn_fileHandleSize(uint8_t fileHandle) {
 
   //0xa4
 
+  rn_focusInterrupts();
+
   hcca_writeByte(0xa4);
 
   hcca_writeByte(fileHandle);
 
-  return hcca_readInt32();
+  int32_t t = hcca_readInt32();
+
+  rn_restoreInterrupts();
+
+  return t;
 }
 
 uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferOffset, uint32_t readOffset, uint16_t readLength) {
 
   //0xa5
+
+  rn_focusInterrupts();
 
   hcca_writeByte(0xa5);
 
@@ -85,6 +128,8 @@ uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferO
 
   for (uint16_t i = 0; i < toRead; i++)
     buffer[i + bufferOffset] = hcca_readByte();
+
+  rn_restoreInterrupts();
 
   return toRead;
 }
@@ -203,6 +248,8 @@ uint16_t rn_fileList(uint8_t pathLen, uint8_t* path, uint8_t wildcardLen, uint8_
 
   // 0xb1
 
+  rn_focusInterrupts();
+
   hcca_writeByte(0xb1);
 
   hcca_writeByte(pathLen);
@@ -215,7 +262,11 @@ uint16_t rn_fileList(uint8_t pathLen, uint8_t* path, uint8_t wildcardLen, uint8_
 
   hcca_writeByte(fileListFlags);
 
-  return hcca_readUInt16();
+  uint16_t t = hcca_readUInt16();
+
+  rn_restoreInterrupts();
+
+  return t;
 }
 
 void rn_fileListItem(uint16_t fileItemIndex, FileDetailsStruct* s) {
@@ -241,6 +292,8 @@ void rn_fileListItem(uint16_t fileItemIndex, FileDetailsStruct* s) {
   // 17          uint8_t   Modified Second
   // 18          uint8_t   Length of filename (max 64)
   // 19..82                The remaining bytes is the filename
+
+  rn_focusInterrupts();
 
   hcca_writeByte(0xb2);
 
@@ -268,11 +321,16 @@ void rn_fileListItem(uint16_t fileItemIndex, FileDetailsStruct* s) {
 
   s->IsFile = (s->FileSize >= 0);
   s->Exists = (s->FileSize != -2);
+
+  rn_restoreInterrupts();
 }
 
 void rn_fileDetails(uint8_t filenameLen, uint8_t* filename, FileDetailsStruct* s) {
 
   // 0xb3
+
+  rn_focusInterrupts();
+
   hcca_writeByte(0xb3);
 
   hcca_writeByte(filenameLen);
@@ -301,11 +359,15 @@ void rn_fileDetails(uint8_t filenameLen, uint8_t* filename, FileDetailsStruct* s
 
   s->IsFile = (s->FileSize >= 0);
   s->Exists = (s->FileSize != -2);
+
+  rn_restoreInterrupts();
 }
 
 void rn_fileHandleDetails(int8_t fileHandle, FileDetailsStruct* s) {
 
   // 0xb4
+
+  rn_focusInterrupts();
 
   hcca_writeByte(0xb4);
 
@@ -333,11 +395,15 @@ void rn_fileHandleDetails(int8_t fileHandle, FileDetailsStruct* s) {
 
   s->IsFile = (s->FileSize >= 0);
   s->Exists = (s->FileSize != -2);
+
+  rn_restoreInterrupts();
 }
 
 uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferOffset, uint16_t readLength) {
 
   // 0xb5
+
+  rn_focusInterrupts();
 
   hcca_writeByte(0xb5);
 
@@ -350,12 +416,16 @@ uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t buff
   for (uint16_t i = 0; i < toRead; i++)
     buffer[i + bufferOffset] = hcca_readByte();
 
+  rn_restoreInterrupts();
+
   return toRead;
 }
 
 uint32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption) {
 
   // 0xb6
+
+  rn_focusInterrupts();
 
   hcca_writeByte(0xb6);
 
@@ -365,6 +435,10 @@ uint32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOptio
 
   hcca_writeByte(seekOption);
 
-  return hcca_readUInt32();
+  uint32_t t = hcca_readUInt32();
+
+  rn_restoreInterrupts();
+
+  return t;
 }
 

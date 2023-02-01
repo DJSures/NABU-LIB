@@ -104,6 +104,10 @@ typedef struct {
 
 } FileDetailsStruct;
 
+// Stuff
+// -----
+uint8_t _rn_TmpOriginalInterrupt = 0;
+
 /// <summary>
 /// Opens the file and returns a file handle that will be used for all file functions.
 /// Files are stored in the RetroNET Storage folder that is defined in the Internet Adapter settings. 

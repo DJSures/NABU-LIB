@@ -139,7 +139,7 @@ inline void NABU_EnableInterrupts() {
 // -----
 // **************************************************************************
 
-#ifndef DISABLE_HCCA_RX_INT
+#ifndef DISABLE_HCCA_RX_INT  
   void isrHCCARX() __naked {
 
     // review LIS and only bc, hl, a registers are used for this function
@@ -583,7 +583,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     for (uint8_t i = 0; i < bufferLen; i++)
       buffer[offset + i] = hcca_readByte();
   }
-
 
 
   // **************************************************************************
