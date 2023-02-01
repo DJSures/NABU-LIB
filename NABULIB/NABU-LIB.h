@@ -225,7 +225,7 @@ __sfr __at 0x00 IO_CONTROL;
 volatile uint8_t _randomSeed = 0;
 
 #ifndef DISABLE_HCCA_RX_INT
-  uint8_t _rxBuffer[RX_BUFFER_SIZE] = { 0 };
+  uint8_t _rxBuffer[RX_BUFFER_SIZE];
   uint16_t _rxBufferReadPos = 0;
   uint16_t _rxBufferWritePos = 0;
   #warning
@@ -239,7 +239,7 @@ volatile uint8_t _randomSeed = 0;
 
 #ifndef DISABLE_KEYBOARD_INT
 
-  volatile uint8_t _kbdBuffer[256] = { 0 };
+  volatile uint8_t _kbdBuffer[256];
   volatile uint8_t _kbdBufferReadPos = 0;
   volatile uint8_t _kbdBufferWritePos = 0;
   volatile uint8_t _lastKeyboardIntVal = 0;

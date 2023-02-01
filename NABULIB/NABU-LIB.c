@@ -150,32 +150,12 @@ inline void NABU_EnableInterrupts() {
       push iy;
     __endasm;
 
-    // _rxBuffer[_rxBufferWritePos] = IO_HCCA;
+    _rxBuffer[_rxBufferWritePos] = IO_HCCA;
 
-    // _rxBufferWritePos++;
+    _rxBufferWritePos++;
 
-    // if (_rxBufferWritePos == RX_BUFFER_SIZE)
-    //   _rxBufferWritePos = 0;
-
-    // put the assembly in here for above code incase the compiler decides to change what registers it uses for what we save to stack
-    __asm
-      ld	bc,__rxBuffer+0
-      ld	hl, (__rxBufferWritePos)
-      add	hl, bc
-      in	a, (_IO_HCCA)
-      ld	(hl), a
-      ld	hl, (__rxBufferWritePos)
-      inc	hl
-      ld	(__rxBufferWritePos), hl
-      ld	a, (__rxBufferWritePos+0)
-      sub	a, RX_BUFFER_SIZE
-      ld	iy,__rxBufferWritePos
-      or	a,(iy+1)
-      jr	NZ,l_isrHCCARX_00102
-      ld	hl,0x0000
-      ld	(__rxBufferWritePos), hl
-      l_isrHCCARX_00102:
-    __endasm;
+    if (_rxBufferWritePos == RX_BUFFER_SIZE)
+      _rxBufferWritePos = 0;
 
     __asm
       pop iy;
@@ -199,101 +179,35 @@ inline void NABU_EnableInterrupts() {
       push iy;
     __endasm;
 
-    // uint8_t inKey = IO_KEYBOARD;
+    uint8_t inKey = IO_KEYBOARD;
 
-    // if (inKey >= 0x80 && inKey <= 0x83) {
+    if (inKey >= 0x80 && inKey <= 0x83) {
 
-    //     _lastKeyboardIntVal = inKey;
-    // } else if (inKey < 0x90 || inKey > 0x95) {
+        _lastKeyboardIntVal = inKey;
+    } else if (inKey < 0x90 || inKey > 0x95) {
 
-    //   switch (_lastKeyboardIntVal) {
-    //     case 0x80:
-    //       _lastKeyboardIntVal = 0;
-    //       _joyStatus[0] = inKey;
-    //       break;
-    //     case 0x81:
-    //       _lastKeyboardIntVal = 0;
-    //       _joyStatus[1] = inKey;
-    //       break;
-    //     case 0x82:
-    //       _lastKeyboardIntVal = 0;
-    //       _joyStatus[2] = inKey;
-    //       break;
-    //     case 0x83:
-    //       _lastKeyboardIntVal = 0;
-    //       _joyStatus[3] = inKey;
-    //       break;
-    //     default:
-    //       _kbdBuffer[_kbdBufferWritePos] = inKey;
-    //       _kbdBufferWritePos++;
-    //   }
-    // }
-
-    // put the assembly in here for above code incase the compiler decides to change what registers it uses for what we save to stack
-    __asm
-      in	a, (_IO_KEYBOARD)
-      ld	c,a
-      sub	a,0x80
-      jr	C,l_isrKeyboard_00111
-      ld	a,0x83
-      sub	a, c
-      jr	C,l_isrKeyboard_00111
-      ld	iy,__lastKeyboardIntVal
-      ld	(iy+0),c
-      jr	l_isrKeyboard_00112
-      l_isrKeyboard_00111:
-      ld	a, c
-      sub	a,0x90
-      jr	C,l_isrKeyboard_00107
-      ld	a,0x95
-      sub	a, c
-      jr	NC,l_isrKeyboard_00112
-      l_isrKeyboard_00107:
-      ld	a, (__lastKeyboardIntVal+0)
-      cp	a,0x80
-      jr	Z,l_isrKeyboard_00101
-      cp	a,0x81
-      jr	Z,l_isrKeyboard_00102
-      cp	a,0x82
-      jr	Z,l_isrKeyboard_00103
-      sub	a,0x83
-      jr	Z,l_isrKeyboard_00104
-      jr	l_isrKeyboard_00105
-      l_isrKeyboard_00101:
-      ld	iy,__lastKeyboardIntVal
-      ld	(iy+0),0x00
-      ld	hl,__joyStatus
-      ld	(hl), c
-      jr	l_isrKeyboard_00112
-      l_isrKeyboard_00102:
-      ld	iy,__lastKeyboardIntVal
-      ld	(iy+0),0x00
-      ld	hl, +(__joyStatus + 1)
-      ld	(hl), c
-      jr	l_isrKeyboard_00112
-      l_isrKeyboard_00103:
-      ld	iy,__lastKeyboardIntVal
-      ld	(iy+0),0x00
-      ld	hl, +(__joyStatus + 2)
-      ld	(hl), c
-      jr	l_isrKeyboard_00112
-      l_isrKeyboard_00104:
-      ld	iy,__lastKeyboardIntVal
-      ld	(iy+0),0x00
-      ld	hl, +(__joyStatus + 3)
-      ld	(hl), c
-      jr	l_isrKeyboard_00112
-      l_isrKeyboard_00105:
-      ld	hl,__kbdBuffer+0
-      ld	de, (__kbdBufferWritePos)
-      ld	d,0x00
-      add	hl, de
-      ld	(hl), c
-      ld	a, (__kbdBufferWritePos+0)
-      inc	a
-      ld	(__kbdBufferWritePos+0), a
-      l_isrKeyboard_00112:
-    __endasm;
+      switch (_lastKeyboardIntVal) {
+        case 0x80:
+          _lastKeyboardIntVal = 0;
+          _joyStatus[0] = inKey;
+          break;
+        case 0x81:
+          _lastKeyboardIntVal = 0;
+          _joyStatus[1] = inKey;
+          break;
+        case 0x82:
+          _lastKeyboardIntVal = 0;
+          _joyStatus[2] = inKey;
+          break;
+        case 0x83:
+          _lastKeyboardIntVal = 0;
+          _joyStatus[3] = inKey;
+          break;
+        default:
+          _kbdBuffer[_kbdBufferWritePos] = inKey;
+          _kbdBufferWritePos++;
+      }
+    }
 
     __asm
       pop iy;
