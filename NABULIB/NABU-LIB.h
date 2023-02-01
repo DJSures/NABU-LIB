@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on January 30, 2031 (v2023.01.31.00)
+// Last updated on Feb 1, 2023 (v2023.02.01.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -142,6 +142,10 @@
 /// **************************************************************************
 /// HCCA RX Input buffer.
 /// You can override the RX BUFFER SIZE by defining it before the #include in your main.c
+/// 
+/// ****IMPORTANT: It is important that any buffer/packet size you read using RetroNET
+///                remote filesystem cannot be larger than this buffer size!
+///
 /// **************************************************************************
 #ifndef DISABLE_HCCA_RX_INT
   #ifndef RX_BUFFER_SIZE

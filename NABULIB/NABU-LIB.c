@@ -219,7 +219,9 @@ inline void NABU_EnableInterrupts() {
       reti;
     __endasm;
   }
-#else 
+#endif
+
+#if BIN_TYPE == BIN_CPM
 
   // **************************************************************************
   // VT51 for CPM
@@ -742,23 +744,24 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       vdp_setRegister(0, 0x00);
       
-      _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; // Ram size 16k, activate video output
+      _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; // Ram size 16k, Disable Int, 16x16 Sprites, mag off, activate video output
       vdp_setRegister(1, _vdpReg1Val); 
 
-      vdp_setRegister(2, 0x05); // Name table at 0x1400
-      _vdpNameTableAddr = 0x1400;
+      vdp_setRegister(2, 0x06); // Name table at 0x1800
+      _vdpNameTableAddr = 0x1800;     
 
-      vdp_setRegister(3, 0x80); // Color, start at 0x2000
+      vdp_setRegister(3, 0xFF); // Color table, start at 0x2000
       _vdpColorTableAddr = 0x2000;
-      _vdpColorTableSize = 32;
+      _vdpColorTableSize = 0x1800;
 
-      vdp_setRegister(4, 0x01); // Pattern generator start at 0x800
-      _vdpPatternTableAddr = 0x800;
+      vdp_setRegister(4, 0x03); // Pattern generator start at 0x0
+      _vdpPatternTableAddr = 0x00;
 
-      vdp_setRegister(5, 0x20); // Sprite attributes start at 0x1000
-      _vdpSpriteAttributeTableAddr = 0x1000;
-      vdp_setRegister(6, 0x00); // Sprite pattern table at 0x000
-      _vdpSpritePatternTableAddr = 0;
+      vdp_setRegister(5, 0x36); // Sprite attributes start at 0x1b00
+      _vdpSpriteAttributeTableAddr = 0x1b00;
+
+      vdp_setRegister(6, 0x07); // Sprite pattern table at 0x3800
+      _vdpSpritePatternTableAddr = 0x3800;
 
       _vdpCursorMaxX = 31;
 
@@ -772,13 +775,13 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     case VDP_MODE_G2:
 
-      vdp_setRegister(0, 0x02);
+      vdp_setRegister(0, 0x02); // M3 (graphics mode 2)
 
       _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; // Ram size 16k, Disable Int, 16x16 Sprites, mag off, activate video output
       vdp_setRegister(1, _vdpReg1Val); 
 
-      vdp_setRegister(2, 0x0E); // Name table at 0x3800
-      _vdpNameTableAddr = 0x3800;     
+      vdp_setRegister(2, 0x06); // Name table at 0x1800
+      _vdpNameTableAddr = 0x1800;     
 
       vdp_setRegister(3, 0xFF); // Color table, start at 0x2000
       _vdpColorTableAddr = 0x2000;
@@ -787,11 +790,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       vdp_setRegister(4, 0x03); // Pattern generator start at 0x0
       _vdpPatternTableAddr = 0x00;
 
-      vdp_setRegister(5, 0x76); // Sprite attributes start at 0x3800
-      _vdpSpriteAttributeTableAddr = 0x3B00;
+      vdp_setRegister(5, 0x36); // Sprite attributes start at 0x1b00
+      _vdpSpriteAttributeTableAddr = 0x1b00;
 
-      vdp_setRegister(6, 0x03); // Sprite pattern table at 0x1800
-      _vdpSpritePatternTableAddr = 0x1800;
+      vdp_setRegister(6, 0x07); // Sprite pattern table at 0x3800
+      _vdpSpritePatternTableAddr = 0x3800;
 
       _vdpCursorMaxX = 31;
 
@@ -1357,5 +1360,4 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     vdp_init(VDP_MODE_MULTICOLOR, 0, 0, 0, false);
   }
-
 #endif

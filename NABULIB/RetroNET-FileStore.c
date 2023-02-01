@@ -368,4 +368,3 @@ uint32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOptio
   return hcca_readUInt32();
 }
 
-
