@@ -43,6 +43,9 @@ pause
 
 # Version Notes
 
+## v2023.02.01.00
+VDP uses default MSX memory mapping so you can load .sc2 files directly from vdp's 0x0. RetroNET remote filesystem calls that include reading now disable all other interrupts so it can get the job done without being annoyed with keyboard and vdp interrupts.
+
 ## v2023.01.30.00
 Fixed a bunch of sprite stuff.
 
