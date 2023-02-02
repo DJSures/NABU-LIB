@@ -43,6 +43,9 @@ pause
 
 # Version Notes
 
+## v2023.02.01.01
+Sorry, I broke your build! This release has a bunch of changes that allows G2 and Text mode to operate the same. You can load ASCII fonts -or- entire patterns. Even performing text print/write functions to G2 mode will work, including scrolling. So there's a number of changes that will break your build - but it's worth it.
+
 ## v2023.02.01.00
 VDP uses default MSX memory mapping so you can load .sc2 files directly from vdp's 0x0. RetroNET remote filesystem calls that include reading now disable all other interrupts so it can get the job done without being annoyed with keyboard and vdp interrupts.
 
