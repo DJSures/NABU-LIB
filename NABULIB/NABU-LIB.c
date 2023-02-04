@@ -5,8 +5,6 @@
 // https://github.com/DJSures/NABU-LIB
 // 
 // Read the NABU-LIB.h file for details of each function in this file.
-// 
-// *Note: Some TMS9918 graphic functions were inspired, fixed and heavily modified from: https://github.com/michalin/TMS9918_Arduino/tree/main/examples
 //
 // **********************************************************************************************
 
@@ -100,7 +98,12 @@ void initNABULib() {
   ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
 
   NABU_EnableInterrupts();
-  
+
+  initNABULIBAudio();
+}
+
+void initNABULIBAudio() {
+
   // Noise envelope
   ayWrite(6, 0b00000000);
 
@@ -660,27 +663,102 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
 #ifndef DISABLE_VDP
 
-  inline void vdp_setRegister(unsigned char registerIndex, unsigned char value) {
+  inline void vdp_setRegister(uint8_t registerIndex, uint8_t value) {
 
     IO_VDPLATCH = value;
 
     IO_VDPLATCH = 0x80 | registerIndex;
   }
 
-  inline void vdp_setWriteAddress(unsigned int address) {
+  inline void vdp_setWriteAddress(uint16_t address) {
 
     IO_VDPLATCH = address & 0xff;
 
     IO_VDPLATCH = 0x40 | (address >> 8) & 0x3f;
   }
 
-  inline void vdp_setReadAddress(unsigned int address) {
+  inline void vdp_setReadAddress(uint16_t address) {
 
     IO_VDPLATCH = address & 0xff;
 
     IO_VDPLATCH = (address >> 8) & 0x3f;
   }
-      
+
+  void waitVdpISR() __naked {
+
+    __asm
+
+      push  af;      
+
+    // _vdpStatus = IO_VDPLATCH;
+      in	a, (_IO_VDPLATCH)
+      ld	(_vdpStatusRegVal), a
+
+    // _vdpReady = true;
+      ld  a, 0x01
+      ld  (_vdpIsReady), a
+
+      pop af;      
+
+      ei;
+      reti;
+
+    __endasm;
+  }
+
+  void vdp_enableVDPReadyInt() {
+
+    NABU_DisableInterrupts();
+
+    __asm
+
+      // Video Frame Sync
+      ld hl, _waitVdpISR;
+      ld (INTERUPT_VECTOR_MAP_ADDRESS + 6), hl;
+
+    __endasm;
+
+    _ORIGINAL_INT_MASK |= INT_MASK_VDP;
+
+    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+
+    NABU_EnableInterrupts();
+
+    _vdpInterruptEnabled = true;
+    vdp_setRegister(1, _vdpReg1Val | 0b00100000 );   
+  }
+
+  inline void vdp_waitVDPReadyInt() {
+
+    if (vdpIsReady)
+      IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF | CONTROL_LED_PAUSE;
+    else
+      IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF;
+
+    while (!vdpIsReady);
+
+    vdpIsReady = false;
+  }
+
+  void vdp_disableVDPReadyInt() {
+
+    vdp_setRegister(1, _vdpReg1Val);
+
+    NABU_DisableInterrupts();
+
+    _vdpInterruptEnabled = false;
+
+    // clear any existing interrupts status
+    uint8_t tmp = IO_AYLATCH;
+
+    if (_ORIGINAL_INT_MASK & INT_MASK_VDP)
+      _ORIGINAL_INT_MASK ^= INT_MASK_VDP;
+
+    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+
+    NABU_EnableInterrupts();
+  }
+
   void vdp_addISR(void (*isr)()) {
 
     NABU_DisableInterrupts();
@@ -741,7 +819,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       case VDP_MODE_G2:
 
-        vdp_setRegister(0, 0x02); 
+        vdp_setRegister(0, 0b00000010); 
 
         _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; 
         vdp_setRegister(1, _vdpReg1Val); 
@@ -753,10 +831,18 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       case VDP_MODE_TEXT:
 
-        vdp_setRegister(0, 0x00);
+        vdp_setRegister(0, 0b00000000); 
 
         _vdpReg1Val = 0b11010010;
         vdp_setRegister(1, _vdpReg1Val);
+
+        // https://konamiman.github.io/MSX2-Technical-Handbook/md/Appendix5.html#screen-1--graphic-1
+        // vdp_setRegister(2, 0x06);
+        // vdp_setRegister(3, 0xff);
+        // vdp_setRegister(4, 0x03);
+        // vdp_setRegister(5, 0x36); 
+        // vdp_setRegister(6, 0x07);
+
 
         _vdpCursorMaxX = 39;
 
@@ -764,7 +850,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       case VDP_MODE_MULTICOLOR:
 
-        vdp_setRegister(0, 0x00);
+        vdp_setRegister(0, 0b00000000); 
 
         _vdpReg1Val = 0b11001000 | (big_sprites << 1) | magnify;
         vdp_setRegister(1, _vdpReg1Val); 
@@ -776,24 +862,47 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
 
     vdp_setRegister(2, 0x06);
-    _vdpNameTableAddr = 0x1800;     
+    _vdpPatternNameTableAddr = 0x1800;     
 
-    vdp_setRegister(3, 0xFF);
+    vdp_setRegister(3, 0xff); // <- ALL LIES! how is 0xff 0x2000? 
     _vdpColorTableAddr = 0x2000;
     _vdpColorTableSize = 0x1800;
 
     vdp_setRegister(4, 0x00);
-    _vdpPatternTableAddr = 0x00;
+    _vdpPatternGeneratorTableAddr = 0x00;
 
     vdp_setRegister(5, 0x36);
     _vdpSpriteAttributeTableAddr = 0x1b00;
 
     vdp_setRegister(6, 0x07);
-    _vdpSpritePatternTableAddr = 0x3800;
+    _vdpSpriteGeneratorTableAddr = 0x3800;
 
     vdp_setRegister(7, (fgColor << 4) | (bgColor & 0x0f));
 
     vdp_clearScreen();
+  }
+
+  void vdp_clearVRAM() {
+
+    vdp_setWriteAddress(0x00);
+
+    for (uint16_t i = 0; i < 0x3FFF; i++)
+      IO_VDPDATA = 0;  
+  }
+
+  void vdp_initMSXMode(uint8_t bgColor) {
+
+    // https://konamiman.github.io/MSX2-Technical-Handbook/md/Appendix5.html#screen-1--graphic-1
+
+    vdp_setRegister(0, 0b00000010); 
+    vdp_setRegister(1, 0b11000000); 
+    vdp_setRegister(2, 0x06);
+    vdp_setRegister(3, 0xff); // <- ALL LIES! how is 0xff 0x2000? 
+    vdp_setRegister(4, 0x03);
+    vdp_setRegister(5, 0x36); 
+    vdp_setRegister(6, 0x07);
+
+    vdp_setRegister(7, bgColor & 0x0f);
   }
 
   void vdp_initTextMode(uint8_t fgColor, uint8_t bgColor, bool autoScroll) {
@@ -811,20 +920,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     vdp_init(VDP_MODE_MULTICOLOR, 0, 0, false, false, false);
   }
 
-#include <arch/z80.h>
-
   void vdp_clearScreen() {
-
-    if (_vdpInterruptEnabled)
-      vdp_setRegister(1, _vdpReg1Val); 
-
-    nop();
-    nop();
-    nop();
-    nop();
-    nop();
-
-    vdp_setWriteAddress(_vdpNameTableAddr);
+      
+    vdp_setWriteAddress(_vdpPatternNameTableAddr);
 
     uint16_t c;
 
@@ -839,16 +937,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   
       _vdp_textBuffer[i] = 0x20;
     }
-
-    uint8_t t = IO_VDPLATCH;
-
-    if (_vdpInterruptEnabled) 
-      vdp_setRegister(1, _vdpReg1Val | 0b00100000 );   
   }
 
   void vdp_loadASCIIFont(uint8_t* font) {
 
-    vdp_setWriteAddress(_vdpPatternTableAddr + 0x100);
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 0x100);
 
     for (uint16_t i = 0; i < 768; i++)
       IO_VDPDATA = font[i];
@@ -858,14 +951,14 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint16_t name_offset = y * (_vdpCursorMaxX + 1) + x;
 
-    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
     IO_VDPDATA = patternId;
   }
 
   void vdp_loadPatternTable(uint8_t *patternTable, uint16_t len) {
 
-    vdp_setWriteAddress(_vdpPatternTableAddr);
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr);
 
     // datasheet 2-20 : screen is split into 3 and the pattern table therefore is repeated 3 times
     for (uint16_t i = 0; i < len; i++)
@@ -918,7 +1011,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint16_t offset = 8 * (x / 8) + y % 8 + 256 * (y / 8);
 
-    vdp_setReadAddress(_vdpPatternTableAddr + offset);
+    vdp_setReadAddress(_vdpPatternGeneratorTableAddr + offset);
     uint8_t pixel = IO_VDPDATA;
 
     vdp_setReadAddress(_vdpColorTableAddr + offset);
@@ -934,7 +1027,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       color = (color & 0xF0) | (color2 & 0x0F);
     }
 
-    vdp_setWriteAddress(_vdpPatternTableAddr + offset);
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + offset);
     IO_VDPDATA = pixel;
 
     vdp_setWriteAddress(_vdpColorTableAddr + offset);
@@ -945,7 +1038,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     if (_vdpMode == VDP_MODE_MULTICOLOR) {
 
-      uint16_t addr = _vdpPatternTableAddr + 8 * (x / 2) + y % 8 + 256 * (y / 8);
+      uint16_t addr = _vdpPatternGeneratorTableAddr + 8 * (x / 2) + y % 8 + 256 * (y / 8);
 
       vdp_setReadAddress(addr);
       uint8_t dot = IO_VDPDATA;
@@ -975,7 +1068,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         color_ |= color & 0x0F;
       }
 
-      vdp_setWriteAddress(_vdpPatternTableAddr + offset);
+      vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + offset);
       IO_VDPDATA = 0xF0;
 
       vdp_setWriteAddress(_vdpColorTableAddr + offset);
@@ -1001,13 +1094,13 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     if (_vdpSpriteSizeSelected) {
 
-      vdp_setWriteAddress(_vdpSpritePatternTableAddr);
+      vdp_setWriteAddress(_vdpSpriteGeneratorTableAddr);
 
       for (uint16_t i = 0; i < numSprites * 32; i++) 
         IO_VDPDATA = sprite[i];
     } else {
 
-      vdp_setWriteAddress(_vdpSpritePatternTableAddr);
+      vdp_setWriteAddress(_vdpSpriteGeneratorTableAddr);
 
       for (uint16_t i = 0; i < numSprites * 8; i++) 
         IO_VDPDATA = sprite[i];
@@ -1148,7 +1241,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // Position in name table
     uint16_t name_offset = vdp_cursor.y * (_vdpCursorMaxX + 1) + vdp_cursor.x;
 
-    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
     IO_VDPDATA = chr;
 
@@ -1170,7 +1263,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     _vdp_textBuffer[name_offset] = c;
       
-    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
     IO_VDPDATA = c;
   }
@@ -1179,7 +1272,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint16_t name_offset = y * (_vdpCursorMaxX + 1) + x; 
 
-    vdp_setReadAddress(_vdpNameTableAddr + name_offset);
+    vdp_setReadAddress(_vdpPatternNameTableAddr + name_offset);
 
     return IO_VDPDATA;
   }
@@ -1198,7 +1291,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint16_t name_offset = topRow * (_vdpCursorMaxX + 1);
 
-    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
     for (uint8_t y = topRow; y < bottomRow; y++)
       for (uint8_t x = 0; x < 40; x++) {
@@ -1225,7 +1318,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint16_t name_offset = topRow * (_vdpCursorMaxX + 1);
 
-    vdp_setWriteAddress(_vdpNameTableAddr + name_offset);
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
     for (uint8_t y = topRow; y < bottomRow; y++)
       for (uint8_t x = 0; x < 40; x++) {

@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on Feb 1, 2023 (v2023.02.01.01)
+// Last updated on Feb 3, 2023 (v2023.02.03.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -357,17 +357,21 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   volatile uint8_t _vdpReg1Val = 0;
 
   uint16_t       _vdpSpriteAttributeTableAddr;
-  uint16_t       _vdpSpritePatternTableAddr;
+  uint16_t       _vdpSpriteGeneratorTableAddr;
   uint8_t        _vdpSpriteSizeSelected;
-  uint16_t       _vdpNameTableAddr;
+  uint16_t       _vdpPatternNameTableAddr;
   uint16_t       _vdpColorTableSize = 0;
   uint16_t       _vdpColorTableAddr;
-  uint16_t       _vdpPatternTableAddr;
+  uint16_t       _vdpPatternGeneratorTableAddr;
   uint8_t        _vdpCursorMaxX;
   const uint8_t  _vdpCursorMaxY = 23;
   uint8_t        _vdpMode;
   bool           _autoScroll;
   bool           _vdpInterruptEnabled = false;
+
+  // used for the vdp_enableVDPReadyInt()
+  volatile uint8_t vdpStatusRegVal = 0x00;
+  volatile bool    vdpIsReady      = false;
 
 
   /// **************************************************************************
@@ -668,6 +672,14 @@ void nop();
 // **************************************************************************
 
 /// **************************************************************************
+/// Initializes the NABULIB audio settings for using playNoteDelay()
+/// This is called from initNABULib() so you don't need to call it unless
+/// the settings have been changed and you wish to restore them to use
+/// playNoteDelay()
+/// **************************************************************************
+void initNABULIBAudio();
+
+/// **************************************************************************
 /// Play a note with delay envelope
 /// 
 /// - Channel: 0, 1, 2
@@ -945,12 +957,64 @@ uint8_t ayRead(uint8_t reg);
   /// **************************************************************************
   /// For directly writing and reading from IO_VDPDATA and writing registers
   /// **************************************************************************
-  void vdp_setRegister(unsigned char registerIndex, unsigned char value);
-  void vdp_setWriteAddress(unsigned int address);
-  void vdp_setReadAddress(unsigned int address);
-
+  void vdp_setRegister(uint8_t registerIndex, uint8_t value);
+  void vdp_setWriteAddress(uint16_t address);
+  void vdp_setReadAddress(uint16_t address);
 
   /// **************************************************************************
+  /// Enable the interrupt that will set the variables so you can time your game with
+  /// the screen refresh rate. This is the recommended method to ensure your game operates
+  /// at a constant and acceptable speed.
+  ///
+  /// You can call the vdp_waitVDPReadyInt() to synchronize your program.
+  ///
+  /// The following variables will be set from an interrupt.
+  ///
+  /// 1) uint8_t  vdpStatusRegVal - contains the value of the VDP Status Register (Check TMS9918a manual for collision bit)
+  /// 2) bool     vdpIsReady      - TRUE if the VDP has just completed a vsync. But you will normally not
+  ///                               use this because you'll be calling vdp_waitVDPReadyInt()
+  ///
+  /// Here is an example of how to use this...
+  //
+  // void main() {
+  //
+  //   // init the nabu lib library
+  //   initNABULib();
+  //
+  //   // switch to the graphic mode 
+  //   vdp_initG2Mode(0, true, false, false);
+  //
+  //   // enable the VDP sync
+  //   vdp_enableVDPReadyInt();
+  //
+  //   while (!isKeyPressed()) {
+  //
+  //     // do a bunch of expensive processing here
+  //     // i.e. calculate where the characters are gonna be
+  //     //      check for collisions and stuff
+  //
+  //     // wait for the vsync
+  //     vdp_waitVDPReadyInt();
+  //
+  //     // update the sprites and other screen stuff
+  //   }
+  //
+  //   // remove the vdp sync
+  //   vdp_disableVDPReadyInt();
+  // }
+  //
+  ///
+  /// **************************************************************************
+  void vdp_enableVDPReadyInt();
+  void vdp_waitVDPReadyInt();
+  void vdp_disableVDPReadyInt();
+
+  /// **************************************************************************
+  /// Add a function to the VDP frame sync interrupt.
+  ///
+  /// *Note: a game should be timed by the vsync, so using this function is not recommended. Instead,
+  ///        use the vdp_enableVDPReadyInt().
+  ///
   /// Add a function to the VDP frame sync interrupt. The function you add should be _naked with a ei and reti. 
   /// After calling initNABULib(), this can be called if you need the vdp interrupt (i.e. for G2 graphics).
   /// This function requires that initNABULib() be called first because it will setup the interrupts, and
@@ -1034,6 +1098,12 @@ uint8_t ayRead(uint8_t reg);
   void vdp_initMultiColorMode();
 
   /// **************************************************************************
+  /// Initializes the VDP in MSX Basic compatible mode for loading .SC2 files
+  ///
+  /// **************************************************************************
+  void vdp_initMSXMode(uint8_t bgColor);
+
+  /// **************************************************************************
   /// 
   /// mode:         One of the graphic modes (VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT)
   /// fgColor:        Color of the foreground (for text mode only)
@@ -1045,6 +1115,11 @@ uint8_t ayRead(uint8_t reg);
   ///  autoScroll:  Scrolls textmode vertically when your text is at the bottom of the screen 
   /// **************************************************************************
   void vdp_init(uint8_t mode, uint8_t fgColor, uint8_t bgColor, bool big_sprites, bool magnify, bool autoScroll);
+
+  /// **************************************************************************
+  /// Clear all VRAM set to 0's
+  /// **************************************************************************
+  void vdp_clearVRAM();
 
   /// **************************************************************************
   /// Clears the screen
