@@ -43,6 +43,9 @@ pause
 
 # Version Notes
 
+## v2023.02.03.00
+Added new vdp functions for syncing game speed with vsync. Check the nabulib.h header in the VDP section for instructions and sample code. I'll add more examples and fix the build of other examples as time permits. Right now I'm breaking things while I continue to build GameManYeah!. I'll update the code on here for it someday when I'm a bit more comfortable with what I've created. There's also the NABU Tracker uploaded in here. But I need to provide examples for that as well. Stay tuned, I guess :)
+
 ## v2023.02.01.01
 Sorry, I broke your build! This release has a bunch of changes that allows G2 and Text mode to operate the same. You can load ASCII fonts -or- entire patterns. Even performing text print/write functions to G2 mode will work, including scrolling. So there's a number of changes that will break your build - but it's worth it.
 
