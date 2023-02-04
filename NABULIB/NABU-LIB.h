@@ -946,7 +946,6 @@ uint8_t ayRead(uint8_t reg);
 // ---
 // 
 // Start by calling one of the graphic modes that you wish to initialize.
-// Such as vdp_loadTextMode().
 // 
 // *Note: Read about the function in this file to see if it's compatible 
 // with your graphic mode. Some text functions, such as scroll up, are only
@@ -1171,16 +1170,6 @@ uint8_t ayRead(uint8_t reg);
   void vdp_loadColorTable(uint8_t *colorTable, uint16_t len);
 
   /// **************************************************************************
-  /// Set foreground and background color of the pattern at the current cursor position
-  /// 
-  /// *Note: Only available in Graphic mode 2
-  ///
-  /// - fgcolor Foreground color
-  /// - bgcolor Background color
-  /// **************************************************************************
-  void vdp_colorizeCurrentPattern(uint8_t fgcolor, uint8_t bgcolor);
-
-  /// **************************************************************************
   /// Set foreground and background color of the pattern at the specified location
   /// 
   /// *Note: Only available in Graphic mode 2
@@ -1190,7 +1179,7 @@ uint8_t ayRead(uint8_t reg);
   /// - fgcolor Foreground color
   /// - bgcolor Background color
   /// **************************************************************************
-  void vdp_colorizePattern(uint8_t x, uint8_t y, uint8_t fgcolor, uint8_t bgcolor);
+  void vdp_colorizePattern(uint8_t patternId, uint8_t fg, uint8_t bg);
 
   /// **************************************************************************
   /// Place a pattern by the ID on X and Y in G2 mode
@@ -1224,18 +1213,23 @@ uint8_t ayRead(uint8_t reg);
   void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color);
 
   /// **************************************************************************
-  /// Print null terminated string at current cursor position. These Escape sequences are supported:
-  /// 
-  /// Graphic Mode 2 only: \\033[<fg>;[<bg>]m sets the colors and optionally the background of the subsequent characters 
-  /// 
-  /// Example: vdp_print("\033[4m Dark blue on transparent background\n\r\033[4;14m dark blue on gray background");
-  /// 
+  /// Print null terminated string at the current cursor position.
+  ///
   /// - text Text to print
   /// **************************************************************************
   void vdp_print(uint8_t* text);
 
   /// **************************************************************************
-  /// Print the specified portion of the string. No escape sequences are supported.
+  /// Print null terminated string at the current cursor position and change the
+  /// color table for each character. 
+  ///
+  /// *Note: This only works on graphic mode G2 and will change the color of
+  /// each character - so be careful how you use this!
+  /// **************************************************************************
+  void vdp_printColorized(uint8_t* text, uint8_t fgColor, uint8_t bgColor);
+
+  /// **************************************************************************
+  /// Print the specified portion of the string at the current cursor position
   /// **************************************************************************
   void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text);
     

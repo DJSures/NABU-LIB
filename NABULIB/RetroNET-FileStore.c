@@ -126,8 +126,7 @@ uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferO
 
   uint16_t toRead = hcca_readUInt16();
 
-  for (uint16_t i = 0; i < toRead; i++)
-    buffer[i + bufferOffset] = hcca_readByte();
+  hcca_readBytes(bufferOffset, toRead, buffer);
 
   rn_restoreInterrupts();
 
@@ -413,8 +412,7 @@ uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t buff
 
   uint16_t toRead = hcca_readUInt16();
 
-  for (uint16_t i = 0; i < toRead; i++)
-    buffer[i + bufferOffset] = hcca_readByte();
+  hcca_readBytes(bufferOffset, toRead, buffer);
 
   rn_restoreInterrupts();
 

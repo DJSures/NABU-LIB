@@ -924,16 +924,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       
     vdp_setWriteAddress(_vdpPatternNameTableAddr);
 
-    uint16_t c;
+    uint16_t cnt = (_vdpCursorMaxX + 1) * 24;
 
-    if (_vdpMode == VDP_MODE_G2)
-      c = 32 * 24;
-    else
-      c = 40 * 24;
-    
-    for (uint16_t i = 0; i < c; i++) {
+    uint8_t cr = 0x00;
 
-      IO_VDPDATA = 0x00;
+    if (_vdpMode == VDP_MODE_TEXT)
+      cr = 0x20;
+
+    for (uint16_t i = 0; i < cnt; i++) {
+
+      IO_VDPDATA = cr;
   
       _vdp_textBuffer[i] = 0x20;
     }
@@ -986,25 +986,23 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       IO_VDPDATA = colorTable[i];
   }
 
-  void vdp_colorizeCurrentPattern(uint8_t fg, uint8_t bg) {
+  void vdp_colorizePattern(uint8_t patternId, uint8_t fg, uint8_t bg) {
 
-    uint16_t name_offset = vdp_cursor.y * (_vdpCursorMaxX + 1) + vdp_cursor.x; // Position in name table
-    uint16_t color_offset = name_offset << 3;                                   // Offset of pattern in pattern table
-    vdp_setWriteAddress(_vdpColorTableAddr + color_offset);
+    uint16_t pt = patternId * 8;
 
+    uint8_t c = (fg << 4) + bg;
+
+    vdp_setWriteAddress(_vdpColorTableAddr + pt);
     for (uint8_t i = 0; i < 8; i++)
-      IO_VDPDATA = (fg << 4) + bg;
-  }
+      IO_VDPDATA = c;
 
-  void vdp_colorizePattern(uint8_t x, uint8_t y, uint8_t fg, uint8_t bg) {
-
-    uint16_t name_offset = x * (_vdpCursorMaxX + 1) + y; 
-    uint16_t color_offset = name_offset << 3;
-
-    vdp_setWriteAddress(_vdpColorTableAddr + color_offset);
-
+    vdp_setWriteAddress(_vdpColorTableAddr + 2048  + pt);
     for (uint8_t i = 0; i < 8; i++)
-      IO_VDPDATA = (fg << 4) + bg;
+      IO_VDPDATA = c;
+
+    vdp_setWriteAddress(_vdpColorTableAddr + 4096 + pt);
+    for (uint8_t i = 0; i < 8; i++)
+      IO_VDPDATA = c;
   }
 
   void vdp_plotHires(uint8_t x, uint8_t y, uint8_t color1, uint8_t color2) {
@@ -1174,6 +1172,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       vdp_write(text[i]);
   }
 
+  void vdp_printColorized(uint8_t* text, uint8_t fgColor, uint8_t bgColor) {
+
+    for (uint16_t i = 0; text[i] != 0x00; i++) {
+
+      vdp_colorizePattern(text[i], fgColor, bgColor);
+
+      vdp_write(text[i]);
+    }
+  }
+
   void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text) {
 
     for (uint16_t i = 0; i < textLength; i++)
@@ -1289,14 +1297,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow) {
 
-    uint16_t name_offset = topRow * (_vdpCursorMaxX + 1);
+    uint16_t maxX = _vdpCursorMaxX + 1;
+
+    uint16_t name_offset = topRow * maxX;
 
     vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
     for (uint8_t y = topRow; y < bottomRow; y++)
-      for (uint8_t x = 0; x < 40; x++) {
+      for (uint8_t x = 0; x < maxX; x++) {
 
-        _vdp_textBuffer[name_offset] = _vdp_textBuffer[name_offset + _vdpCursorMaxX + 1];
+        _vdp_textBuffer[name_offset] = _vdp_textBuffer[name_offset + maxX];
 
         IO_VDPDATA = _vdp_textBuffer[name_offset];
 
@@ -1304,7 +1314,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       }
 
     if (bottomRow <= _vdpCursorMaxY)
-      for (uint8_t x = 0; x < 40; x++) {
+      for (uint8_t x = 0; x < maxX; x++) {
 
         _vdp_textBuffer[name_offset] = 0x20;
 
@@ -1316,12 +1326,14 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_clearRows(uint8_t topRow, uint8_t bottomRow) {
 
-    uint16_t name_offset = topRow * (_vdpCursorMaxX + 1);
+    uint16_t maxX = _vdpCursorMaxX + 1;
+
+    uint16_t name_offset = topRow * maxX;
 
     vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
     for (uint8_t y = topRow; y < bottomRow; y++)
-      for (uint8_t x = 0; x < 40; x++) {
+      for (uint8_t x = 0; x < maxX; x++) {
 
         _vdp_textBuffer[name_offset] = 0x20;
 
