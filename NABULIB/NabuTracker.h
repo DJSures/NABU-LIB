@@ -1,3 +1,19 @@
+// ****************************************************************************************
+// NABU-LIB NABU TRACKER
+//
+// DJ Sures (c) 2023
+// https://nabu.ca
+// 
+// Last updated on Feb 5, 2023 (v2023.02.05.00)
+// 
+// Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
+//
+// This is a lightweight NABU music tracker. 
+// 
+// Read the summaries below for details of each function in this file.
+// 
+// **********************************************************************************************
+
 #ifndef RETRONET_NABUTRACKER
 #define RETRONET_NABUTRACKER
 
@@ -19,16 +35,25 @@
 #define NT_NOTE_ON  20
 #define NT_LOOP     99
 
+// No touchy
 uint16_t _itemCntr;
 uint8_t _beatCntr;
-
 uint8_t *_song;
 
+// ***************************************************************************
+// Initialize the tracker with the specified song
+// ***************************************************************************
 void nt_init(uint8_t *song);
 
-void nt_stopSounds();
-
+// ***************************************************************************
+// Called on each iteration of your program that advances the music by 1/16
+// ***************************************************************************
 void nt_handleNote();
+
+// ***************************************************************************
+// Stop all sounds becuase you're done playing music
+// ***************************************************************************
+void nt_stopSounds();
 
 #include "NabuTracker.c"
 

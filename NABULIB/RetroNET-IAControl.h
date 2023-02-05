@@ -1,3 +1,19 @@
+// ****************************************************************************************
+// NABU-LIB IA CONTROL
+//
+// DJ Sures (c) 2023
+// https://nabu.ca
+// 
+// Last updated on Feb 5, 2023 (v2023.02.05.00)
+// 
+// Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
+//
+// Interface for controlling the Internet Adapter settings from the NABU
+// 
+// Read the summaries below for details of each function in this file.
+// 
+// **********************************************************************************************
+
 #ifndef RETRONET_IA_FILE_STORE_H
 #define RETRONET_IA_FILE_STORE_H
 

@@ -36,7 +36,7 @@
 /// The diference between a FONT and a PATTERN is the size. A FONT is just the visible 
 /// written 127 ASCII characters, starting at ASCII Decimal 37 (space bar). The PATTERN
 /// is the entire pattern memory (256 characters) that include text and image patterns.
-/// Generaly, if you're just using text, then load the textFont() which can be used in
+/// Generaly, if you're just using text, then load the vdp_loadASCIIFont() which can be used in
 /// both G2 and Text mode.
 ///
 /// USE ONE OF OUR FONTS
@@ -47,7 +47,7 @@
 /// #define FONT_SET1
 /// #define FONT_STANDARD
 /// #define FONT_LM80C
-/// 3) call vdp_loadTextFont(ASCII);
+/// 3) call vdp_loadASCIIFont(ASCII);
 ///
 /// USE YOUR FONT
 /// -------------
@@ -55,7 +55,7 @@
 ///
 ///    const uint8_t[768] ASCII = {} 
 ///
-/// Once your font has been created, add it with vdp_loadTextFont(ASCII);
+/// Once your font has been created, add it with vdp_loadASCIIFont(ASCII);
 ///
 /// *Note: You do not need to include a font if DISABLE_VDP is set and you're
 ///        building a text-only cp/m program that uses stdio.
@@ -73,11 +73,22 @@
 ///
 /// HOMEBREW
 /// This binary is executable as a standalone application from the NABU
-/// Internet Adapter or as a NABU Channel.
+/// Internet Adapter or as a NABU Channel. Compiling for HOMEBREW uses
+/// the following example commandline:
+///
+///    zcc +nabu -vn --list -m -create-app -compiler=sdcc main.c -o "000001.nabu"
+///
 ///
 /// Cloud CP/M
 /// A binary that produces a .COM executable which will be run on the
-/// Cloud CP/M Operating System.
+/// Cloud CP/M Operating System. If you decide to create a HOMEBREW program,
+/// but also want the same code to work in CPM, you can set this to HOMEBREW
+/// and not use any CPM specific calls (i.e. printf). You would also need to
+/// use the NABULIB keyboard & vdp. Compiling for CPM uses teh example
+/// commandline:
+///
+///     zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "APPNAME"
+///
 ///
 /// **************************************************************************
 // #define BIN_TYPE BIN_HOMEBREW
@@ -89,12 +100,14 @@
 /// KEYBOARD INPUT TYPE
 /// -------------------
 /// 
-/// If you are using CPM stdio, such as gets, you will need to disable the keyboard
-/// interupt in NABULIB. Add this #define above your #include in the main.c
-/// If you disable the keyboard interrupt, you cannot use any NABULIB keyboard
-/// input commands and have to use the cpm ones.
+/// This disables the NABULIB keyboard input commands (i.e. isKeyPressed(), getChar(), readLine()).
+/// When you disable the NABULIB keyboard input commands, you will have to use the CPM
+/// input commands through stdio.h or conio.h
 ///
-/// For safety and memory, this will hide all NABULIB keyboard input functions
+/// If you are using CPM stdio, such as gets(), stdio.h or conio.h, you will need to 
+/// disable the keyboard interupt in NABULIB. Add this #define above your 
+/// #include in the main.c
+///
 /// **************************************************************************
 // #define DISABLE_KEYBOARD_INT
 
@@ -106,10 +119,6 @@
 /// 
 /// If your program is not using the file store or HCCA for retronet, you can
 /// disable the RX interrupt to save filesize.
-///
-/// Note that there are a few VDP commands in the HCCA functions, so you cannot
-/// disable VDP and enable HCCA RX. You can disable HCCA RX and keep VDP, but 
-/// you cannot disable VDP and keep HCCA.
 ///
 /// If you are keeping the HCCA, you can customize the buffer size further down
 /// in this file by adding the #define RX_BUFFER_SIZE XXX to your main.c above
@@ -128,10 +137,6 @@
 /// You can disable the vdp functions if you're just using the cpm built-in
 /// console stuff, like puts() or printf(), etc.
 ///
-/// Note that there are a few VDP commands in the HCCA functions, so you cannot
-/// disable VDP and enable HCCA RX. You can disable HCCA RX and keep VDP, but 
-/// you cannot disable VDP and keep HCCA.
-///
 /// Add this #define above your #include in the main.c to disable the VDP commands
 /// **************************************************************************
 // #define DISABLE_VDP
@@ -140,8 +145,9 @@
 /// **************************************************************************
 /// The cursor that will be displayed with getChar() and readLine()
 /// You can override this value by defining it before the #include in your main.c
-/// If you do not want a cursor, set it to 0x00
-/// Note: This is only valid when using the nabulib vdp and keyboard interupts
+///
+/// Note: This is only valid when using the nabulib vdp and keyboard interupts. It has
+///       no effect on the CPM cursor, because that is handled by the BIOS.
 /// **************************************************************************
 #ifndef CURSOR_CHAR
 #define CURSOR_CHAR '_'
@@ -149,24 +155,27 @@
 
 /// **************************************************************************
 /// You can disable the cursor by putting this line above the #include in your main.c
-/// If you disable the VDP but still want to use the keyboard interrupt, then
-/// this will also work. 
+/// This can only disable the VDP NABULIB cursor, not the CPM cursor.
+/// Meaning, it will disable the cursor for NABULIB key input commands, like getChar()
 /// **************************************************************************
 // #define DISABLE_CURSOR
 
 /// **************************************************************************
 /// HCCA RX Input buffer.
 /// You can override the RX BUFFER SIZE by defining it before the #include in your main.c
+///
+/// For example, add #define RX_BUFFER_SIZE 2048 (or what ever your buffer needs to be)
+/// above the #include in the main.c
 /// 
-/// ****IMPORTANT: It is important that any buffer/packet size you read using RetroNET
-///                remote filesystem cannot be larger than this buffer size!
+/// *Note: It is important that any buffer/packet size you read using RetroNET
+///        remote filesystem cannot be larger than this buffer size!
 ///
 /// **************************************************************************
 #ifndef DISABLE_HCCA_RX_INT
   #ifndef RX_BUFFER_SIZE
-    #define RX_BUFFER_SIZE 1024
+    #define RX_BUFFER_SIZE 128
     #warning
-    #warning Using default 1024 HCCA RX Buffer
+    #warning Using default 128 byte HCCA RX Buffer
     #warning
   #endif
 #endif
