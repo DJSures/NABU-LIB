@@ -1,5 +1,5 @@
 // ************************************************************************
-// GAME MAN YEAH!
+// Brick Battle
 // DJ Sures (c)2023
 //
 // This is the progress of a game I'm making for the NABU computer.
@@ -23,83 +23,39 @@
 #include <stdio.h>
 #include "../NABULIB/NABU-LIB.h"
 #include "../NABULIB/RetroNET-FileStore.h"
-#include "starpattern.c"
+#include "patterns.c"
 #include "../NABULIB/NabuTracker.h"
-#include "./midis/loop1-nt.h"
+#include "./midis/baseattack-nt.h"
 
-// SPRITE DATA
 unsigned char SPRITE_DATA[]={
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-0x00,0x00,0x00,0x03,0x04,0x08,0x28,0x68,
-0x7F,0x3F,0x0F,0x00,0x00,0x00,0x00,0x00,
-0x00,0x00,0x00,0x80,0x40,0x20,0x28,0x2C,
-0xFC,0xF8,0xE0,0x00,0x00,0x00,0x00,0x00,
-0x12,0x1B,0x1F,0x7F,0xFF,0xFF,0x7F,0x3F,
-0x3F,0xFF,0xFF,0xDF,0x1F,0x3F,0x7C,0x60,
-0x38,0x38,0xF8,0xFC,0xFF,0xFF,0xFF,0xFD,
-0xFE,0xFE,0xFC,0xFC,0xFC,0xBE,0x18,0x18,
-0x00,0x0F,0x3F,0x3F,0x3F,0x7F,0x7F,0x7F,
-0x3F,0x3F,0x3F,0x3F,0x3F,0x1F,0x3F,0x00,
-0x00,0xCC,0xFC,0xFE,0xFE,0xFE,0xFF,0xFF,
-0xFE,0xFE,0xFE,0xFC,0xFC,0xC4,0x00,0x00,
-0x00,0x17,0x3F,0x3F,0x1F,0x3F,0x7F,0xFF,
-0x7F,0x3F,0x3F,0x1F,0x3F,0x3F,0x33,0x01,
-0x00,0xC0,0xF8,0xFC,0xFC,0xFE,0xFE,0xFC,
-0xFC,0xF8,0xFC,0xFE,0xFE,0xFE,0xB4,0x00,
-0x00,0x00,0x03,0x01,0x09,0x1F,0x1F,0x1F,
-0x0F,0x1F,0x1F,0x1F,0x07,0x03,0x03,0x00,
-0x00,0x80,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,
-0xFC,0xF8,0xFC,0xFE,0xFC,0xF8,0x30,0x00,
-0x00,0x00,0x00,0x00,0x00,0x07,0x07,0x07,
-0x0F,0x0F,0x07,0x07,0x03,0x01,0x00,0x00,
-0x00,0x00,0x60,0xE0,0xF0,0xF8,0xF8,0xF8,
-0xF8,0xE0,0xE0,0xE0,0xF0,0xE0,0x00,0x00,
-0x00,0x00,0x19,0x1F,0x1F,0x0F,0x1F,0x1F,
-0x1F,0x3F,0x3F,0x3F,0x1B,0x01,0x00,0x00,
-0x00,0x00,0x60,0xF0,0xF8,0xF8,0xFC,0xFC,
-0xFC,0xFC,0xF8,0xE0,0xF0,0xE0,0x00,0x00,
-0x00,0x00,0x07,0x0F,0x1F,0x3F,0x7F,0x7F,
-0x7F,0x7F,0x7F,0x3F,0x1B,0x0C,0x07,0x00,
-0x00,0x00,0xC0,0xE0,0xB0,0xD8,0xDC,0xEC,
-0xEC,0xFC,0xFC,0xF8,0xF0,0xE0,0xC0,0x00,
-0x06,0x02,0x07,0x0D,0x0F,0x06,0x03,0x01,
-0x07,0x09,0x09,0x01,0x02,0x04,0x04,0x0C,
-0xC0,0x80,0xC0,0x60,0xE0,0xC0,0x80,0x00,
-0xC0,0x20,0x20,0x00,0x80,0x40,0x40,0x60,
-0x07,0x18,0x20,0x40,0x40,0x80,0x80,0x80,
-0x80,0x80,0x40,0x40,0x20,0x18,0x07,0x00,
-0xC0,0x30,0x08,0x04,0x04,0x02,0x02,0x02,
-0x02,0x02,0x04,0x04,0x08,0x30,0xC0,0x00};
+0x7F,0xFF,0xFF,0x7F,0x00,0x00,0x00,0x00,
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+0xFE,0xFF,0xFF,0xFE,0x00,0x00,0x00,0x00,
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+0x38,0x7C,0xFE,0xFE,0xFE,0x7C,0x38,0x00,
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
 #define SPRITE_NAME_BLANK  0
-#define SPRITE_NAME_UFO    1
-#define SPRITE_NAME_ROCK1  2
-#define SPRITE_NAME_ROCK2  3
-#define SPRITE_NAME_ROCK3  4
-#define SPRITE_NAME_ROCK4  5
-#define SPRITE_NAME_ROCK5  6
-#define SPRITE_NAME_ROCK6  7
-#define SPRITE_NAME_PELLET 8
-#define SPRITE_NAME_GUY    9
-#define SPRITE_NAME_SHIELD 10
+#define SPRITE_NAME_PADDLE 1
+#define SPRITE_NAME_BALL   2
 
-#define CHAR_PELLET 0x08
-#define CHAR_MAN    0x09
-
-#define SCREEN_MAX_X 239
+#define SCREEN_MAX_X 255
 #define SCREEN_MIN_X 1
 
-#define SCREEN_MAX_Y 176
+#define SCREEN_MAX_Y 190
 #define SCREEN_MIN_Y 8
 
-uint8_t tb[64];
-uint8_t PLAYER_LIVES = 3;
-uint8_t PLAYER_CNT   = 1;
-uint8_t PELLET_CNT   = 4;
-uint8_t TIME         = 30;
+uint8_t tb[64] = { 0x00 };
+
+uint8_t PLAYER_CNT = 1;
+uint8_t ROCK_CNT   = 1;
+uint8_t TIME       = 60;
 
 // Main game loop counter used for player & rock movement inertia
 uint16_t _loopCntr = 0;
@@ -108,39 +64,26 @@ uint8_t _timeCntr = 0;
 
 bool _isGamePlaying = false;
 
-#define SPEED_CURVES 7
-uint8_t _speedCurve[SPEED_CURVES] = {
-  0,
-  15,
-  10,
-  8,
-  5,
-  3,
-  1
-};
+#define PLAYER_MAX 2
 
-#define PLAYER_MAX 4
+uint8_t _playerColors[4] = { 2, 4, 6, 10 };
+
 struct {
            uint8_t  x;
            uint8_t  y;
-           bool     xDir;
-           bool     yDir;
-           uint8_t  xSpeed;
-           uint8_t  ySpeed;
            uint8_t  score;
-           uint8_t  lives;
            uint8_t  spriteId;
-           uint8_t  joyCnt;
            bool     vdpReady;
-} _player[PLAYER_MAX] = 
+} _player[4] = 
   {
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0 },
+    { 0 },
+    { 0 },
+    { 0 },
   };
 
-#define ROCK_CNT 6
+#define ROCK_MAX 6
+
 struct {
            uint8_t  x;
            uint8_t  y;
@@ -149,22 +92,17 @@ struct {
            uint8_t  xSpeed;
            uint8_t  ySpeed;
            uint8_t  spriteId;
+           uint8_t  lastTouchPlayerId;
            bool     vdpReady;
-} _rock[ROCK_CNT] = 
+} _rock[ROCK_MAX] = 
   {
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0 },
+    { 0 },
+    { 0 },
+    { 0 },
+    { 0 },
+    { 0 },
   };
-
-#define PELLET_MAX 10
-struct {
-    uint8_t x;
-    uint8_t y;
-} _pellets[PELLET_MAX] = { { 0 } };
 
 void updateScore(uint8_t p) {
   
@@ -174,58 +112,19 @@ void updateScore(uint8_t p) {
   vdp_print(tb);
 }
 
-void updateLives(uint8_t p) {
+void initBricks() {
 
-  uint8_t i;
+  for (uint8_t y = 2; y < 6; y++) {
 
-  vdp_setCursor2(p * 7, 1);
+    uint8_t p = 0;
 
-  for (i = 0; i < _player[p].lives; i++)
-    vdp_write(CHAR_MAN);
+    for (uint8_t x = 1; x < 31; x++) {
 
-  for (; i < 6; i++)
-    vdp_write(' ');
-}
+      vdp_putPattern(x, y, 10 + (p % 15));
 
-void updatePellets() {
-
-  for (uint8_t i = 0; i < PELLET_MAX; i++)
-    vdp_putPattern(_pellets[i].x, _pellets[i].y, ' ');
-
-  for (uint8_t i = 0; i < PELLET_CNT;) {
-
-    uint8_t x = rand() % 32;
-    uint8_t y = (rand() % 21) + 2;
-
-    if (vdp_getCharAtLocationBuf(x, y) != CHAR_PELLET) {
-
-      _pellets[i].x = x;
-      _pellets[i].y = y;
-
-      vdp_putPattern(
-        x,
-        y,
-        CHAR_PELLET);    
-
-      i++;
+      p++;
     }
   }
-}
-
-// ********************************************************************************************
-// STARS
-// Flicker stars in the background
-// ********************************************************************************************
-void doStars() {
-    
-    uint8_t x = rand() % 32;
-    uint8_t y = (rand() % 21) + 2;
-
-    if (vdp_getCharAtLocationBuf(x, y) < 8)
-      vdp_putPattern(
-        x,
-        y,
-        rand() % 8);
 }
 
 // ********************************************************************************************
@@ -234,35 +133,39 @@ void doStars() {
 // ********************************************************************************************
 void initPlayers() {
 
-  for (uint8_t p = 0; p < PLAYER_MAX; p++) 
+  for (uint8_t p = 0; p < PLAYER_MAX;)
     if (p < PLAYER_CNT) {
 
-      _player[p].x = SCREEN_MIN_X;
-      _player[p].y = rand() % SCREEN_MAX_Y;
-      _player[p].xSpeed = 0;
-      _player[p].ySpeed = 0;
-      _player[p].xDir = true;
-      _player[p].yDir = true;
-      _player[p].lives = PLAYER_LIVES;
-      _player[p].score = 0;
-      _player[p].vdpReady = true;
+      uint8_t x = (rand() % (SCREEN_MAX_X - 22)) + 2;
 
-      _player[p].spriteId = vdp_spriteInit(p, SPRITE_NAME_UFO, _player[p].x, _player[p].y, 3);
+      bool ok = true;
+  
+      for (uint8_t pp = 0; pp < p; pp++)
+        if (x > _player[pp].x - 16 && x < _player[pp].x + 16)
+          ok = false;
+      
+      if (!ok)
+        continue;
+      
+      _player[p].x        = x;
+      _player[p].y        = SCREEN_MAX_Y - 14;
+      _player[p].score    = 0;
+      _player[p].vdpReady = true;
+      _player[p].spriteId = vdp_spriteInit(p, SPRITE_NAME_PADDLE, _player[p].x, _player[p].y, _playerColors[p]);
 
       updateScore(p);
-      updateLives(p);
+
+      p++;
     } else {
 
-      _player[p].lives = 0;
       _player[p].vdpReady = false;
 
       vdp_setCursor2(p * 7, 0);
       vdp_print("       ");
 
-      vdp_setCursor2(p * 7, 1);
-      vdp_print("       ");
-
       vdp_disableSprite(p);
+
+      p++;
     }
 }
 
@@ -272,209 +175,83 @@ void initPlayers() {
 // ********************************************************************************************
 void initRocks() {
 
-  for (uint8_t p = 0; p < ROCK_CNT; p++) {
+  for (uint8_t p = 0; p < ROCK_MAX; p++)
+    if (p < ROCK_CNT) {
 
-    _rock[p].x = (rand() % (SCREEN_MAX_X - SCREEN_MIN_X)) + SCREEN_MIN_X;
-    _rock[p].y = (rand() % (SCREEN_MAX_Y - SCREEN_MIN_Y)) + SCREEN_MIN_Y;
-    _rock[p].xSpeed = (rand() % (15)) + 1;
-    _rock[p].ySpeed = (rand() % (15)) + 1;    
-    _rock[p].xDir = rand() % 2;
-    _rock[p].yDir = rand() % 2;
-    _rock[p].vdpReady = true;
-  }
+      _rock[p].x = SCREEN_MAX_X / 2;
+      _rock[p].y = SCREEN_MAX_Y / 2;
+      _rock[p].xSpeed = (rand() % (5)) + 1;
+      _rock[p].ySpeed = (rand() % (5)) + 1;    
+      _rock[p].xDir = false;
+      _rock[p].yDir = false;
+      _rock[p].vdpReady = true;
+      _rock[p].spriteId = vdp_spriteInit(4 + p, SPRITE_NAME_BALL, _rock[p].x, _rock[p].y, VDP_GRAY);
+      _rock[p].lastTouchPlayerId = 0xff;
+    } else {
 
-  // ***************************************************
-  // Init asteroids
-  // ***************************************************
-  _rock[0].spriteId = vdp_spriteInit(4, SPRITE_NAME_ROCK1, _rock[0].x, _rock[0].y, VDP_DARK_BLUE);
+      _rock[p].vdpReady = true;
 
-  _rock[1].spriteId = vdp_spriteInit(5, SPRITE_NAME_ROCK2, _rock[1].x, _rock[1].y, VDP_LIGHT_BLUE);
-
-  _rock[2].spriteId = vdp_spriteInit(6, SPRITE_NAME_ROCK3, _rock[2].x, _rock[2].y, VDP_DARK_RED);
-
-  _rock[3].spriteId = vdp_spriteInit(7, SPRITE_NAME_ROCK4, _rock[3].x, _rock[3].y, VDP_CYAN);
-
-  _rock[4].spriteId = vdp_spriteInit(8, SPRITE_NAME_ROCK5, _rock[4].x, _rock[4].y, VDP_GRAY);
-
-  _rock[5].spriteId = vdp_spriteInit(9, SPRITE_NAME_ROCK6, _rock[5].x, _rock[5].y, VDP_LIGHT_YELLOW);
+      vdp_disableSprite(4 + p);
+    }
 }
 
 // ********************************************************************************************
-// PLAYER (UFO)
-// Handle the player's movement and inertia
+// PLAYER
+// Handle the player's movement
 // ********************************************************************************************
 void doPlayer(uint8_t p) {
 
-  if (_player[p].lives == 0)
-    return;
+  // Joystick up/down
+  // -------------------------------------------------------
+  switch (_joyStatus[p] & 0b00001010) {
 
-  if (_joyStatus[p] & 0b00001111)
-    _player[p].joyCnt++;
-  else
-    _player[p].joyCnt = 0;
+    case Joy_Up:
 
-  if (_player[p].joyCnt == 10) {
+      if (_player[p].y > SCREEN_MIN_Y) {
 
-    _player[p].joyCnt = 0;
+        _player[p].vdpReady = true;      
 
-    // Joystick up/down
-    // -------------------------------------------------------
-    switch (_joyStatus[p] & 0b00001010) {
+        _player[p].y--;
+      }
 
-      case Joy_Up:
+      break;
+    case Joy_Down:
 
-        if (_player[p].ySpeed == 0) {
+      if (_player[p].y < SCREEN_MAX_Y - 5) {
 
-          _player[p].yDir = false;
-          _player[p].ySpeed = 1;
-        } else {
+        _player[p].vdpReady = true;
 
-          if (_player[p].yDir) {
+        _player[p].y++;
+      }
 
-            _player[p].ySpeed--;
-          } else if (_player[p].ySpeed < SPEED_CURVES - 1) {
-
-            _player[p].ySpeed++;
-          }
-        }
-
-        break;
-      case Joy_Down:
-
-        if (_player[p].ySpeed == 0) {
-
-          _player[p].yDir = true;
-
-          _player[p].ySpeed = 1;
-        } else {
-
-          if (!_player[p].yDir) {
-
-            _player[p].ySpeed--;
-          } else if (_player[p].ySpeed < SPEED_CURVES - 1) {
-
-            _player[p].ySpeed++;
-          }
-        }
-
-        break;
-    }
-
-    // Joystick left/right
-    // -------------------------------------------------------
-    switch (_joyStatus[p] & 0b00000101) {
-
-      case Joy_Right:
-
-        if (_player[p].xSpeed == 0) {    
-
-          _player[p].xDir = true;
-
-          _player[p].xSpeed = 1;
-        } else {
-
-          if (!_player[p].xDir) {
-
-            _player[p].xSpeed--;
-          } else if (_player[p].xSpeed < SPEED_CURVES - 1) {
-
-            _player[p].xSpeed++;
-          }
-        }
-        break;
-      case Joy_Left:
-
-        if (_player[p].xSpeed == 0) {
-
-          _player[p].xDir = false;
-
-          _player[p].xSpeed = 1;
-        } else {
-
-          if (_player[p].xDir) {
-
-            _player[p].xSpeed--;
-          } else if (_player[p].xSpeed < SPEED_CURVES - 1) {
-
-            _player[p].xSpeed++;
-          }
-        }
-        break;
-    }
+      break;
   }
 
-  bool needsRedraw = false;
+  // Joystick left/right
+  // -------------------------------------------------------
+  switch (_joyStatus[p] & 0b00000101) {
 
-  if (_player[p].xSpeed != 0 && !(_loopCntr % _speedCurve[_player[p].xSpeed])) {
+    case Joy_Right:
 
-    if (_player[p].xDir) {
+      if (_player[p].x < SCREEN_MAX_X - 16) {
 
-      _player[p].x++;
+        _player[p].vdpReady = true;      
 
-      if (_player[p].x >= SCREEN_MAX_X) {
-
-        if (_isGamePlaying)
-          playNoteDelay(2, 50, 5);
-
-        _player[p].xDir = false;
+        _player[p].x++;
       }
-    } else {
 
-      _player[p].x--;
+      break;
+    case Joy_Left:
 
-      if (_player[p].x <= SCREEN_MIN_X) {
+      if (_player[p].x > SCREEN_MIN_X) {
 
-        if (_isGamePlaying)
-          playNoteDelay(2, 50, 5);
-  
-        _player[p].xDir = true;
+        _player[p].vdpReady = true;      
+
+        _player[p].x--;
       }
-    }
 
-    needsRedraw = true;
-  }
-
-  if (_player[p].ySpeed != 0 && !(_loopCntr % _speedCurve[_player[p].ySpeed])) {
-
-    if (_player[p].yDir) {
-
-      _player[p].y++;
-
-      if (_player[p].y >= SCREEN_MAX_Y) {
-
-        if (_isGamePlaying)
-          playNoteDelay(2, 50, 5);
-  
-        _player[p].yDir = false;
-      }
-    } else {
-
-      _player[p].y--;
-
-      if (_player[p].y <= SCREEN_MIN_Y) {
-
-        if (_isGamePlaying)
-          playNoteDelay(2, 50, 5);
-
-        _player[p].yDir = true;
-      }
-    }
-
-    needsRedraw = true;
-  }
-
-  if (needsRedraw) {
-
-    if (vdp_getCharAtLocationBuf((_player[p].x + 8) / 8, (_player[p].y + 8) / 8) == CHAR_PELLET) {
-
-      _player[p].score+=2;
-      
-      updateScore(p);
-      updatePellets();
-    }
-
-    _player[p].vdpReady = true;      
-  }
+      break;
+  }  
 }
 
 
@@ -492,7 +269,7 @@ void doRock(uint8_t r) {
 
       _rock[r].x++;
 
-      if (_rock[r].x >= SCREEN_MAX_X) {
+      if (_rock[r].x >= SCREEN_MAX_X - 8) {
 
         if (_isGamePlaying)
           playNoteDelay(2, 0, 10);
@@ -521,12 +298,16 @@ void doRock(uint8_t r) {
 
       _rock[r].y++;
 
-      if (_rock[r].y >= SCREEN_MAX_Y) {
+      if (_rock[r].y >= SCREEN_MAX_Y - 6) {
 
         if (_isGamePlaying)
           playNoteDelay(2, 0, 10);
 
         _rock[r].yDir = false;
+
+        // _rock[r].lastTouchPlayerId == 0xff;
+
+        // vdp_setSpriteColor(_rock[r].spriteId, VDP_GRAY);
       }
     } else {
 
@@ -539,13 +320,34 @@ void doRock(uint8_t r) {
   
         _rock[r].yDir = true;
       }
+
+      if (_isGamePlaying) {
+
+        uint8_t xCol = (_rock[r].x + 4) / 8;
+        uint8_t yCol = (_rock[r].y + 4) / 8;
+
+        if (vdp_getCharAtLocationBuf(xCol, yCol) >= 10 && _rock[r].lastTouchPlayerId != 0xff) {
+
+          vdp_putPattern(xCol, yCol, 0x00);
+
+          _rock[r].yDir = true;
+
+          _player[_rock[r].lastTouchPlayerId].score += 2;
+
+          updateScore(_rock[r].lastTouchPlayerId);
+
+          playNoteDelay(0, 50, 10);
+        }
+      }
     }
 
     needsRedraw = true;
   }
 
-  if (needsRedraw)
+  if (needsRedraw) {
+
     _rock[r].vdpReady = true;  
+  }
 }
 
 
@@ -558,52 +360,48 @@ void doCollision() {
   // Check player collisions
   for (uint8_t p = 0; p < PLAYER_CNT; p++) {
 
-    if (_player[p].lives == 0)
-      continue;
-
+    // width and height of sprite
     uint8_t xd = _player[p].x + 16;
-    uint8_t yd = _player[p].y + 16;
+    uint8_t yd = _player[p].y + 4;
 
+    // center of sprite
     uint8_t xc = _player[p].x + 8;
-    uint8_t yc = _player[p].y + 8;
+    uint8_t yc = _player[p].y + 2;
 
     // player against player
     for (uint8_t i = 0; i < PLAYER_CNT; i++) {
 
-      if (i == p || _player[i].lives == 0)
+      if (i == p)
         continue;
 
       if ( (_player[p].x < _player[i].x + 16) && (xd > _player[i].x) && 
-           (_player[p].y < _player[i].y + 16) && (yd > _player[i].y) ) {
+           (_player[p].y < _player[i].y + 4) && (yd > _player[i].y) ) {
 
         if (_isGamePlaying)
           playNoteDelay(2, 38, 5);
   
         if (xc < _player[i].x + 8) {
 
-          _player[p].xDir = false;
-          _player[i].xDir = true;
+          _player[p].x -= 4;
+          _player[i].x += 4;
         } else {
 
-          _player[p].xDir = true;
-          _player[i].xDir = false;  
+          _player[p].x += 4;
+          _player[i].x -= 4;
         }
 
-        if (yc < _player[i].y + 8) {
+        if (yc < _player[i].y + 2) {
 
-          _player[p].yDir = false;
-          _player[i].yDir = true;
+          _player[p].y -= 2;
+          _player[i].y += 2;
         } else {
 
-          _player[p].yDir = true;
-          _player[i].yDir = false;
+          _player[p].y += 2;
+          _player[i].y -= 2;
         }
 
-        _player[p].xSpeed = SPEED_CURVES - 1;
-        _player[p].ySpeed = SPEED_CURVES - 1;    
-
-        _player[i].xSpeed = SPEED_CURVES - 1;
-        _player[i].ySpeed = SPEED_CURVES - 1;    
+        _player[p].vdpReady = true;
+        _player[i].vdpReady = true;
 
         break;
       }
@@ -613,53 +411,27 @@ void doCollision() {
     for (uint8_t i = 0; i < ROCK_CNT; i++) {
 
       if ( (_player[p].x < _rock[i].x + 16) && (xd > _rock[i].x) && 
-           (_player[p].y < _rock[i].y + 16) && (yd > _rock[i].y) ) {
+           (_player[p].y < _rock[i].y + 8) && (yd > _rock[i].y) ) {
 
         if (_isGamePlaying)
-          playNoteDelay(1, 0, 100);
+          playNoteDelay(1, 0, 10);
   
-        if (xc < _rock[i].x + 8) {
-
-          _player[p].xDir = false;
+        if (xc < _rock[i].x + 4) 
           _rock[i].xDir = true;
-        } else {
-
-          _player[p].xDir = true;
+        else 
           _rock[i].xDir = false;  
-        }
-
-        if (yc < _rock[i].y + 8) {
-
-          _player[p].yDir = false;
-          _rock[i].yDir = true;
-        } else {
-
-          _player[p].yDir = true;
+        
+        // if (yc < _rock[i].y + 4) 
+        //   _rock[i].yDir = true;
+        // else 
           _rock[i].yDir = false;
-        }
+      
+        _rock[i].xSpeed = (rand() % (3)) + 1;
+        _rock[i].ySpeed = (rand() % (3)) + 1;    
 
-        _player[p].lives--;
+        _rock[i].lastTouchPlayerId = p;
 
-        updateLives(p);
-
-        if (_player[p].lives == 0) {
-
-          vdp_disableSprite(p);
-         
-          _player[p].vdpReady = false;
-        } else {        
-
-          _player[p].x = SCREEN_MIN_X;
-          _player[p].y = rand() % SCREEN_MAX_Y;
-          _player[p].xSpeed = 0;
-          _player[p].ySpeed = 0;
-          _player[p].xDir = true;
-          _player[p].yDir = true;
-          _player[p].vdpReady = true;
-        }
-
-        _rock[i].xSpeed = (rand() % (5)) + 1;
-        _rock[i].ySpeed = (rand() % (5)) + 1;    
+        vdp_setSpriteColor(_rock[i].spriteId, _playerColors[p]);
 
         break;
       }
@@ -669,24 +441,24 @@ void doCollision() {
   // check rock collisions
   for (uint8_t r = 0; r < ROCK_CNT; r++) {
     
-    uint8_t xd = _rock[r].x + 16;
-    uint8_t yd = _rock[r].y + 16;
+    uint8_t xd = _rock[r].x + 8;
+    uint8_t yd = _rock[r].y + 8;
 
-    uint8_t xc = _rock[r].x + 8;
-    uint8_t yc = _rock[r].y + 8;
+    uint8_t xc = _rock[r].x + 4;
+    uint8_t yc = _rock[r].y + 4;
 
     for (uint8_t i = 0; i < ROCK_CNT; i++) {
 
       if (i == r)
         continue;
 
-      if ( (_rock[r].x < _rock[i].x + 16) && (xd > _rock[i].x) && 
-           (_rock[r].y < _rock[i].y + 16) && (yd > _rock[i].y) ) {
+      if ( (_rock[r].x < _rock[i].x + 8) && (xd > _rock[i].x) && 
+           (_rock[r].y < _rock[i].y + 8) && (yd > _rock[i].y) ) {
 
         if (_isGamePlaying)
           playNoteDelay(2, 12, 10);
   
-        if (xc < _rock[i].x + 8) {
+        if (xc < _rock[i].x + 4) {
 
           _rock[r].xDir = false;
           _rock[i].xDir = true;
@@ -696,7 +468,7 @@ void doCollision() {
           _rock[i].xDir = false;
         }
 
-        if (yc < _rock[i].y + 8) {
+        if (yc < _rock[i].y + 4) {
 
           _rock[r].yDir = false;
           _rock[i].yDir = true;
@@ -706,8 +478,8 @@ void doCollision() {
           _rock[i].yDir = false;
         }
 
-        _rock[r].xSpeed = (rand() % (20)) + 4;
-        _rock[r].ySpeed = (rand() % (20)) + 4;    
+        _rock[r].xSpeed = (rand() % (20)) + 1;
+        _rock[r].ySpeed = (rand() % (20)) + 1;    
 
         break;
       }
@@ -762,6 +534,28 @@ void renderRocks() {
     }
 }
 
+void clearScreen() {
+
+  vdp_fillScreen(0x00);
+
+  for (uint8_t x = 0; x < 32; x++) {
+
+    vdp_putPattern(x, 1, 0x03);
+    vdp_putPattern(x, 23, 0x04);
+  }
+
+  for (uint8_t y = 1; y < 23; y++) {
+
+    vdp_putPattern(0, y, 0x02);
+    vdp_putPattern(31, y, 0x08);
+  }
+
+  vdp_putPattern(0, 1, 0x01);
+  vdp_putPattern(31, 1, 0x05);
+  vdp_putPattern(31, 23, 0x07);
+  vdp_putPattern(0, 23, 0x06);
+}
+
 // ********************************************************************************************
 // PLAYING THE GAME YO!
 // Sets up the graphic mode, vdp interrupt, initializes the game, plays it in a loop
@@ -775,22 +569,24 @@ void doGameLoop() {
 
   initNABULIBAudio();
 
-  vdp_fillScreen(0x00);
-
-  for (uint8_t i = 0; i < 50; i++)
-    doStars();
+  clearScreen();
 
   initPlayers();
 
-  if (PLAYER_CNT != 0)
-    updatePellets();
+  initRocks();
+
+  initBricks();
+
+  if (PLAYER_CNT == 0)
+    for (uint8_t i = 0; i < ROCK_CNT; i++)
+      _rock[i].lastTouchPlayerId = 0;
 
   while (true) {
 
     if (isKeyPressed() && getChar() == 'q')
       break;
 
-    if ((_loopCntr % 3 == 0) && vdpStatusRegVal & VDP_FLAG_COLLISION)
+    if (vdpStatusRegVal & VDP_FLAG_COLLISION)
       doCollision();
 
     for (uint8_t p = 0; p < PLAYER_CNT; p++)
@@ -837,8 +633,6 @@ void doGameLoop() {
 
     if (PLAYER_CNT != 0 && _loopCntr % 60 == 0) {
 
-      doStars();
-
       _timeCntr--;
 
       sprintf(tb, "% 3u", _timeCntr);
@@ -854,6 +648,9 @@ void doGameLoop() {
 
     _loopCntr++;
   }
+
+  for (uint p = 0; p < PLAYER_MAX; p++)
+    vdp_disableSprite(p);
 
   _isGamePlaying = false;
 }
@@ -896,23 +693,18 @@ void loadImage(uint8_t filenameLen, uint8_t *filename) {
 // ********************************************************************************************
 void initMenu() {
 
-  for (uint8_t i = 0; i < 50; i++)
-    doStars();
+  vdp_setCursor2(27, 22);
+  vdp_print("v0.1");
 
-  vdp_setCursor2(28, 23);
-  vdp_print("v0.7");
-
-  vdp_setCursor2(4, 20);
-  vdp_print("(PRESS Q IN GAME TO EXIT)");
-  vdp_setCursor2(8, 22);
+  vdp_setCursor2(5, 18);
+  vdp_print("PRESS Q IN GAME TO EXIT");
+  vdp_setCursor2(8, 20);
   vdp_print("DJ SURES (C)2023");
 
-  vdp_setCursor2(9, 6);
-  vdp_print("LIVES:");
   vdp_setCursor2(9, 7);
   vdp_print("PLAYERS:");
   vdp_setCursor2(9, 8);
-  vdp_print("PELLETS:");
+  vdp_print("BALLS:");
   vdp_setCursor2(9, 9);
   vdp_print("TIME:");
   vdp_setCursor2(9, 11);
@@ -926,22 +718,9 @@ void introScreens() {
   vdp_clearVRAM();
 
   vdp_initMSXMode(0x00);
-
-  loadImage(61, "https://cloud.nabu.ca/resources/GameManYeah/RetroNETLogo1.SC2");
-  playNoteDelay(0, 5, 80);        
-  while (true) {
-
-    if (isKeyPressed() && getChar() == ' ')
-      break;
-    
-    if (_joyStatus[0] & Joy_Button)
-      break;
-  }
-
-  vdp_clearVRAM();
   
-  loadImage(60, "https://cloud.nabu.ca/resources/GameManYeah/GameManYeah1.SC2");
-  nt_init(loop1_nt);
+  loadImage(53, "https://cloud.nabu.ca/resources/BrickBattle/title.sc2");
+  nt_init(baseattack_nt);
 
   _loopCntr++;
   while (true) {
@@ -974,9 +753,14 @@ void main() {
 
   vdp_loadPatternTable(PATTERN, sizeof(PATTERN));
   vdp_loadColorTable(COLOR, sizeof(COLOR));
-  vdp_loadSpritePatternNameTable(11, SPRITE_DATA);
+  vdp_loadSpritePatternNameTable(3, SPRITE_DATA);
 
-  vdp_fillScreen(0x00);
+  for (uint8_t i = 33; i < 91; i++)
+    vdp_colorizePattern(i, VDP_WHITE, VDP_TRANSPARENT);
+
+  vdp_colorizePattern('>', VDP_LIGHT_GREEN, VDP_TRANSPARENT);
+
+  clearScreen();
 
   vdp_enableVDPReadyInt();
 
@@ -984,38 +768,30 @@ void main() {
 
   initMenu();
   
+  initBricks();
+
   initPlayers();
 
   uint8_t menuPos = 0;
 
   while (true) {
 
-    // LIVES
-    // -------------------------------------------------
-    sprintf(tb, "%u", PLAYER_LIVES);
-    vdp_setCursor2(18, 6);
-    vdp_print(tb);
-    if (menuPos == 0)
-      vdp_writeCharAtLocation(7, 6, '>');
-    else
-      vdp_writeCharAtLocation(7, 6, ' ');
-
     // PLAYERS
     // -------------------------------------------------
     sprintf(tb, "%u", PLAYER_CNT);
     vdp_setCursor2(18, 7);
     vdp_print(tb);
-    if (menuPos == 1)
+    if (menuPos == 0)
       vdp_writeCharAtLocation(7, 7, '>');
     else
       vdp_writeCharAtLocation(7, 7, ' ');
 
     // PELLETS
     // -------------------------------------------------
-    sprintf(tb, "%03u", PELLET_CNT);
+    sprintf(tb, "%u", ROCK_CNT);
     vdp_setCursor2(18, 8);
     vdp_print(tb);
-    if (menuPos == 2)
+    if (menuPos == 1)
       vdp_writeCharAtLocation(7, 8, '>');
     else
       vdp_writeCharAtLocation(7, 8, ' ');
@@ -1025,21 +801,21 @@ void main() {
     sprintf(tb, "%03u", TIME);
     vdp_setCursor2(18, 9);
     vdp_print(tb);
-    if (menuPos == 3)
+    if (menuPos == 2)
       vdp_writeCharAtLocation(7, 9, '>');
     else
       vdp_writeCharAtLocation(7, 9, ' ');
 
     // PLAY
     // -------------------------------------------------
-    if (menuPos == 4)
+    if (menuPos == 3)
       vdp_writeCharAtLocation(7, 11, '>');
     else
       vdp_writeCharAtLocation(7, 11, ' ');
 
     // QUIT
     // -------------------------------------------------
-    if (menuPos == 5)
+    if (menuPos == 4)
       vdp_writeCharAtLocation(16, 11, '>');
     else
       vdp_writeCharAtLocation(16, 11, ' ');
@@ -1051,9 +827,6 @@ void main() {
 
       if (_loopCntr % 9 == 0)
         nt_handleNote();    
-
-      if (_loopCntr % 60 == 0)
-        doStars();
 
       for (uint8_t r = 0; r < ROCK_CNT; r++) 
         doRock(r);
@@ -1069,59 +842,51 @@ void main() {
 
       case Joy_Up:
           if (menuPos == 0)
-            menuPos = 5;
+            menuPos = 4;
           else
             menuPos--;            
+        break;
+      case Joy_Down:
+          if (menuPos == 4)
+            menuPos = 0;
+          else
+            menuPos++;            
         break;
       case Joy_Right:
         switch (menuPos) {
           case 0:
-            if (PLAYER_LIVES < 6)
-              PLAYER_LIVES++;
-
-            initPlayers();
-            break;
-          case 1:
             if (PLAYER_CNT < PLAYER_MAX)
               PLAYER_CNT++;
 
             initPlayers();
             break;
-          case 2:
-            if (PELLET_CNT < PELLET_MAX)
-              PELLET_CNT++;
+          case 1:
+            if (ROCK_CNT < ROCK_MAX)
+              ROCK_CNT++;
+
+            initRocks();
             break;
-          case 3:
+          case 2:
             if (TIME < 240)
               TIME+=10;
             break;
         }
         break;
-      case Joy_Down:
-          if (menuPos == 5)
-            menuPos = 0;
-          else
-            menuPos++;            
-        break;
       case Joy_Left:
         switch (menuPos) {
           case 0:
-            if (PLAYER_LIVES > 1)
-              PLAYER_LIVES--;
-
-            initPlayers();
-            break;
-          case 1:
             if (PLAYER_CNT > 0)
               PLAYER_CNT--;
 
             initPlayers();
             break;
-          case 2:
-            if (PELLET_CNT > 1)
-              PELLET_CNT--;
+          case 1:
+            if (ROCK_CNT > 1)
+              ROCK_CNT--;
+
+            initRocks();
             break;
-          case 3:
+          case 2:
             if (TIME > 10)
               TIME-=10;
             break;
@@ -1129,15 +894,17 @@ void main() {
         break;
       case Joy_Button:
         switch (menuPos) {
-          case 4:      
+          case 3:      
 
             doGameLoop();
 
             initMenu();
 
-            nt_init(loop1_nt);
+            initRocks();
+
+            nt_init(baseattack_nt);
             break;
-          case 5:
+          case 4:
 
             vdp_disableVDPReadyInt();
             nt_stopSounds();
@@ -1146,7 +913,7 @@ void main() {
 
             puts("");
             puts("----------------------------------------");
-            puts("GameManYeah!            DJ Sures (c)2023");
+            puts("Brick Battle            DJ Sures (c)2023");
             puts("https://nabu.ca");
             puts("");
             puts("Thank you for playing!");

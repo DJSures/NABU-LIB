@@ -426,14 +426,11 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
     VDP_CURSOR_RIGHT = 3
   };
 
-
-  // ---------------------------------------------
-  // Coincidence flag, set when sprites overlap
-  #define VDP_FLAG_COIN 0x20 
-
+  // Collision flag for vdp
+  #define VDP_FLAG_COLLISION 0b00100000
 
   // 5th sprite flag, set when more than 4 sprite per line 
-  #define VDP_FLAG_S5 0x40  
+  #define VDP_FLAG_S5 0b01000000
 
 
   #warning
@@ -1000,6 +997,9 @@ uint8_t ayRead(uint8_t reg);
   //     // do a bunch of expensive processing here
   //     // i.e. calculate where the characters are gonna be
   //     //      check for collisions and stuff
+  //
+  //     if (vdpStatusRegVal & VDP_FLAG_COLLISION) 
+  //       doCollisionThings();
   //
   //     // wait for the vsync
   //     vdp_waitVDPReadyInt();
