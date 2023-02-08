@@ -939,6 +939,39 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
+  void vdp_fillScreen(uint8_t c) {
+
+    vdp_setWriteAddress(_vdpPatternNameTableAddr);
+
+    uint16_t cnt = (_vdpCursorMaxX + 1) * 24;
+
+    for (uint16_t i = 0; i < cnt; i++) {
+
+      IO_VDPDATA = c;
+  
+      _vdp_textBuffer[i] = c;
+    }
+  }
+
+  void vdp_clearRows(uint8_t topRow, uint8_t bottomRow) {
+
+    uint16_t maxX = _vdpCursorMaxX + 1;
+
+    uint16_t name_offset = topRow * maxX;
+
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
+
+    for (uint8_t y = topRow; y < bottomRow; y++)
+      for (uint8_t x = 0; x < maxX; x++) {
+
+        _vdp_textBuffer[name_offset] = 0x20;
+
+        IO_VDPDATA = 0x20;
+
+        name_offset++;
+      }
+  }
+
   void vdp_loadASCIIFont(uint8_t* font) {
 
     vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 0x100);
@@ -952,7 +985,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     uint16_t name_offset = y * (_vdpCursorMaxX + 1) + x;
 
     vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
-
+    _vdp_textBuffer[name_offset] = patternId;
+    
     IO_VDPDATA = patternId;
   }
 
@@ -1255,7 +1289,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     _vdp_textBuffer[name_offset] = chr;
 
-    if (_autoScroll && vdp_cursor.x == 39 && vdp_cursor.y == 23) {
+    if (_autoScroll && vdp_cursor.x == _vdpCursorMaxX && vdp_cursor.y == 23) {
 
       vdp_scrollTextUp(0, 23);
 
@@ -1314,25 +1348,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       }
 
     if (bottomRow <= _vdpCursorMaxY)
-      for (uint8_t x = 0; x < maxX; x++) {
-
-        _vdp_textBuffer[name_offset] = 0x20;
-
-        IO_VDPDATA = 0x20;
-
-        name_offset++;
-      }
-  }
-
-  void vdp_clearRows(uint8_t topRow, uint8_t bottomRow) {
-
-    uint16_t maxX = _vdpCursorMaxX + 1;
-
-    uint16_t name_offset = topRow * maxX;
-
-    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
-
-    for (uint8_t y = topRow; y < bottomRow; y++)
       for (uint8_t x = 0; x < maxX; x++) {
 
         _vdp_textBuffer[name_offset] = 0x20;

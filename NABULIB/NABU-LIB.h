@@ -1135,6 +1135,16 @@ uint8_t ayRead(uint8_t reg);
   void vdp_clearScreen();
 
   /// **************************************************************************
+  /// Fills the screen with the character
+  /// **************************************************************************
+  void vdp_fillScreen(uint8_t c);
+
+  /// **************************************************************************
+  /// Clear the rows with 0x20 between topRow and bottomRow
+  /// **************************************************************************
+  void vdp_clearRows(uint8_t topRow, uint8_t bottomRow);
+
+  /// **************************************************************************
   /// This will update the vram to the specified font.
   ///
   /// A few fonts have been included in the pattern.h. You can include and define one of them to activate.
@@ -1191,7 +1201,8 @@ uint8_t ayRead(uint8_t reg);
   void vdp_colorizePattern(uint8_t patternId, uint8_t fg, uint8_t bg);
 
   /// **************************************************************************
-  /// Place a pattern by the ID on X and Y in G2 mode
+  /// Place a pattern by the ID on X and Y in G2 mode. Also saves the pattern into
+  /// the double buffer for screen scrolling.
   ///
   /// x:         x coordinate
   /// y:         y coordinate
@@ -1379,7 +1390,9 @@ uint8_t ayRead(uint8_t reg);
   void vdp_newLine();
 
   /// **************************************************************************
-  /// Get the character in text mode at the specified location directly from VRAM, which is slow
+  /// Get the character in text mode at the specified location directly from VRAM, which is slow.
+  /// You should use vdp_getCharAtLocationVRAM(), which will get the character from the double
+  /// buffer without accessing VRAM.
   /// **************************************************************************
   uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y);
 
@@ -1398,11 +1411,6 @@ uint8_t ayRead(uint8_t reg);
   /// Scroll all lines up between topRow and bottomRow
   /// **************************************************************************
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow);
-
-  /// **************************************************************************
-  /// Clear the rows with 0x20 between topRow and bottomRow
-  /// **************************************************************************
-  void vdp_clearRows(uint8_t topRow, uint8_t bottomRow);
 
   /// **************************************************************************
   /// Write a character at the specified location
