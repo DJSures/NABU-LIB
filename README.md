@@ -7,9 +7,9 @@ This library is optimized to be as efficient as possible, including text mode do
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
 # Tips
-I'm not using homebrew much, because I prefer Cloud CP/M builds. So you'll see my examples are leaning toward Cloud CP/M. It'll make your program friendly to distribute and will easily work on other CP/M systems if it isn't using hardware specific stuff. So if you disable keyboard, disable hcca, disable vdp, and use fprint/stdout and vt52 commands, it'll work on any z80 cpm computer. Now, if you use VDP and maintain interrupts for keyboard, then you're program is stuck with NABU but I still prefer CPM builds.
+I'm not using homebrew much, because I prefer Cloud CP/M builds. So you'll see my examples are leaning toward Cloud CP/M. It'll make your program friendly to distribute and will easily work on other CP/M systems if it isn't using hardware specific stuff. So if you disable keyboard, disable hcca, disable vdp, and use fprint/stdout and vt52 commands, it'll work on any z80 cpm computer. Now, if you use VDP and maintain interrupts for keyboard, then you're program is stuck with NABU but I still prefer CPM builds. Either way, the instructions for both are provided below.
 
-# Cloud CP/M
+# Cloud CP/M Apps
 When building for Cloud CP/M, I recommend using the +cpm target with z88dk. While they've been really great adding support for NABU, they have aligned their development efforts at NABU CP/M for MAME and not Cloud CP/M. The +cpm with -subtype=nabu or -subtype=nabudos will take the vdp interrupt, create a unwanted hcca buffer and a few other things. Since no one has storage on their NABU, it isn't possible for 99.9% of the metal out there to use NABU CP/M. That is why I created Cloud CP/M, so we don't need floppy's (Don't copy that floppy! xD). 
 
 For building apps for Cloud CP/M, this is the suggested command-line (replace the MYAPP with your app title)..
@@ -21,7 +21,7 @@ For building apps for Cloud CP/M, this is the suggested command-line (replace th
 That command-line will create a MYAPP.COM file, which you can simply copy to a Cloud CP/M disk image and run it. I have a BUILD.BAT for every project, and in the project folder I include the CPMTOOLS (mkfs.cpm, cpmcp, diskdefs) files. In my BUILD.BAT, I create a Cloud CP/M disk image with the MYAPP.com and copy it to my Internet Adapter Storage Folder. I usually use B: and that way you can just switch to B: in Cloud CP/M and test the program. You don't need to reboot the NABU every time you create a new build/disk image. Just run the program again after a rebuild and the new binary will be read - that's what's great about CP/M not having disk cache. It really only caches the directory contents, so the same program name can be ran over and over. Now, if your program crashes the NABU, you'll need to reboot because that's your problem :)
 
 # Sample Cloud CP/M BUILD.BAT
-Because NABULIB is created for z88dk and I use Windows, this is a batch file. I always put the latest (nightly build) of z88dk in C:\Z88DK folder so it's easy to find and works with all my BUILD.BAT files. Another thing is that I name all my programs main.c, so that's a thing you'll notice. I put a pause at the end of the batch file so I can see if there were any errors. I also have a DIR *.COM because I like to see the file size of my program when optimizing. The parameters that are used for z88dk will create a LST and MAP file for you, as well.
+CPM apps have a .COM extension. Because NABULIB is created for z88dk and I use Windows, this is a batch file. I always put the latest (nightly build) of z88dk in C:\Z88DK folder so it's easy to find and works with all my BUILD.BAT files. Another thing is that I name all my programs main.c, so that's a thing you'll notice. I put a pause at the end of the batch file so I can see if there were any errors. I also have a DIR *.COM because I like to see the file size of my program when optimizing. The parameters that are used for z88dk will create a LST and MAP file for you, as well.
 
 ```
 @echo off
@@ -40,6 +40,25 @@ dir *.com
 
 pause
 ```
+# Home Brew Apps
+Building a homebrew app is just as easy as a CPM App. It will generate a .NABU file, which is an executable binary that will load from the ROM when the NABU is first booted up. You can find more details about how that works and how I created the .NABU file format on my early YouTube NABU Hacking videos. But, the great folks at z88dk have created a +NABU targer for the compiler, which will generate a .NABU file. Here is an example z88dk commandline for compiling a .NABU file.
+```
+@echo off
+
+SET Z88DK_DIR=c:\z88dk\
+SET ZCCCFG=%Z88DK_DIR%lib\config\
+SET PATH=%Z88DK_DIR%bin;%PATH%
+
+echo.
+echo ****************************************************************************
+
+zcc +nabu -vn --list -m -create-app -compiler=sdcc main.c -o "000001.nabu"
+
+echo ****************************************************************************
+
+pause
+```
+
 
 # Version Notes
 
