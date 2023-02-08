@@ -6,6 +6,9 @@ This library is optimized to be as efficient as possible, including text mode do
 
 To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
 
+# The NABU-LIB Library
+The main library in the directories above is NABULIB. Within that folder you will find the main NABULIB libraries, which is the only stuff that need to be included in your NABU program. I have included fonts and utilities for graphics, sound, joystick, CPM, and more. If an example is missing or not working, ask me and I'll create it for you.
+
 # Tips
 I'm not using homebrew much, because I prefer Cloud CP/M builds. So you'll see my examples are leaning toward Cloud CP/M. It'll make your program friendly to distribute and will easily work on other CP/M systems if it isn't using hardware specific stuff. So if you disable keyboard, disable hcca, disable vdp, and use fprint/stdout and vt52 commands, it'll work on any z80 cpm computer. Now, if you use VDP and maintain interrupts for keyboard, then you're program is stuck with NABU but I still prefer CPM builds. Either way, the instructions for both are provided below.
 
