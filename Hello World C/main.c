@@ -1,19 +1,3 @@
-static void orgit() __naked {
-  __asm
-    org 0x140D
-    nop
-    nop
-    nop
-    __endasm;
-}
-
-void main2();
-
-void main() {
-
-  main2();
-}
-
 //#define FONT_AMIGA
 //#define FONT_SET1
 //#define FONT_STANDARD
@@ -26,12 +10,14 @@ void main() {
 #define DISABLE_HCCA_RX_INT
 
 #include "../NABULIB/NABU-LIB.h"
-#include <z80.h>
+#include "../NABULIB/patterns.h"
+#include <arch/z80.h>
 
-void main2() {
+void main() {
 
   // Put the graphics into text mode with the text color 0x01 and background color 0x03
   vdp_initTextMode(0x01, 0x03, false);
+  vdp_loadASCIIFont(ASCII);
 
   initNABULib();
 
@@ -95,6 +81,6 @@ void main2() {
 
     // for fun display the keys pressed as trail
     if (isKeyPressed()) 
-      vdp_write(LastKeyPressed);    
+      vdp_write(getChar());    
   }
 }
