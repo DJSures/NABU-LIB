@@ -1,28 +1,12 @@
-static void orgit() __naked {
-  __asm
-  org     0x140D
-    nop
-    nop
-    nop
-    __endasm;
-}
-
-void main2();
-
-void main() {
-
-  main2();
-}
-
 #define FONT_LM80C
 
 #define BIN_TYPE BIN_HOMEBREW
 
 #include "../NABULIB/NABU-LIB.h"
 #include "../NABULIB/patterns.h"
-#include <z80.h> // for z80_delay_ms()
+#include <arch/z80.h> // for z80_delay_ms()
 
-void main2() {
+void main() {
  
   // init the nabu lib which does interrupts and all that jazz
   initNABULib();
