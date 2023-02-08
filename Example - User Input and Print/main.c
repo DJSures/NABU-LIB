@@ -19,6 +19,7 @@ void main() {
 #define BIN_TYPE BIN_HOMEBREW
 
 #include "../NABULIB/NABU-LIB.h"
+#include "../NABULIB/patterns.h"
 #include <z80.h> // for z80_delay_ms()
 
 void main2() {
@@ -28,6 +29,7 @@ void main2() {
 
   // Set the text mode to foreground color white, bg black
   vdp_initTextMode(0xf, 0x0, true);
+  vdp_loadASCIIFont(ASCII);
 
   // This is our intro song
   // col 0: note
