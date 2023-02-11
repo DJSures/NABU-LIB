@@ -99,7 +99,7 @@ uint8_t tb[64];
 uint8_t PLAYER_LIVES = 3;
 uint8_t PLAYER_CNT   = 1;
 uint8_t PELLET_CNT   = 4;
-uint8_t TIME         = 30;
+uint8_t TIME         = 60;
 
 // Main game loop counter used for player & rock movement inertia
 uint16_t _loopCntr = 0;
@@ -616,7 +616,7 @@ void doCollision() {
            (_player[p].y < _rock[i].y + 16) && (yd > _rock[i].y) ) {
 
         if (_isGamePlaying)
-          playNoteDelay(1, 0, 100);
+          playNoteDelay(1, 0, 30);
   
         if (xc < _rock[i].x + 8) {
 
@@ -775,6 +775,8 @@ void doGameLoop() {
 
   initNABULIBAudio();
 
+  vdp_waitVDPReadyInt();
+
   vdp_fillScreen(0x00);
 
   for (uint8_t i = 0; i < 50; i++)
@@ -896,11 +898,13 @@ void loadImage(uint8_t filenameLen, uint8_t *filename) {
 // ********************************************************************************************
 void initMenu() {
 
+  vdp_waitVDPReadyInt();
+
   for (uint8_t i = 0; i < 50; i++)
     doStars();
 
   vdp_setCursor2(28, 23);
-  vdp_print("v0.7");
+  vdp_print("v0.8");
 
   vdp_setCursor2(4, 20);
   vdp_print("(PRESS Q IN GAME TO EXIT)");
@@ -979,6 +983,8 @@ void main() {
   vdp_fillScreen(0x00);
 
   vdp_enableVDPReadyInt();
+
+  vdp_waitVDPReadyInt();
 
   initRocks();
 

@@ -1,4 +1,4 @@
-C:/Users/dj/AppData/Local/Temp/zcc00001BF8EDA84.asm:
+C:/Users/dj/AppData/Local/Temp/zcc00001050DA5F4.asm:
      1                          MODULE cpm_crt0_asm
      2                          LINE 0, "c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm"
 c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
@@ -26,7 +26,7 @@ c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
     21                          
     22                              defc    crt0 = 1
     23                              INCLUDE "zcc_opt.def"
-C:/Users/dj/AppData/Local/Temp/zcc00001BF8EDA83/zcc_opt.def:
+C:/Users/dj/AppData/Local/Temp/zcc00001050DA5F3/zcc_opt.def:
      1                          
 c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
     24                          
