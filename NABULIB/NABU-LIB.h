@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on Feb 3, 2023 (v2023.02.03.00)
+// Last updated on Feb 11, 2023 (v2023.02.11.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -337,7 +337,8 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   /// and it is quicker to keep 960 bytes in RAM to double buffer
   /// the text mode.
   /// **************************************************************************
-  uint8_t _vdp_textBuffer[24 * 40]; // row * col = 960 bytes
+  #define TEXT_BUFFER_SIZE 960
+  uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
 
 
   /// **************************************************************************
@@ -373,6 +374,7 @@ uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7,
   uint16_t       _vdpColorTableAddr;
   uint16_t       _vdpPatternGeneratorTableAddr;
   uint8_t        _vdpCursorMaxX;
+  uint8_t        _vdpCursorMaxXFull;
   const uint8_t  _vdpCursorMaxY = 23;
   uint8_t        _vdpMode;
   bool           _autoScroll;
@@ -659,6 +661,11 @@ void NABU_EnableInterrupts();
 /// **************************************************************************
 void nop();
 
+/// **************************************************************************
+/// Shift an array (arr) of len to the right by N
+/// **************************************************************************
+void RightShift(uint8_t *arr, uint16_t len, uint8_t n);
+
 
 
 // **************************************************************************
@@ -886,7 +893,7 @@ uint8_t ayRead(uint8_t reg);
   /// **************************************************************************
   /// Read bufferLen into buffer, starting at the offset
   /// **************************************************************************
-  void hcca_readBytes(uint8_t offset, uint8_t bufferLen, uint8_t* buffer);
+  void hcca_readBytes(uint16_t offset, uint16_t bufferLen, const uint8_t* buffer);
 
 
 
@@ -1411,6 +1418,11 @@ uint8_t ayRead(uint8_t reg);
   /// Scroll all lines up between topRow and bottomRow
   /// **************************************************************************
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow);
+
+  /// **************************************************************************
+  /// Scroll all lines down between topRow and bottomRow
+  /// **************************************************************************
+//  void vdp_scrollTextDown(uint8_t topRow, uint8_t bottomRow);
 
   /// **************************************************************************
   /// Write a character at the specified location

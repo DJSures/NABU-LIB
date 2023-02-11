@@ -136,6 +136,27 @@ inline void NABU_EnableInterrupts() {
   __endasm;
 }
 
+void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
+        
+  uint8_t *toPtr = arr + (len - 1);
+  uint8_t *fromPtr = toPtr - n;
+  uint8_t *endPtr = arr - 1;
+
+  while (fromPtr != endPtr) {
+
+    *toPtr = *fromPtr;
+    toPtr--;
+    fromPtr--;
+  }
+  
+  fromPtr = arr + (n - 1);
+  
+  while (fromPtr != endPtr) {
+
+    *fromPtr = 0x20;
+    fromPtr--;
+  }   
+}
 
 // **************************************************************************
 // Interrupts
@@ -153,7 +174,8 @@ inline void NABU_EnableInterrupts() {
       push iy;
     __endasm;
 
-    _rxBuffer[_rxBufferWritePos] = IO_HCCA;
+    uint8_t *v = _rxBuffer + _rxBufferWritePos;
+    *v = IO_HCCA;
 
     _rxBufferWritePos++;
 
@@ -206,9 +228,11 @@ inline void NABU_EnableInterrupts() {
           _lastKeyboardIntVal = 0;
           _joyStatus[3] = inKey;
           break;
-        default:
-          _kbdBuffer[_kbdBufferWritePos] = inKey;
+        default: {
+          uint8_t *v = _kbdBuffer + _kbdBufferWritePos;
+          *v = inKey;
           _kbdBufferWritePos++;
+        }
       }
     }
 
@@ -581,10 +605,17 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       ((int32_t)hcca_readByte() << 24);
   }
 
-  void hcca_readBytes(uint8_t offset, uint8_t bufferLen, uint8_t* buffer) {
+  void hcca_readBytes(uint16_t offset, uint16_t bufferLen, uint8_t* buffer) {
 
-    for (uint8_t i = 0; i < bufferLen; i++)
-      buffer[offset + i] = hcca_readByte();
+    uint8_t *start = buffer + offset;
+    uint8_t *end = buffer + bufferLen;
+    
+    while (start != end) {
+
+      *start = hcca_readByte();
+
+      start++;
+    }
   }
 
 
@@ -638,15 +669,22 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   }
 
   void hcca_writeString(uint8_t* str) {
-
+    
     for (unsigned int i = 0; str[i] != 0x00; i++)
       hcca_writeByte(str[i]);
   }
 
   void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes) {
 
-    for (uint16_t i = 0; i < length; i++)
-      hcca_writeByte(bytes[offset + i]);
+    uint8_t *start = bytes + offset;
+    uint8_t *end = bytes + length;
+
+    while (start != end) {
+
+      hcca_writeByte(*start);
+
+      start++;
+    }
   }
 
   void hcca_exitRetroNETBridgeMode() {
@@ -730,10 +768,14 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   inline void vdp_waitVDPReadyInt() {
 
-    if (vdpIsReady)
-      IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF | CONTROL_LED_PAUSE;
-    else
-      IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF;
+    // uncomment this to enable debugging for the VDP to see if the vdpIsReady flag was
+    // set prior to your program calling vdp_waitVDPReadyInt(). That means your program took
+    // too long and missed the vertical screen refresh.
+
+    // if (vdpIsReady)
+    //   IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF | CONTROL_LED_PAUSE;
+    // else
+    //   IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF;
 
     while (!vdpIsReady);
 
@@ -826,6 +868,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
         fgColor = 0;
         _vdpCursorMaxX = 31;
+        _vdpCursorMaxXFull = 32;
 
         break;
 
@@ -845,6 +888,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
 
         _vdpCursorMaxX = 39;
+        _vdpCursorMaxXFull = 40;
 
         break;
 
@@ -857,6 +901,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         
         fgColor = 0;
         _vdpCursorMaxX = 31;
+        _vdpCursorMaxXFull = 32;
 
         break;
     }
@@ -924,65 +969,79 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       
     vdp_setWriteAddress(_vdpPatternNameTableAddr);
 
-    uint16_t cnt = (_vdpCursorMaxX + 1) * 24;
+    uint8_t *start = _vdp_textBuffer;
+    uint8_t *end = start + (_vdpCursorMaxXFull * 24);
 
     uint8_t cr = 0x00;
 
     if (_vdpMode == VDP_MODE_TEXT)
       cr = 0x20;
 
-    for (uint16_t i = 0; i < cnt; i++) {
+    do {
 
       IO_VDPDATA = cr;
-  
-      _vdp_textBuffer[i] = 0x20;
-    }
+
+      *start = 0x20;
+
+      start++;
+    } while (start != end);
   }
 
   void vdp_fillScreen(uint8_t c) {
 
     vdp_setWriteAddress(_vdpPatternNameTableAddr);
 
-    uint16_t cnt = (_vdpCursorMaxX + 1) * 24;
+    uint8_t *start = _vdp_textBuffer;
 
-    for (uint16_t i = 0; i < cnt; i++) {
+    uint8_t *end = start + (_vdpCursorMaxXFull * 24);
+
+    do {
 
       IO_VDPDATA = c;
-  
-      _vdp_textBuffer[i] = c;
-    }
+
+      *start = c;
+
+      start++;
+    } while (start != end);
   }
 
   void vdp_clearRows(uint8_t topRow, uint8_t bottomRow) {
 
-    uint16_t maxX = _vdpCursorMaxX + 1;
-
-    uint16_t name_offset = topRow * maxX;
+    uint16_t name_offset = topRow * _vdpCursorMaxXFull;
 
     vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
-    for (uint8_t y = topRow; y < bottomRow; y++)
-      for (uint8_t x = 0; x < maxX; x++) {
+    uint8_t *start = _vdp_textBuffer + (topRow * _vdpCursorMaxXFull);
+    uint8_t *end   = _vdp_textBuffer + ((bottomRow + 1) * _vdpCursorMaxXFull);
 
-        _vdp_textBuffer[name_offset] = 0x20;
+    do {
+      
+      IO_VDPDATA = 0x20;
 
-        IO_VDPDATA = 0x20;
+      *start = 0x20;
 
-        name_offset++;
-      }
+      start++;
+    } while (start != end);
   }
 
   void vdp_loadASCIIFont(uint8_t* font) {
 
     vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 0x100);
 
-    for (uint16_t i = 0; i < 768; i++)
-      IO_VDPDATA = font[i];
+    uint8_t *start = font;
+    uint8_t *end = start + 768;
+
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
   }
 
   void vdp_putPattern(uint8_t x, uint8_t y, uint8_t patternId) {
 
-    uint16_t name_offset = y * (_vdpCursorMaxX + 1) + x;
+    uint16_t name_offset = y * _vdpCursorMaxXFull + x;
 
     vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
     _vdp_textBuffer[name_offset] = patternId;
@@ -992,32 +1051,65 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_loadPatternTable(uint8_t *patternTable, uint16_t len) {
 
-    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr);
-
     // datasheet 2-20 : screen is split into 3 and the pattern table therefore is repeated 3 times
-    for (uint16_t i = 0; i < len; i++)
-      IO_VDPDATA = patternTable[i];
 
-    for (uint16_t i = 0; i < len; i++)
-      IO_VDPDATA = patternTable[i];
+    uint8_t *start = patternTable;
+    uint8_t *end = start + len;
 
-    for (uint16_t i = 0; i < len; i++)
-      IO_VDPDATA = patternTable[i];
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr);
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    start = patternTable;
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    start = patternTable;
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
   }
 
   void vdp_loadColorTable(uint8_t *colorTable, uint16_t len) {
 
-    vdp_setWriteAddress(_vdpColorTableAddr);
-
     // datasheet 2-20 : screen is split into 3 and the color table therefore is repeated 3 times
-    for (uint16_t i = 0; i < len; i++)
-      IO_VDPDATA = colorTable[i];
+    uint8_t *start = colorTable;
+    uint8_t *end = start + len;
 
-    for (uint16_t i = 0; i < len; i++)
-      IO_VDPDATA = colorTable[i];
+    vdp_setWriteAddress(_vdpColorTableAddr);
+    do {
 
-    for (uint16_t i = 0; i < len; i++)
-      IO_VDPDATA = colorTable[i];
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    start = colorTable;
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    start = colorTable;
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
   }
 
   void vdp_colorizePattern(uint8_t patternId, uint8_t fg, uint8_t bg) {
@@ -1128,13 +1220,17 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       vdp_setWriteAddress(_vdpSpriteGeneratorTableAddr);
 
-      for (uint16_t i = 0; i < numSprites * 32; i++) 
+      uint16_t end = numSprites * 32;
+
+      for (uint16_t i = 0; i < end; i++) 
         IO_VDPDATA = sprite[i];
     } else {
 
       vdp_setWriteAddress(_vdpSpriteGeneratorTableAddr);
 
-      for (uint16_t i = 0; i < numSprites * 8; i++) 
+      uint16_t end = numSprites * 8;
+      
+      for (uint16_t i = 0; i < end; i++) 
         IO_VDPDATA = sprite[i];
     }
   }
@@ -1281,7 +1377,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   void vdp_write(uint8_t chr) {
 
     // Position in name table
-    uint16_t name_offset = vdp_cursor.y * (_vdpCursorMaxX + 1) + vdp_cursor.x;
+    uint16_t name_offset = vdp_cursor.y * _vdpCursorMaxXFull + vdp_cursor.x;
 
     vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
@@ -1301,7 +1397,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c) {
 
-    uint16_t name_offset = y * (_vdpCursorMaxX + 1) + x; 
+    uint16_t name_offset = y * _vdpCursorMaxXFull + x; 
 
     _vdp_textBuffer[name_offset] = c;
       
@@ -1312,7 +1408,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y) {
 
-    uint16_t name_offset = y * (_vdpCursorMaxX + 1) + x; 
+    uint16_t name_offset = y * _vdpCursorMaxXFull + x; 
 
     vdp_setReadAddress(_vdpPatternNameTableAddr + name_offset);
 
@@ -1321,41 +1417,74 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   inline uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y) {
 
-    return _vdp_textBuffer[y * (_vdpCursorMaxX + 1) + x];
+    uint8_t *v = _vdp_textBuffer + y * _vdpCursorMaxXFull + x;
+
+    return *v;
   }
 
   inline void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c) {
 
-    _vdp_textBuffer[y * (_vdpCursorMaxX + 1) + x] = c;
+    uint8_t *v = _vdp_textBuffer + y * _vdpCursorMaxXFull + x;
+
+    *v = c;
   }
 
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow) {
 
-    uint16_t maxX = _vdpCursorMaxX + 1;
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + (topRow * _vdpCursorMaxXFull));
 
-    uint16_t name_offset = topRow * maxX;
+    uint8_t *to   = _vdp_textBuffer + (topRow * _vdpCursorMaxXFull);
+    uint8_t *from = to + _vdpCursorMaxXFull;
+    uint8_t *end  = _vdp_textBuffer + ((bottomRow + 1) * _vdpCursorMaxXFull);
 
-    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
+    do {
 
-    for (uint8_t y = topRow; y < bottomRow; y++)
-      for (uint8_t x = 0; x < maxX; x++) {
+      *to = *from;
 
-        _vdp_textBuffer[name_offset] = _vdp_textBuffer[name_offset + maxX];
+      IO_VDPDATA = *to;
 
-        IO_VDPDATA = _vdp_textBuffer[name_offset];
+      to++;
+      from++;
+    } while (from != end);
+    
+    do {
 
-        name_offset++;
-      }
+      *to = 0x20;
+      IO_VDPDATA = 0x20;
 
-    if (bottomRow <= _vdpCursorMaxY)
-      for (uint8_t x = 0; x < maxX; x++) {
+      to++;
+    } while (to != end);
+  }
 
-        _vdp_textBuffer[name_offset] = 0x20;
+  void vdp_scrollTextDown(uint8_t topRow, uint8_t bottomRow) {
 
-        IO_VDPDATA = 0x20;
+    uint8_t *fromPtr = _vdp_textBuffer + (bottomRow * _vdpCursorMaxXFull) - 1;
+    uint8_t *toPtr   = fromPtr + _vdpCursorMaxXFull;
+    uint8_t *endPtr  = (_vdp_textBuffer - 1) + (topRow * _vdpCursorMaxXFull);
 
-        name_offset++;
-      }
+    do {
+
+      *toPtr = *fromPtr;
+      toPtr--;
+      fromPtr--;
+    } while (fromPtr != endPtr);
+        
+    do {
+
+      *toPtr = 0x20;
+      toPtr--;
+    } while (toPtr != endPtr);
+
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + (topRow * _vdpCursorMaxXFull));
+    uint8_t *v = _vdp_textBuffer + (topRow * _vdpCursorMaxXFull);
+    uint8_t *e = _vdp_textBuffer + ((bottomRow + 1) * _vdpCursorMaxXFull);
+
+    do {
+
+      IO_VDPDATA = *v;
+
+      v++;
+    } while (v != e);
   }
 
   void vdp_writeUInt32(uint32_t v) {
