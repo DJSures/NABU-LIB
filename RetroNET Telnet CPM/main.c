@@ -186,7 +186,7 @@ void main() {
   initNABULib();
 
   puts("");
-  puts("RetroNet Telnet Client CPM (0.8b)");
+  puts("RetroNet Telnet Client CPM (0.9b)");
   puts("by DJ Sures (c)2023");
   puts("");
   puts("");
@@ -221,7 +221,11 @@ void main() {
       doKeyInput();
   }
 
-  hcca_exitRetroNETBridgeMode();
+  puts("");
+  puts("");
+  puts("Exiting telnet...");
 
+  hcca_exitRetroNETBridgeMode();
+  
   NABU_DisableInterrupts();  
 }

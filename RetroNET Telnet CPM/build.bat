@@ -7,7 +7,7 @@ SET PATH=%Z88DK_DIR%bin;%PATH%
 echo.
 echo ****************************************************************************
 
-zcc +cpm main.c -compiler=sdcc -create-app -O3 --opt-code-speed -o telnet
+zcc +cpm main.c -compiler=sdcc -create-app -O2 --opt-code-speed -o telnet
 
 :: zcc +cpm -subtype=nabu main.c -compiler=sdcc -create-app -O3 --opt-code-speed -o telnet
 
@@ -19,5 +19,7 @@ echo ***************************************************************************
 mkfs.cpm -f naburn "C:\My Documents\NABU Internet Adapter\Store\a.dsk"
 
 cpmcp -f naburn    "C:\My Documents\NABU Internet Adapter\Store\a.dsk" telnet.com 0:
+
+dir "C:\My Documents\NABU Internet Adapter\Store\a.dsk"
 
 pause

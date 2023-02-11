@@ -7,22 +7,12 @@ SET PATH=%Z88DK_DIR%bin;%PATH%
 echo.
 echo ****************************************************************************
 
- zcc +z80 -mz80 -startup 0 -zorg 0x140D --no-crt -O3 --opt-code-speed -lm main.c -o "C:\NABU Segments\000001.nabu"
+:: zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "game5"
+zcc +nabu -vn --list -m -create-app -compiler=sdcc main.c -o "C:\NABU Segments\000001.nabu"
 
-:: zcc +z80 -mz80 -startup 0 -zorg 0x140D --no-crt -D__SDCC_ENABLE_FASTCALL --no-peep -lm main.c -o "C:\NABU Segments\000001.nabu"
-
-:: zcc +z80 -mz80 -startup 0 -zorg 0x140D --no-crt -D__z88dk_fastcall --no-peep -lm main.c -o "C:\NABU Segments\000001.nabu"
-
-:: zcc +z80 -mz80 -startup 0 -zorg 0x140D --no-crt -D__z88dk_fastcall --no-peep -lm main.c -o "C:\NABU Segments\000001.nabu"
-
-:: zcc +z80 -mz80 -startup 0 -zorg 0x140D --no-crt -O3 --no-peep -lm main.c -o "C:\NABU Segments\000001.nabu"
+:: zcc +cpm -subtype=nabu main.c -compiler=sdcc -create-app -lndos -pragma-need=ansiterminal -pragma-define:ansicolumns=51 -o DUMPRAM
+:: Columns can be 85, 80, 64, 51, 42, 40, 46, 32, 28, 24
 
 echo ****************************************************************************
-
-del "C:\NABU Segments\000001.nabu"
-
-move "C:\NABU Segments\000001_code_compiler.bin" "C:\NABU Segments\000001.nabu"
-
-dir "C:\NABU Segments"
 
 pause

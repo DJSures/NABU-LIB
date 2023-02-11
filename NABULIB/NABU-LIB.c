@@ -690,6 +690,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   void hcca_exitRetroNETBridgeMode() {
 
     hcca_writeBytes(0, RETRONET_BRIDGE_EXIT_CODE_LEN, (void *)RETRONET_BRIDGE_EXIT_CODE);
+
+    sleep(2); // give IA a moment to cancel
   }
 #endif
 

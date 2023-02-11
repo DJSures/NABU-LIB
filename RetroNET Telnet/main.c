@@ -1,30 +1,18 @@
-static void orgit() __naked {
-  __asm
-  org     0x140D
-    nop
-    nop
-    nop
-    __endasm;
-}
-
-void main2();
-
-void main() {
-
-  main2();
-}
-
 #define FONT_LM80C
-
+#define DISABLE_CURSOR
 #define BIN_TYPE BIN_HOMEBREW
 
 #include "../NABULIB/NABU-LIB.h"
+#include "../NABULIB/patterns.h"
 #include "vt100.c"
-#include <z80.h>
+#include <arch/z80.h>
 
 void doKeyInput() {
 
-  uint8_t key = isKeyPressed();
+  if (!isKeyPressed())
+    return;
+
+  uint8_t key = getChar();
 
   if (key >= 0x01 && key <= 0x7d) {
 
@@ -173,14 +161,29 @@ void doHCCAInput() {
   vt100_putc(c);
 }
 
-void main2() {
+void main() {
 
   initNABULib();
 
   vdp_initTextMode(0xf, 0x0, false);
+  vdp_loadASCIIFont(ASCII);
+
+  vdp_clearScreen();
+  vdp_print("This version is outdated and broken");vdp_newLine();
+  vdp_newLine();
+  vdp_print("Updates to this app and many others are on Cloud CPM in User Area #1."); vdp_newLine();
+  vdp_newLine();
+  vdp_print("Check https://nabu.ca for list of applications on the cloud drive.");
+  vdp_newLine();
+  vdp_newLine();
+  vdp_print("Press any key to continue");
+
+  getChar();
+
+  vdp_clearScreen();
 
   vdp_setCursor2(0, 0);
-  vdp_print("RetroNet Telnet Client (0.8b)");
+  vdp_print("RetroNet Telnet Client (1.0b)");
   vdp_setCursor2(0, 1);
   vdp_print("by DJ Sures (c)2023");
 
