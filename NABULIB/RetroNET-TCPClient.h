@@ -107,7 +107,7 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 ///
 /// Returns: the number of bytes written or -1 if client is disconnected
 /// </summary>
-int32_t rn_TCPHandleWrite(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
+int32_t rn_TCPHandleWrite(uint8_t tcpHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
 
 #include "RetroNET-TCPClient.c"
 

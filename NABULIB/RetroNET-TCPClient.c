@@ -98,7 +98,7 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 
   hcca_writeByte(0xd3);
 
-  hcca_writeByte(fileHandle);
+  hcca_writeByte(tcpHandle);
 
   hcca_writeUInt16(readLength);
 
@@ -111,14 +111,14 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
   return toRead;
 }
 
-int32_t rn_TCPHandleWrite(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data) {
+int32_t rn_TCPHandleWrite(uint8_t tcpHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data) {
 
   // 0xd4
   rn_tcpFocusInterrupts();
 
   hcca_writeByte(0xd4);
 
-  hcca_writeByte(fileHandle);
+  hcca_writeByte(tcpHandle);
 
   hcca_writeUInt16(dataLen);
 
