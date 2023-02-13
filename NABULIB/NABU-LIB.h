@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on Feb 11, 2023 (v2023.02.11.00)
+// Last updated on Feb 13, 2023 (v2023.02.13.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -76,7 +76,7 @@
 /// Internet Adapter or as a NABU Channel. Compiling for HOMEBREW uses
 /// the following example commandline:
 ///
-///    zcc +nabu -vn --list -m -create-app -compiler=sdcc main.c -o "000001.nabu"
+///    zcc +nabu -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "000001.nabu"
 ///
 ///
 /// Cloud CP/M
@@ -186,6 +186,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 // **************************************************************************
@@ -252,9 +253,9 @@ __sfr __at 0x00 IO_CONTROL;
 volatile uint8_t _randomSeed = 0;
 
 #ifndef DISABLE_HCCA_RX_INT
-  uint8_t _rxBuffer[RX_BUFFER_SIZE];
-  uint16_t _rxBufferReadPos = 0;
-  uint16_t _rxBufferWritePos = 0;
+  volatile uint8_t _rxBuffer[RX_BUFFER_SIZE];
+  volatile uint16_t _rxBufferReadPos = 0;
+  volatile uint16_t _rxBufferWritePos = 0;
   #warning
   #warning HCCA Interupt: Enabled
   #warning
@@ -893,7 +894,7 @@ uint8_t ayRead(uint8_t reg);
   /// **************************************************************************
   /// Read bufferLen into buffer, starting at the offset
   /// **************************************************************************
-  void hcca_readBytes(uint16_t offset, uint16_t bufferLen, const uint8_t* buffer);
+  void hcca_readBytes(uint16_t offset, uint16_t bufferLen, uint8_t* buffer);
 
 
 
@@ -1319,7 +1320,7 @@ uint8_t ayRead(uint8_t reg);
   ///  5) You can disable sprites that you don't shown with vdp_disableSprite()
   ///
   /// **************************************************************************
-  void vdp_loadSpritePatternNameTable(uint16_t numSprites, const uint8_t* sprite);
+  void vdp_loadSpritePatternNameTable(uint16_t numSprites, uint8_t* sprite);
 
   /// **************************************************************************
   ///  Initialize a sprite by the ID
