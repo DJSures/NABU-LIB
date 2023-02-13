@@ -57,7 +57,7 @@ SET PATH=%Z88DK_DIR%bin;%PATH%
 echo.
 echo ****************************************************************************
 
-zcc +nabu -vn --list -m -create-app -compiler=sdcc main.c -o "000001.nabu"
+zcc +nabu -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "000001.nabu"
 
 echo ****************************************************************************
 
