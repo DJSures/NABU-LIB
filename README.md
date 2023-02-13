@@ -70,6 +70,9 @@ pause
 ## v2023.02.11.00
 Updated many routines to be much faster. Also added a scroll down.
 
+## v2023.02.13.00
+A few bug fixes (specifically vdp_clearRows()). Also added the new TCP library for the latest internet adapter. This allows NABU programs to establish stream TCP connections. 
+
 ## v2023.02.03.00
 Added new vdp functions for syncing game speed with vsync. Check the nabulib.h header in the VDP section for instructions and sample code. I'll add more examples and fix the build of other examples as time permits. Right now I'm breaking things while I continue to build GameManYeah!. I'll update the code on here for it someday when I'm a bit more comfortable with what I've created. There's also the NABU Tracker uploaded in here. But I need to provide examples for that as well. Stay tuned, I guess :)
 
