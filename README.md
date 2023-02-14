@@ -67,6 +67,9 @@ pause
 
 # Version Notes
 
+## v2023.02.13.00
+Huge performance improvements on scrolling, hcca and other stuff. A few bug fixes. Also the retronet tcp client library is checked in. Requires the IA to be updated to 2023.02.14.00
+
 ## v2023.02.11.00
 Updated many routines to be much faster. Also added a scroll down.
 
