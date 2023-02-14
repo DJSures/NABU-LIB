@@ -55,7 +55,7 @@ void main() {
   // -------------------------------------------------------
   vt_clearScreen();
   vt_wrapOff();
-  for (uint8_t i = 0; i < 40; i++) {
+  for (uint8_t i = 0; i < 80; i++) {
 
     vt_setCursor(i, 0);
     printf("*");
@@ -69,9 +69,19 @@ void main() {
     vt_setCursor(0, i);
     printf("*");
 
-    vt_setCursor(39, i);
+    vt_setCursor(79, i);
     printf("*");
   }
+
+  vt_setCursor(2, 10);
+  puts("There is a border around the entire 80 column screen.");
+  vt_setCursor(2, 11);
+  puts("Use <<< (page up) and >>> (page down) keys to scroll the virtual screen");
+  
+  vt_setCursor(2, 12);
+  vt_reverseVideo();
+  puts("This is inverted text!    and blank spaces");
+  vt_normalVideo();
 
   vt_wrapOn();
   vt_setCursor(8, 14);  
@@ -137,7 +147,7 @@ void main() {
     puts("clear the end of screen from the center");
   prompt();
   
-  vt_setCursor(0, 10);
+  vt_setCursor(0, 12);
   vt_clearToEndOfScreen();
   prompt();
 
@@ -158,8 +168,19 @@ void main() {
     puts("clear the top of screen from the center");
   prompt();
   
-  vt_setCursor(0, 10);
+  vt_setCursor(0, 12);
   vt_clearToStartOfScreen();
+  prompt();
+
+  // insert line
+  // -------------------------------------------------------
+  vt_clearScreen();
+  for (uint8_t i = 0; i < 23; i++)
+    printf("%u insert line at center shift down\n", i);
+  prompt();
+  
+  vt_setCursor(0, 12);
+  vt_insertLine();
   prompt();
 
   // -------------------------------------------------------
