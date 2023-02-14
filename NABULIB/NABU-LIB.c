@@ -371,6 +371,16 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
     printf("%cv", 27);
   }
 
+  void vt_normalVideo() {
+
+    printf("%cq", 27);
+  }
+
+  void vt_reverseVideo() {
+
+    printf("%cp", 27);
+  }
+
 #endif
 
 

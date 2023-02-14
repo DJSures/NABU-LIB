@@ -104,7 +104,8 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 
   int32_t toRead = hcca_readInt32();
 
-  hcca_readBytes(bufferOffset, toRead, buffer);
+  if (toRead > 0)
+    hcca_readBytes(bufferOffset, toRead, buffer);
 
   rn_tcpRestoreInterrupts();
 

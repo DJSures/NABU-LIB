@@ -89,6 +89,24 @@
 ///
 ///     zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "APPNAME"
 ///
+/// In addition to the commandline for CPM binaries, the z88dk allows you to fine-tune
+/// what features are enabled. You can add each #pragma option to the top of your main.c
+/// to disable that feature and save filesize and RAM.
+///
+///    #pragma output nostreams
+///    Disable stdio. Useful if not using DISABLE_VDP, and therefore you're using only the CPM built-in functions.
+///
+///    #pragma output nofileio
+///    No FILEIO. This disables all ability to read/write CPM files
+///
+///    #pragma output noprotectmsdos
+///    Strip the MS-DOS protection header (recommended because ain't nobody got time for that)
+///
+///    #pragma output noredir
+///    Do not insert the file redirection option while parsing the command line arguments (useless if “nostreams” is set)
+///
+///    #pragma output nogfxglobals
+///    No global variables for graphics (recommended because you'll be using NABULIB for graphics)
 ///
 /// **************************************************************************
 // #define BIN_TYPE BIN_HOMEBREW
@@ -831,6 +849,10 @@ uint8_t ayRead(uint8_t reg);
   void vt_wrapOff();
 
   void vt_wrapOn();
+
+  void vt_normalVideo();
+
+  void vt_reverseVideo();
 
 #endif 
 
