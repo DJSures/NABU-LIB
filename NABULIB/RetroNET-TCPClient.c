@@ -29,6 +29,8 @@ void rn_tcpFocusInterrupts() {
   _rn_TCPTmpOriginalInterrupt = _ORIGINAL_INT_MASK;  
   _ORIGINAL_INT_MASK = INT_MASK_HCCARX;
 
+  ayWrite(IOPORTA, INT_MASK_HCCARX);
+
   NABU_EnableInterrupts();
 }
 

@@ -558,6 +558,28 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   // ------------
   // **************************************************************************
 
+  bool hcca_ping() {
+
+    hcca_writeByte(0xa1);
+
+    uint32_t timer = 0;
+
+    while (!hcca_isRxBufferAvailable()) {
+      
+      timer++;
+
+      if (timer == 50000)
+        return false;
+    }
+
+    uint8_t resp = hcca_readByte();
+
+    if (resp == 0x55)
+      return true;
+
+    return false;
+  }
+
   inline bool hcca_isRxBufferAvailable() {
 
     return _rxBufferWritePos != _rxBufferReadPos;

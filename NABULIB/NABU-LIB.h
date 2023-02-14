@@ -884,6 +884,12 @@ uint8_t ayRead(uint8_t reg);
   uint8_t hcca_getSizeOfDataInBuffer();
 
   /// **************************************************************************
+  /// Returns true if receive a response from Internet Adapter otherwise
+  /// will timeout and return false
+  /// **************************************************************************
+  bool hcca_ping();
+
+  /// **************************************************************************
   /// Read a byte from the buffer.
   /// Check the hcca_ISRxBufferAvailable() first or this blocks.
   /// **************************************************************************
