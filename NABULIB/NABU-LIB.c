@@ -624,18 +624,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   uint32_t hcca_readUInt32() {
 
-    return (uint32_t)hcca_readByte() +
-           ((uint32_t)hcca_readByte() << 8) +
-           ((uint32_t)hcca_readByte() << 16) +
-           ((uint32_t)hcca_readByte() << 24);
+    uint8_t ret[4] = { hcca_readByte(), hcca_readByte(), hcca_readByte(), hcca_readByte() };
+
+    return *((uint32_t *)ret);
   }
 
   int32_t hcca_readInt32() {
 
-    return (int32_t)hcca_readByte() +
-           ((int32_t)hcca_readByte() << 8) +
-           ((int32_t)hcca_readByte() << 16) +
-           ((int32_t)hcca_readByte() << 24);
+    uint8_t ret[4] = { hcca_readByte(), hcca_readByte(), hcca_readByte(), hcca_readByte() };
+
+    return *((int32_t *)ret);
   }
 
   void hcca_readBytes(uint16_t offset, uint16_t bufferLen, uint8_t *buffer) {
@@ -1627,6 +1625,21 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         str[15 - i] = '0';
 
     str[16] = 0x00;
+
+    vdp_print(str);
+  }
+
+  void vdp_writeUInt32ToBinary(uint32_t v) {
+
+    uint8_t str[33];
+
+    for (uint8_t i = 0; i < 32; i++)
+      if (v >> i & 1)
+        str[31 - i] = '1';
+      else
+        str[31 - i] = '0';
+
+    str[32] = 0x00;
 
     vdp_print(str);
   }

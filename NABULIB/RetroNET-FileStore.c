@@ -15,8 +15,12 @@
 
 
 // **************************************************************************
-// RetroNET
-// ------------
+// INTERRUPTLESS HCCA COMMANDS
+// ---------------------------
+// These are HCCA commands that do not require the interrupt. The interrupt
+// will be disabled while these commands are executed. This is because they
+// will focus entirely on hcca data transfer for optimal speed. Interrupts
+// use too many cycles for large amounts of data.
 // **************************************************************************
 void hcca_DiFocusInterrupts() {
 
@@ -77,8 +81,8 @@ void hcca_DiWriteInt16(int16_t val) {
 
 void hcca_DiWriteString(uint8_t *str) {
   
-  for (unsigned int i = 0; str[i] != 0x00; i++)
-    hcca_DiWriteByte(str[i]);
+  for (uint8_t *start = str; *start != 0x00; start++)
+    hcca_DiWriteByte(*start);
 }
 
 void hcca_DiWriteBytes(uint16_t offset, uint16_t length, uint8_t *bytes) {
@@ -117,32 +121,16 @@ int16_t hcca_DiReadInt16() {
 
 uint32_t hcca_DiReadUInt32() {
 
-  uint32_t ret = hcca_DiReadByte();
+  uint8_t ret[4] = { hcca_DiReadByte(), hcca_DiReadByte(), hcca_DiReadByte(), hcca_DiReadByte() };
 
-  uint8_t *t = &ret;
-  t++;
-  *t = hcca_DiReadByte();
-  t++;
-  *t = hcca_DiReadByte();
-  t++;
-  *t = hcca_DiReadByte();
-
-  return ret;
+  return *((uint32_t *)ret);
 }
 
 int32_t hcca_DiReadInt32() {
 
-  int32_t ret = hcca_DiReadByte();
+  uint8_t ret[4] = { hcca_DiReadByte(), hcca_DiReadByte(), hcca_DiReadByte(), hcca_DiReadByte() };
 
-  uint8_t *t = &ret;
-  t++;
-  *t = hcca_DiReadByte();
-  t++;
-  *t = hcca_DiReadByte();
-  t++;
-  *t = hcca_DiReadByte();
-
-  return ret;
+  return *((int32_t *)ret);
 }
 
 void hcca_DiReadBytes(uint16_t offset, uint16_t bufferLen, uint8_t *buffer) {
@@ -160,7 +148,12 @@ void hcca_DiReadBytes(uint16_t offset, uint16_t bufferLen, uint8_t *buffer) {
   }
 }
 
-// -------------------------------------------------------------------------------------------------------
+// **************************************************************************
+// FILE & DIRECTORIES
+// ------------------
+//
+// These functions are for reading and creating files and directories.
+// **************************************************************************
 
 uint8_t rn_fileOpen(uint8_t filenameLen, uint8_t* filename, uint16_t fileFlag, uint8_t fileHandle) {
 
@@ -236,6 +229,8 @@ uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferO
 
   hcca_DiFocusInterrupts();
 
+  uint8_t *start = buffer + bufferOffset;
+
   hcca_DiWriteByte(0xa5);
 
   hcca_DiWriteByte(fileHandle);
@@ -245,11 +240,8 @@ uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferO
   hcca_DiWriteUInt16(readLength);
 
   uint16_t toRead = hcca_DiReadUInt16();
-
-  uint8_t *start = buffer + bufferOffset;
-  uint8_t *end   = start + toRead;
+  uint8_t *end    = start + toRead;
   
-  IO_AYLATCH = IOPORTB;
   while (start != end) {
 
     while (IO_AYDATA & 0x02);
@@ -534,6 +526,8 @@ uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t buff
 
   hcca_DiFocusInterrupts();
 
+  uint8_t *start = buffer + bufferOffset;
+
   hcca_DiWriteByte(0xb5);
 
   hcca_DiWriteByte(fileHandle);
@@ -541,11 +535,8 @@ uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t buff
   hcca_DiWriteUInt16(readLength);
 
   uint16_t toRead = hcca_DiReadUInt16();
-
-  uint8_t *start = buffer + bufferOffset;
-  uint8_t *end   = start + toRead;
+  uint8_t *end    = start + toRead;
   
-  IO_AYLATCH = IOPORTB;
   while (start != end) {
 
     while (IO_AYDATA & 0x02);
@@ -559,7 +550,7 @@ uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t buff
   return toRead;
 }
 
-uint32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption) {
+int32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption) {
 
   // 0xb6
 
@@ -573,16 +564,19 @@ uint32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOptio
 
   hcca_DiWriteByte(seekOption);
 
-  uint32_t t = hcca_DiReadUInt32();
+  int32_t t = hcca_DiReadInt32();
 
   hcca_DiRestoreInterrupts();
 
   return t;
 }
 
-// -----------------------------------------------------------------------------------------------------
-// TCP STUFF
-// -----------------------------------------------------------------------------------------------------
+// **************************************************************************
+// TCP/IP CLIENT
+// -------------
+//
+// These functions are for communicating with TCP server ports
+// **************************************************************************
 
 uint8_t rn_TCPOpen(uint8_t hostnameLen, uint8_t* hostname, uint16_t port, uint8_t fileHandle) {
 
@@ -638,6 +632,8 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 
   hcca_DiFocusInterrupts();
 
+  uint8_t *start = buffer + bufferOffset;
+
   hcca_DiWriteByte(0xd3);
 
   hcca_DiWriteByte(tcpHandle);
@@ -648,11 +644,8 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 
   if (toRead > 0) {
 
-    uint8_t *start = buffer + bufferOffset;
-    uint8_t *end   = start + toRead;
+    uint8_t *end = start + toRead;
     
-    IO_AYLATCH = IOPORTB;
-
     do {
 
       while (IO_AYDATA & 0x02);
