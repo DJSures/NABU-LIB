@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on Feb 13, 2023 (v2023.02.13.00)
+// Last updated on Feb 16, 2023 (v2023.02.16.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -138,9 +138,6 @@
 /// If your program is not using the file store or HCCA for retronet, you can
 /// disable the RX interrupt to save filesize.
 ///
-/// If you are keeping the HCCA, you can customize the buffer size further down
-/// in this file by adding the #define RX_BUFFER_SIZE XXX to your main.c above
-/// the #includes. That allows you to lower the reserved buffer if needed.
 ///
 /// Add this #define above your #include in the main.c to disable the HCCA RX INT
 /// **************************************************************************
@@ -177,26 +174,6 @@
 /// Meaning, it will disable the cursor for NABULIB key input commands, like getChar()
 /// **************************************************************************
 // #define DISABLE_CURSOR
-
-/// **************************************************************************
-/// HCCA RX Input buffer.
-/// You can override the RX BUFFER SIZE by defining it before the #include in your main.c
-///
-/// For example, add #define RX_BUFFER_SIZE 2048 (or what ever your buffer needs to be)
-/// above the #include in the main.c
-/// 
-/// *Note: It is important that any buffer/packet size you read using RetroNET
-///        remote filesystem cannot be larger than this buffer size!
-///
-/// **************************************************************************
-#ifndef DISABLE_HCCA_RX_INT
-  #ifndef RX_BUFFER_SIZE
-    #define RX_BUFFER_SIZE 128
-    #warning
-    #warning Using default 128 byte HCCA RX Buffer
-    #warning
-  #endif
-#endif
 
 #ifndef BIN_TYPE
   #error A BIN_TYPE has not been specified. Look at the NABU-LIB.h to configure your application.
@@ -271,9 +248,9 @@ __sfr __at 0x00 IO_CONTROL;
 volatile uint8_t _randomSeed = 0;
 
 #ifndef DISABLE_HCCA_RX_INT
-  volatile uint8_t _rxBuffer[RX_BUFFER_SIZE];
-  volatile uint16_t _rxBufferReadPos = 0;
-  volatile uint16_t _rxBufferWritePos = 0;
+  volatile uint8_t _rxBuffer[256];
+  volatile uint8_t _rxBufferReadPos  = 0;
+  volatile uint8_t _rxBufferWritePos = 0;
   #warning
   #warning HCCA Interupt: Enabled
   #warning
@@ -668,17 +645,17 @@ void initNABULib();
 /// **************************************************************************
 /// Disable interrupts on the nabu
 /// **************************************************************************
-void NABU_DisableInterrupts();
+inline void NABU_DisableInterrupts();
 
 /// **************************************************************************
 /// Enable interrupts on the nabu
 /// **************************************************************************
-void NABU_EnableInterrupts();
+inline void NABU_EnableInterrupts();
 
 /// **************************************************************************
 /// Perform one NOP
 /// **************************************************************************
-void nop();
+inline void nop();
 
 /// **************************************************************************
 /// Shift an array (arr) of len to the right by N
@@ -723,12 +700,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength);
 /// **************************************************************************
 /// Write VAL in REG to the AY IC
 /// **************************************************************************
-void ayWrite(uint8_t reg, uint8_t val);
+inline void ayWrite(uint8_t reg, uint8_t val);
 
 /// **************************************************************************
 /// Read from the REG of AY IC
 /// **************************************************************************
-uint8_t ayRead(uint8_t reg);
+inline uint8_t ayRead(uint8_t reg);
 
 
 
@@ -785,7 +762,7 @@ uint8_t ayRead(uint8_t reg);
   ///   if (getJoyStatus(0) & Joy_Up)
   ///  
   /// **************************************************************************
-  uint8_t getJoyStatus(uint8_t joyNum);
+  inline uint8_t getJoyStatus(uint8_t joyNum);
 #endif
 
 #if BIN_TYPE == BIN_CPM
@@ -876,7 +853,7 @@ uint8_t ayRead(uint8_t reg);
   /// **************************************************************************
   /// Returns TRUE if there is data to be read from the hcca rx buffer (256 bytes)
   /// **************************************************************************
-  bool hcca_isRxBufferAvailable();
+  inline bool hcca_isRxBufferAvailable();
 
   /// **************************************************************************
   /// Returns how much data is currently in the RX buffer
@@ -998,9 +975,9 @@ uint8_t ayRead(uint8_t reg);
   /// **************************************************************************
   /// For directly writing and reading from IO_VDPDATA and writing registers
   /// **************************************************************************
-  void vdp_setRegister(uint8_t registerIndex, uint8_t value);
-  void vdp_setWriteAddress(uint16_t address);
-  void vdp_setReadAddress(uint16_t address);
+  inline void vdp_setRegister(uint8_t registerIndex, uint8_t value);
+  inline void vdp_setWriteAddress(uint16_t address);
+  inline void vdp_setReadAddress(uint16_t address);
 
   /// **************************************************************************
   /// Enable the interrupt that will set the variables so you can time your game with
@@ -1050,7 +1027,7 @@ uint8_t ayRead(uint8_t reg);
   ///
   /// **************************************************************************
   void vdp_enableVDPReadyInt();
-  void vdp_waitVDPReadyInt();
+  inline void vdp_waitVDPReadyInt();
   void vdp_disableVDPReadyInt();
 
   /// **************************************************************************
@@ -1292,7 +1269,7 @@ uint8_t ayRead(uint8_t reg);
   /// **************************************************************************
   /// Set backdrop border color
   /// **************************************************************************
-  void vdp_setBackDropColor(uint8_t);
+  inline void vdp_setBackDropColor(uint8_t);
 
   /// **************************************************************************
   ///  Position the cursor at the specified position
@@ -1430,12 +1407,12 @@ uint8_t ayRead(uint8_t reg);
   /// You should use vdp_getCharAtLocationVRAM(), which will get the character from the double
   /// buffer without accessing VRAM.
   /// **************************************************************************
-  uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y);
+  inline uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y);
 
   /// **************************************************************************
   /// In text mode, there is a buffer copy of the screen
   /// **************************************************************************
-  uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y);
+  inline uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y);
 
   /// **************************************************************************
   /// Set the character in memory buffer at location. This does not update the screen!

@@ -116,20 +116,20 @@ void initNABULIBAudio() {
   ayWrite(7, 0b01111000);
 }
 
-inline void nop() {
+void nop() {
   __asm
     NOP
   __endasm;
 }
 
-inline void NABU_DisableInterrupts() {
+void NABU_DisableInterrupts() {
 
   __asm
     di
   __endasm;
 }
 
-inline void NABU_EnableInterrupts() {
+void NABU_EnableInterrupts() {
 
   __asm
     ei
@@ -171,18 +171,24 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
       push af;
       push bc;
       push hl;
-      push iy;
     __endasm;
 
-    _rxBuffer[_rxBufferWritePos] = IO_HCCA;
-
-    _rxBufferWritePos++;
-
-    if (_rxBufferWritePos == RX_BUFFER_SIZE)
-      _rxBufferWritePos = 0;
+    // _rxBuffer[_rxBufferWritePos] = IO_HCCA;
+    // _rxBufferWritePos++;
 
     __asm
-      pop iy;
+      ld	bc, __rxBuffer+0
+      ld	hl, (__rxBufferWritePos)
+      ld	h, 0x00
+      add	hl, bc
+      in	a, (_IO_HCCA)
+      ld	(hl), a
+      ld	a, (__rxBufferWritePos+0)
+      inc	a
+      ld	(__rxBufferWritePos+0), a
+    __endasm;
+
+    __asm
       pop hl;
       pop bc;
       pop af;
@@ -391,14 +397,14 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
 // -----
 // **************************************************************************
 
-inline void ayWrite(uint8_t reg, uint8_t val) {
+void ayWrite(uint8_t reg, uint8_t val) {
 
   IO_AYLATCH = reg;
 
   IO_AYDATA = val;
 }
 
-inline uint8_t ayRead(uint8_t reg) {
+uint8_t ayRead(uint8_t reg) {
 
   IO_AYLATCH = reg;
 
@@ -499,7 +505,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     return key;
   }
 
-  inline uint8_t getJoyStatus(uint8_t joyNum) {
+  uint8_t getJoyStatus(uint8_t joyNum) {
 
       return _joyStatus[joyNum];
   }
@@ -564,7 +570,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint32_t timer = 0;
 
-    while (!hcca_isRxBufferAvailable()) {
+    while (_rxBufferWritePos == _rxBufferReadPos) {
       
       timer++;
 
@@ -580,7 +586,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     return false;
   }
 
-  inline bool hcca_isRxBufferAvailable() {
+  bool hcca_isRxBufferAvailable() {
 
     return _rxBufferWritePos != _rxBufferReadPos;
   }
@@ -588,21 +594,18 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   uint8_t hcca_getSizeOfDataInBuffer() {
 
     if (_rxBufferReadPos > _rxBufferWritePos)
-      return (RX_BUFFER_SIZE - _rxBufferReadPos) + _rxBufferWritePos;
+      return (0xff - _rxBufferReadPos) + _rxBufferWritePos;
 
     return _rxBufferWritePos - _rxBufferReadPos;
   }
 
   uint8_t hcca_readByte() {
 
-    while (!hcca_isRxBufferAvailable());
+    while (_rxBufferWritePos == _rxBufferReadPos);
 
     uint8_t ret = _rxBuffer[_rxBufferReadPos];
 
     _rxBufferReadPos++;
-
-    if (_rxBufferReadPos == RX_BUFFER_SIZE)
-      _rxBufferReadPos = 0;
 
     return ret;
   }
@@ -639,13 +642,17 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint8_t *start = buffer + offset;
     uint8_t *end   = start + bufferLen;
-    
-    while (start != end) {
 
-      *start = hcca_readByte();
+    do {
+
+      while (_rxBufferWritePos == _rxBufferReadPos);
+
+      *start = _rxBuffer[_rxBufferReadPos];
 
       start++;
-    }
+
+      _rxBufferReadPos++;
+    } while (start != end);
   }
 
 
@@ -674,7 +681,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     hcca_writeByte((uint8_t)(val & 0xff));
     hcca_writeByte((uint8_t)((val >> 8) & 0xff));
-    hcca_writeByte(((uint8_t)(val >> 16) & 0xff));
+    hcca_writeByte((uint8_t)((val >> 16) & 0xff));
     hcca_writeByte((uint8_t)((val >> 24) & 0xff));
   }
 
@@ -733,21 +740,21 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
 #ifndef DISABLE_VDP
 
-  inline void vdp_setRegister(uint8_t registerIndex, uint8_t value) {
+  void vdp_setRegister(uint8_t registerIndex, uint8_t value) {
 
     IO_VDPLATCH = value;
 
     IO_VDPLATCH = 0x80 | registerIndex;
   }
 
-  inline void vdp_setWriteAddress(uint16_t address) {
+  void vdp_setWriteAddress(uint16_t address) {
 
     IO_VDPLATCH = address & 0xff;
 
     IO_VDPLATCH = 0x40 | (address >> 8) & 0x3f;
   }
 
-  inline void vdp_setReadAddress(uint16_t address) {
+  void vdp_setReadAddress(uint16_t address) {
 
     IO_VDPLATCH = address & 0xff;
 
@@ -798,7 +805,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     vdp_setRegister(1, _vdpReg1Val | 0b00100000 );   
   }
 
-  inline void vdp_waitVDPReadyInt() {
+  void vdp_waitVDPReadyInt() {
 
     // uncomment this to enable debugging for the VDP to see if the vdpIsReady flag was
     // set prior to your program calling vdp_waitVDPReadyInt(). That means your program took
@@ -1381,7 +1388,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
-  inline void vdp_setBackDropColor(uint8_t color) {
+  void vdp_setBackDropColor(uint8_t color) {
 
     vdp_setRegister(7, color);
   }
@@ -1464,12 +1471,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     return IO_VDPDATA;
   }
 
-  inline uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y) {
+  uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y) {
 
     return _vdp_textBuffer[y * _vdpCursorMaxXFull + x];
   }
 
-  inline void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c) {
+  void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c) {
 
     _vdp_textBuffer[y * _vdpCursorMaxXFull + x] = c;
   }
