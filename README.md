@@ -1,6 +1,6 @@
 # NABU-LIB
 
-MAKE SOME GAMES :D
+MAKE SOME SOMETHING :D
 
 For HomeBrew and Cloud CP/M (HTTPS://NABU.CA) RetroNet of the NABU Persoal Computer Preservation Project. This repo is a z88dk C library for the NABU PC (personal computer). It includes efficient C functions for video, audio, hcca, keyboard, and more for the NABU Computer. This is an ongoing project, so follow this repo for additions, changes and bug fixes
 
