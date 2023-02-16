@@ -9,19 +9,17 @@
 
 #define DISABLE_VDP
 
-#define RX_BUFFER_SIZE 300
-
 // https://www.seasip.info/Cpm/bdos.html
 // https://github.com/z88dk/z88dk/blob/master/include/cpm.h
 #include <cpm.h>
 #include "../NABULIB/NABU-LIB.h"
-#include "../NABULIB/RetroNET-TCPClient.h"
+#include "../NABULIB/RetroNET-FileStore.h"
 #include <string.h>
 
 bool    _isRunning = true;
 uint8_t _handle    = 0xff;
 
-#define IN_BUF_LEN 255
+#define IN_BUF_LEN 128
 uint8_t inBuf[IN_BUF_LEN] = { 0 };
 
 void doKeyInput() {
@@ -228,12 +226,26 @@ void doHCCAInput() {
   }
 }
 
+uint16_t strToInt(char *str) {
+
+  uint16_t result = 0;
+
+  while ((*str >= '0') && (*str <= '9')) {
+
+      result = (result * 10) + ((*str) - '0');
+
+      str++;
+  }
+
+  return result;
+}
+
 void main(int argc, char *argv[]) {
 
   if (argc <= 1) {
 
     puts("");
-    puts("RetroNet Telnet Client CP/M (2.3b)");
+    puts("RetroNet Telnet Client CP/M (2.5b)");
     puts("by DJ Sures (c)2023");
     puts("");
     puts("Usage: telnet <hostname> <port optional>");
@@ -247,6 +259,9 @@ void main(int argc, char *argv[]) {
   }
 
   uint16_t port = 23;
+
+  if (argc == 3)
+    port = strToInt(argv[2]);
 
   printf("\nConnecting to %s %u\n", argv[1], port);
   
