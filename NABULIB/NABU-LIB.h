@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on Feb 16, 2023 (v2023.02.16.01)
+// Last updated on Feb 18, 2023 (v2023.02.18.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -220,6 +220,7 @@ __sfr __at 0x91 IO_KEYBOARD_STATUS;
 
 __sfr __at 0x00 IO_CONTROL;
 
+
 #define CONTROL_ROMSEL     0x01
 #define CONTROL_VDOBUF     0x02
 #define CONTROL_STROBE     0x04
@@ -297,16 +298,6 @@ volatile uint8_t _randomSeed = 0;
 // **************************************************************************
 uint8_t _ORIGINAL_INT_MASK = 0;
  
-// **************************************************************************
-// This stream of bytes are sent by calling the function hcca_exitRetroNETBridgeMode();
-// Sending this stream of bytes when in a bridge mode (i.e. TCP connection terminal connection) will exit bridge mode
-// and return you back to the main nabu talker loop.
-// 
-// Yes this is a hack, because I should have implemented a file stream just like I did with rn_fileHandle stuff (TODO I guess)
-// **************************************************************************
-#define RETRONET_BRIDGE_EXIT_CODE_LEN 21
-uint8_t RETRONET_BRIDGE_EXIT_CODE[RETRONET_BRIDGE_EXIT_CODE_LEN] = { 0x0f, 0xb7, 0xb8, 0xb9, 0x0f, 0xb9, 0xb8, 0xb7, 0xb8, 0xb9, 0xb7, 0xb7, 0xb8, 0xb9, 0xb9, 0xb8, 0xb7, 0xb8, 0x0f, 0xb9, 0xb7 };
-
 
 // **************************************************************************
 // VDP Variables
@@ -788,6 +779,11 @@ inline uint8_t ayRead(uint8_t reg);
     uint8_t y;
   } __at (0xff10) cpm_cursor;
 
+  // For Cloud CP/M to access the emulation mode
+  // 0 ADM
+  // 1 VT52
+  __at (0xff12) uint8_t _EMULATION_MODE; 
+
   void vt_clearToEndOfScreen();
 
   void vt_clearToEndOfLine();
@@ -952,12 +948,6 @@ inline uint8_t ayRead(uint8_t reg);
   // Write to the HCCA
   // **************************************************************************
   void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes);
-
-  // **************************************************************************
-  // Exit the TCP bridge mode for Telnet and RetroNET Chat
-  // This is a hack because I should have implemented a file stream just like i did with rn_fileHandle stuff (TODO I guess)
-  // **************************************************************************
-  void hcca_exitRetroNETBridgeMode();
 
 #endif
 

@@ -273,7 +273,10 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
 
   void vt_clearScreen() {
 
-    printf("%cE", 27);
+    if (_EMULATION_MODE == 0)
+      putchar(26);
+    else
+      printf("%cE", 27);
   }
 
   void vt_clearLine() {
@@ -328,7 +331,11 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
   void vt_setCursor(uint8_t x, uint8_t y) {
 
     putchar(27);
-    putchar('Y');
+    if (_EMULATION_MODE == 0)
+      putchar('=');
+    else
+      putchar('Y');
+      
     putchar(32 + y);
     putchar(32 + x);
   }
@@ -720,13 +727,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       start++;
     }
-  }
-
-  void hcca_exitRetroNETBridgeMode() {
-
-    hcca_writeBytes(0, RETRONET_BRIDGE_EXIT_CODE_LEN, (void *)RETRONET_BRIDGE_EXIT_CODE);
-
-    sleep(2); // give IA a moment to cancel
   }
 #endif
 
