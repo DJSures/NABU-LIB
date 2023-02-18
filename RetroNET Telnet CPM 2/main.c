@@ -245,7 +245,7 @@ void main(int argc, char *argv[]) {
   if (argc <= 1) {
 
     puts("");
-    puts("RetroNet Telnet Client CP/M (2.5b)");
+    puts("RetroNet Telnet Client CP/M (2.6b)");
     puts("by DJ Sures (c)2023");
     puts("");
     puts("Usage: telnet <hostname> <port optional>");
@@ -263,7 +263,18 @@ void main(int argc, char *argv[]) {
   if (argc == 3)
     port = strToInt(argv[2]);
 
-  printf("\nConnecting to %s %u\n", argv[1], port);
+  uint8_t originalEmulationMode = _EMULATION_MODE;
+
+  puts("");
+  
+  if (_EMULATION_MODE != 1) {
+
+    puts("Switching Cloud CP/M BIOS to VT52");
+
+    _EMULATION_MODE = 1;
+  }
+
+  printf("Connecting to %s %u\n", argv[1], port);
   
   initNABULib();
 
@@ -289,5 +300,12 @@ void main(int argc, char *argv[]) {
   }
 
   rn_TCPHandleClose(_handle);
+
+  if (originalEmulationMode == 0) {
+
+    puts("Restoring Cloud CP/M BIOS to ADM3a");
+
+    _EMULATION_MODE = 0;
+  }
 }
  
