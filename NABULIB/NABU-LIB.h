@@ -784,6 +784,10 @@ inline uint8_t ayRead(uint8_t reg);
   // 1 VT52
   __at (0xff12) uint8_t _EMULATION_MODE; 
 
+  // 0 IA
+  // 1 LPT
+  __at (0xff13) uint8_t _LIST_DEVICE; 
+
   void vt_clearToEndOfScreen();
 
   void vt_clearToEndOfLine();
@@ -1174,6 +1178,16 @@ inline uint8_t ayRead(uint8_t reg);
   //        a font to be set
   // **************************************************************************
   void vdp_loadASCIIFont(uint8_t* font);
+
+
+  // **************************************************************************
+  // Does the same as vdp_loadASCIIFont(), except it doubles the font size by
+  // adding a duplicate above it with inverted characters.
+  //
+  // With the default 768 byte ASCII font, you just need to add 96 to the
+  // character. For example, vdp_write(96 + "H") will print an inverted capital H
+  // **************************************************************************
+  void vdp_loadASCIIFontWithInverse(uint8_t* font);
 
   // **************************************************************************
   // Initialize vdp with the pattern table with an array of data. 

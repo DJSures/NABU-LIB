@@ -168,9 +168,8 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
 
     // review LIS and only bc, hl, a registers are used for this function
     __asm
+      exx;
       push af;
-      push bc;
-      push hl;
     __endasm;
 
     // _rxBuffer[_rxBufferWritePos] = IO_HCCA;
@@ -189,9 +188,8 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
     __endasm;
 
     __asm
-      pop hl;
-      pop bc;
       pop af;
+      exx;
       ei;
       reti;
     __endasm;
@@ -203,10 +201,8 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
 
     __asm
       push af;
-      push bc;
-      push de;
-      push hl;
       push iy;
+      exx;
     __endasm;
 
     uint8_t inKey = IO_KEYBOARD;
@@ -243,10 +239,8 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
     }
 
     __asm
+      exx;
       pop iy;
-      pop hl;
-      pop de;
-      pop bc;
       pop af;
       ei;
       reti;
@@ -1071,6 +1065,29 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     do {
 
       IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+  }
+
+  void vdp_loadASCIIFontWithInverse(uint8_t *font) {
+
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 0x100);
+
+    uint8_t *start = font;
+    uint8_t *end = start + 768;
+
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    start = font;
+    do {
+
+      IO_VDPDATA = *start ^ 0xff;
 
       start++;
     } while (start != end);

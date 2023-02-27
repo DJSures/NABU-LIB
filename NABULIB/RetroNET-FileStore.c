@@ -681,3 +681,21 @@ int32_t rn_TCPHandleWrite(uint8_t tcpHandle, uint16_t dataOffset, uint16_t dataL
 
   return wrote;
 }
+
+// **************************************************************************
+// PRINTER
+// -------
+//
+// These functions are for printing to a file on the host PC
+// **************************************************************************
+void rn_Printer(uint8_t c) {
+
+  hcca_writeByte(0xda);
+  hcca_writeByte(c);
+}
+
+void rn_PunchOut(uint8_t c) {
+
+  hcca_writeByte(0xdb);
+  hcca_writeByte(c);
+}

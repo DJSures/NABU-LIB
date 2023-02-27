@@ -471,6 +471,22 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 int32_t rn_TCPHandleWrite(uint8_t tcpHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
 
 
+// **************************************************************************
+// PRINTER
+// -------
+//
+// These functions are for printing to a file on the host PC
+// **************************************************************************
+
+// **************************************************************************
+// Write to the LST.TXT file on the internet adapter's storage folder
+// **************************************************************************
+void rn_Printer(uint8_t c);
+
+// **************************************************************************
+// Write to the PUNCH.TXT file on the internet adapter's storage folder
+// **************************************************************************
+void rn_PunchOut(uint8_t c);
 
 
 #include "RetroNET-FileStore.c"
