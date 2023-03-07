@@ -11,8 +11,6 @@
 
 #define DISABLE_KEYBOARD_INT
 
-#define DISABLE_VDP
-
 #include <stdio.h>
 #include <conio.h>
 #include "../NABULIB/NABU-LIB.h"

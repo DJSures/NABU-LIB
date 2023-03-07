@@ -10,8 +10,7 @@
 #include "../NABULIB/NABU-LIB.h"
 
 #include "../NABULIB/NabuTracker.h"
-//#include "./midis/test1-nt.h"
-#include "./midis/loop1-nt.h"
+#include "./midis/baseattack-nt.h"
 
 void main() {
 
@@ -19,8 +18,10 @@ void main() {
   
   uint16_t _cntr = 0;
 
-  nt_init(loop1_nt);
+  nt_init(baseattack_nt);
 
+  puts("Press q to quit");
+  
   while (true) {
 
     if (_cntr % 420 == 0) {

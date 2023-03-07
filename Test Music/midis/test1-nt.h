@@ -1,4 +1,4 @@
-uint8_t _song[] = {
+uint8_t _test1nt[] = {
 0, NT_NOTE_ON, 1, 12, 15, 
 0, NT_NOTE_ON, 2, 36, 15, 
 0, NT_SND_CHNG, 0, 

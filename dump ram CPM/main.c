@@ -40,13 +40,6 @@ void main() {
     }
   }
 
-
-
-
-
-
-
-
   printf("- Opening remote file: %s\n", REMOTE_FILENAME);
 
   uint8_t writeFileHandle = rn_fileOpen(REMOTE_FILENAME_LEN, REMOTE_FILENAME, OPEN_FILE_FLAG_READWRITE, 0xff);
