@@ -1,26 +1,10 @@
-static void orgit() __naked {
-  __asm
-  org     0x140D
-    nop
-    nop
-    nop
-    __endasm;
-}
-
-void main2();
-
-void main() {
-
-  main2();
-}
-
 #define FONT_LM80C
-
 #define BIN_TYPE BIN_HOMEBREW
 
 #include "../NABULIB/RetroNET-FileStore.h"
 #include "../NABULIB/NABU-LIB.h"
-#include <z80.h> // for z80_delay_ms()
+#include "../NABULIB/patterns.h"
+#include <arch/z80.h> // for z80_delay_ms()
 
 #define LOCAL_TMP_FILE "z:\\test\\directory\\testing.txt"
 #define LOCAL_TMP_FILE_LEN 29
@@ -108,7 +92,7 @@ void doReadSequential() {
     // display the data that we read onto the screen
     vdp_printPart(0, read, _buffer);
 
-    z80_delay_ms(100);
+//    z80_delay_ms(100);
   }
 
   rn_fileHandleClose(readFileHandle);
@@ -132,8 +116,10 @@ void doReadHTTPWriteLocal() {
   // Instruct the IA to get a file and let the server return a file handle id
   uint8_t httpFileHandle = rn_fileOpen(46, "https://cloud.nabu.ca/httpGetQueryResponse.txt", OPEN_FILE_FLAG_READONLY, 0xff);
 
+  vdp_newLine();
+
   // Display the status if the file was received
-  vdp_print("http file Handle: ");
+  vdp_print("read file Handle: ");
   vdp_writeUInt8(httpFileHandle);
   vdp_newLine();
 
@@ -155,11 +141,11 @@ void doReadHTTPWriteLocal() {
   // If the file that we're going to write to has data in it, let's clear the data.
   // This is because we don't want data from the last time we ran it. We want a new
   // fresh empty file to populate.
-  uint32_t testSize = rn_fileHandleSize(writeFileHandle);
+  int32_t testSize = rn_fileHandleSize(writeFileHandle);
 
   if (testSize > 0) {
 
-    vdp_print("File already exists and is  ");
+    vdp_print("File already exists and is ");
     vdp_writeInt32(testSize);
     vdp_print(" bytes");
     vdp_newLine();
@@ -192,7 +178,7 @@ void doReadHTTPWriteLocal() {
 
     // read data from the http file that we downloaded in BUFFERSIZE (4 byte) parts
     uint16_t read = rn_fileHandleRead(httpFileHandle, _buffer, 0, readPos, BUFFERSIZE);
-
+    
     // reached end of file so break out of loop
     if (read == 0)
       break;
@@ -205,7 +191,7 @@ void doReadHTTPWriteLocal() {
     // display the data that we read onto the screen
     vdp_printPart(0, read, _buffer);
 
-    z80_delay_ms(100);
+//    z80_delay_ms(100);
   }
 
   rn_fileHandleClose(httpFileHandle);
@@ -228,7 +214,7 @@ void doShowFileDetails() {
   // ------------------------------------------------------------------------------------------------
 
   uint8_t readFileHandle = rn_fileOpen(LOCAL_TMP_FILE_LEN, LOCAL_TMP_FILE, OPEN_FILE_FLAG_READONLY, 0xff);
-
+  
   rn_fileHandleDetails(readFileHandle, &fs);
 
   rn_fileHandleClose(readFileHandle);
@@ -341,12 +327,13 @@ void doDirectoryListing() {
   vdp_newLine();
 }
 
-void main2() {
+void main() {
 
   initNABULib();
 
   // Put the graphics into text mode with the text color 0x01 and background color 0x03
   vdp_initTextMode(VDP_WHITE, VDP_BLACK, true);
+  vdp_loadASCIIFont(ASCII);
 
   vdp_print("Hi, the goal of NABU is to be a PC with no local storage, relying on the network (or internet) for everything. This is a demo of reading/writing files from the cloud and over the Internet Adapter.");
   vdp_newLine();

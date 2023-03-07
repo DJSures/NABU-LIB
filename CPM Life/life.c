@@ -12,10 +12,17 @@
   this as you wish. 
 
 ==========================================================================*/
- 
+
+#define BIN_TYPE BIN_CPM
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+  // For Cloud CP/M to access the emulation mode
+  // 0 ADM
+  // 1 VT52
+  __at (0xff12) uint8_t _EMULATION_MODE; 
 
 /* Size of the grid. We can't go much bigger the 16x32 on the Z80-PG. */
 #define ROWS 16 
@@ -257,8 +264,17 @@ static int getrnd (void)
   }
 
 /** main */
-int main (int argc, char **argv)
-  {
+int main (int argc, char **argv) {
+
+  uint8_t originalEmulationMode = _EMULATION_MODE;
+
+  if (_EMULATION_MODE != 1) {
+
+    puts("Switching Cloud CP/M BIOS to VT52");
+
+    _EMULATION_MODE = 1;
+  }
+
   BOOL stop = FALSE;
   srand (getrnd());
   life_init_grid();
@@ -272,7 +288,9 @@ int main (int argc, char **argv)
   int delay = 1;
   /* It's best to hide the cursor -- otherwise we see it scanning
      down the display */
-  term_hide_cursor();   while (!stop)
+  term_hide_cursor();   
+  
+  while (!stop)
     {
     life_draw_grid ();
     term_set_cursor (ROWS + 1, 0);
@@ -297,6 +315,14 @@ int main (int argc, char **argv)
   term_clear();
   term_show_cursor();
   fflush (stdout);
+
+  if (originalEmulationMode == 0) {
+
+    puts("Restoring Cloud CP/M BIOS to ADM3a");
+
+    _EMULATION_MODE = 0;
+  }
+
   return 0;
   }
 

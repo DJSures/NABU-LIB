@@ -9,14 +9,12 @@ echo ***************************************************************************
 
 zcc +cpm -Wall -o life.com life.c -lndos
 
-:: zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "game5"
-
 echo ****************************************************************************
 
-mkfs.cpm -f naburn "C:\My Documents\NABU Internet Adapter\Store\b.dsk"
+mkfs.cpm -f naburn8mb "C:\My Documents\NABU Internet Adapter\Store\c.dsk"
 
-cpmcp -f naburn    "C:\My Documents\NABU Internet Adapter\Store\b.dsk" life.com 0:
+cpmcp -f naburn8mb    "C:\My Documents\NABU Internet Adapter\Store\c.dsk" life.com 0:
 
-dir "C:\My Documents\Personal\NABU\C Programs\Game Dev 5\*.com"
+dir *.com
 
 pause

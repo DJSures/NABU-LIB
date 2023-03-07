@@ -7,17 +7,14 @@ SET PATH=%Z88DK_DIR%bin;%PATH%
 echo.
 echo ****************************************************************************
 
-zcc +cpm main.c -compiler=sdcc -create-app -O3 --opt-code-speed -o httptest
-
-:: zcc +cpm -subtype=nabu main.c -compiler=sdcc -create-app -O3 --opt-code-speed -o telnet
-
-:: zcc +cpm -subtype=nabu main.c -compiler=sdcc -create-app -lndos -pragma-need=ansiterminal -pragma-define:ansicolumns=51 -o telnet
-:: Columns can be 85, 80, 64, 51, 42, 40, 46, 32, 28, 24
+zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o HTTPTEST
 
 echo ****************************************************************************
 
-mkfs.cpm -f naburn "C:\My Documents\NABU Internet Adapter\Store\a.dsk"
+mkfs.cpm -f naburn8mb "C:\My Documents\NABU Internet Adapter\Store\c.dsk"
 
-cpmcp -f naburn    "C:\My Documents\NABU Internet Adapter\Store\a.dsk" httptest.com 0:
+cpmcp -f naburn8mb    "C:\My Documents\NABU Internet Adapter\Store\c.dsk" HTTPTEST.com 0:
+
+dir *.com
 
 pause

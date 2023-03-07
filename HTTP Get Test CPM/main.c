@@ -220,7 +220,7 @@ void doShowFileDetails() {
 
   rn_fileHandleClose(readFileHandle);
 
-  puts("Filename: ");
+  printf("Filename: ");
   putsPart(0, fs.FilenameLen, fs.Filename);
   puts("");
 
@@ -258,7 +258,7 @@ void doDirectoryListing() {
 
     if (fs.IsFile) {
 
-      puts("Filename: ");
+      printf("Filename: ");
       putsPart(0, fs.FilenameLen, fs.Filename);
       puts("");
 
