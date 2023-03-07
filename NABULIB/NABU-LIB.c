@@ -202,6 +202,7 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
     __asm
       push af;
       push iy;
+      ld iy, 0;
       exx;
     __endasm;
 
@@ -743,7 +744,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     IO_VDPLATCH = address & 0xff;
 
-    IO_VDPLATCH = 0x40 | (address >> 8) & 0x3f;
+    IO_VDPLATCH = 0x40 | ((address >> 8) & 0x3f);
   }
 
   void vdp_setReadAddress(uint16_t address) {
@@ -897,6 +898,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; 
         vdp_setRegister(1, _vdpReg1Val); 
 
+        vdp_setRegister(4, 0x03);
+        _vdpPatternGeneratorTableAddr = 0x00;
+
         fgColor = 0;
         _vdpCursorMaxX = 31;
         _vdpCursorMaxXFull = 32;
@@ -909,6 +913,10 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
         _vdpReg1Val = 0b11010010;
         vdp_setRegister(1, _vdpReg1Val);
+
+        vdp_setRegister(4, 0x00);
+        _vdpPatternGeneratorTableAddr = 0x00;
+
 
         // https://konamiman.github.io/MSX2-Technical-Handbook/md/Appendix5.html#screen-1--graphic-1
         // vdp_setRegister(2, 0x06);
@@ -929,7 +937,10 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
         _vdpReg1Val = 0b11001000 | (big_sprites << 1) | magnify;
         vdp_setRegister(1, _vdpReg1Val); 
-        
+
+        vdp_setRegister(4, 0x00);
+        _vdpPatternGeneratorTableAddr = 0x00;
+
         fgColor = 0;
         _vdpCursorMaxX = 31;
         _vdpCursorMaxXFull = 32;
@@ -942,10 +953,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     vdp_setRegister(3, 0xff); // <- ALL LIES! how is 0xff 0x2000? 
     _vdpColorTableAddr = 0x2000;
-    _vdpColorTableSize = 0x1800;
-
-    vdp_setRegister(4, 0x00);
-    _vdpPatternGeneratorTableAddr = 0x00;
 
     vdp_setRegister(5, 0x36);
     _vdpSpriteAttributeTableAddr = 0x1b00;

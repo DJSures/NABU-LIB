@@ -1,4 +1,15 @@
-diskdef naburn
+diskdef naburn8mb
+    seclen 128
+    tracks 16384
+    sectrk 4
+    blocksize 4096
+    maxdir 512
+    skew 1
+    boottrk 0
+    os 2.2
+end
+
+diskdef naburn4mb
     seclen 128
     tracks 16384
     sectrk 4

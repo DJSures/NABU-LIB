@@ -245,7 +245,7 @@ void main(int argc, char *argv[]) {
   if (argc <= 1) {
 
     puts("");
-    puts("RetroNet Telnet Client CP/M (2.6b)");
+    puts("RetroNet Telnet Client CP/M (2.7b)");
     puts("by DJ Sures (c)2023");
     puts("");
     puts("Usage: telnet <hostname> <port optional>");
@@ -291,9 +291,12 @@ void main(int argc, char *argv[]) {
   puts("Connected. Use CTRL+] to exit");
   puts("");
 
+  int8_t miss = 0;
+
   while (_isRunning) {
 
-    doHCCAInput();
+    if (miss++ == 0)
+      doHCCAInput();
 
     while (bios(2, 0, 0))
       doKeyInput();

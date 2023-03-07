@@ -11,10 +11,10 @@ zcc +cpm main.c -compiler=sdcc -create-app -O2 --opt-code-speed -o telnet
 
 echo ****************************************************************************
 
-mkfs.cpm -f naburn "C:\My Documents\NABU Internet Adapter\Store\a.dsk"
+mkfs.cpm -f naburn8mb "C:\My Documents\NABU Internet Adapter\Store\c.dsk"
 
-cpmcp -f naburn    "C:\My Documents\NABU Internet Adapter\Store\a.dsk" telnet.com 0:
+cpmcp -f naburn8mb    "C:\My Documents\NABU Internet Adapter\Store\c.dsk" telnet.com 0:
 
-dir "C:\My Documents\NABU Internet Adapter\Store\a.dsk"
+dir *.com
 
 pause

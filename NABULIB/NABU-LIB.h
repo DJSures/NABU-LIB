@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on Feb 18, 2023 (v2023.02.18.00)
+// Last updated on March 6, 2023 (v2023.03.06.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -360,7 +360,6 @@ uint8_t _ORIGINAL_INT_MASK = 0;
   uint16_t       _vdpSpriteGeneratorTableAddr;
   uint8_t        _vdpSpriteSizeSelected;
   uint16_t       _vdpPatternNameTableAddr;
-  uint16_t       _vdpColorTableSize = 0;
   uint16_t       _vdpColorTableAddr;
   uint16_t       _vdpPatternGeneratorTableAddr;
   uint8_t        _vdpCursorMaxX;
