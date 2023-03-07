@@ -14,8 +14,6 @@
 
 #define BIN_TYPE BIN_CPM
 
-#define RX_BUFFER_SIZE 156
-
 #define DISABLE_CURSOR
 
 #include <stdlib.h>
@@ -662,9 +660,9 @@ void doGameLoop() {
 // ********************************************************************************************
 void loadImage(uint8_t filenameLen, uint8_t *filename) {
 
-#define BUF_SIZE 128
+  #define BUF_SIZE 128
   uint8_t buf[BUF_SIZE];
-  
+
   uint8_t fileId = rn_fileOpen(filenameLen, filename, OPEN_FILE_FLAG_READONLY, 0xff);
 
   rn_fileHandleSeek(fileId, 7, RN_SEEK_SET);
@@ -694,7 +692,7 @@ void loadImage(uint8_t filenameLen, uint8_t *filename) {
 void initMenu() {
 
   vdp_setCursor2(27, 22);
-  vdp_print("v0.1");
+  vdp_print("v0.3");
 
   vdp_setCursor2(5, 18);
   vdp_print("PRESS Q IN GAME TO EXIT");
