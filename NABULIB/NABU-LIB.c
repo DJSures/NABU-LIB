@@ -1125,6 +1125,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       start++;
     } while (start != end);
 
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 2048);
     start = patternTable;
     do {
 
@@ -1133,6 +1134,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       start++;
     } while (start != end);
 
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 4096);
     start = patternTable;
     do {
 
@@ -1156,6 +1158,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       start++;
     } while (start != end);
 
+    vdp_setWriteAddress(_vdpColorTableAddr + 2048);
     start = colorTable;
     do {
 
@@ -1164,6 +1167,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       start++;
     } while (start != end);
 
+    vdp_setWriteAddress(_vdpColorTableAddr + 4096);
     start = colorTable;
     do {
 
