@@ -747,7 +747,7 @@ void main() {
 
   vdp_clearVRAM();
 
-  vdp_initG2Mode(0, true, false, false);
+  vdp_initG2Mode(0, true, false, false, false);
 
   vdp_loadPatternTable(PATTERN, sizeof(PATTERN));
   vdp_loadColorTable(COLOR, sizeof(COLOR));
