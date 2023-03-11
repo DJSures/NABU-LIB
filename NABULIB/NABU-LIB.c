@@ -876,9 +876,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     NABU_EnableInterrupts();
   }
 
-  void vdp_init(uint8_t mode, uint8_t fgColor, uint8_t bgColor, bool big_sprites, bool magnify, bool autoScroll) {
+  void vdp_init(uint8_t mode, uint8_t fgColor, uint8_t bgColor, bool big_sprites, bool magnify, bool autoScroll, bool splitThirds) {
 
     _vdpMode = mode;
+
+    _vdpSplitThirds = splitThirds;
 
     _vdpSpriteSizeSelected = big_sprites;
 
@@ -898,7 +900,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; 
         vdp_setRegister(1, _vdpReg1Val); 
 
-        vdp_setRegister(4, 0x03);
+        if (_vdpSplitThirds)
+          vdp_setRegister(4, 0x03);
+        else
+          vdp_setRegister(4, 0x00);
+        
         _vdpPatternGeneratorTableAddr = 0x00;
 
         fgColor = 0;
@@ -951,7 +957,10 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     vdp_setRegister(2, 0x06);
     _vdpPatternNameTableAddr = 0x1800;     
 
-    vdp_setRegister(3, 0xff); // <- ALL LIES! how is 0xff 0x2000? 
+    if (_vdpSplitThirds)
+      vdp_setRegister(3, 0xff);
+    else
+      vdp_setRegister(3, 0x9f);
     _vdpColorTableAddr = 0x2000;
 
     vdp_setRegister(5, 0x36);
@@ -990,17 +999,17 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_initTextMode(uint8_t fgColor, uint8_t bgColor, bool autoScroll) {
 
-    vdp_init(VDP_MODE_TEXT, fgColor, bgColor , false, false, autoScroll);
+    vdp_init(VDP_MODE_TEXT, fgColor, bgColor , false, false, autoScroll, false);
   }
 
-  void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll) {
+  void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds) {
 
-    vdp_init(VDP_MODE_G2, 0, bgColor, bigSprites, scaleSprites, autoScroll);
+    vdp_init(VDP_MODE_G2, 0, bgColor, bigSprites, scaleSprites, autoScroll, splitThirds);
   }
 
   void vdp_initMultiColorMode() {
 
-    vdp_init(VDP_MODE_MULTICOLOR, 0, 0, false, false, false);
+    vdp_init(VDP_MODE_MULTICOLOR, 0, 0, false, false, false, false);
   }
 
   void vdp_clearScreen() {
@@ -1125,23 +1134,26 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       start++;
     } while (start != end);
 
-    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 2048);
-    start = patternTable;
-    do {
+    if (_vdpSplitThirds) { 
 
-      IO_VDPDATA = *start;
+      vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 2048);
+      start = patternTable;
+      do {
 
-      start++;
-    } while (start != end);
+        IO_VDPDATA = *start;
 
-    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 4096);
-    start = patternTable;
-    do {
+        start++;
+      } while (start != end);
 
-      IO_VDPDATA = *start;
+      vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 4096);
+      start = patternTable;
+      do {
 
-      start++;
-    } while (start != end);
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+    }
   }
 
   void vdp_loadColorTable(uint8_t *colorTable, uint16_t len) {
@@ -1149,7 +1161,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // datasheet 2-20 : screen is split into 3 and the color table therefore is repeated 3 times
     uint8_t *start = colorTable;
     uint8_t *end = colorTable + len;
-
+      
     vdp_setWriteAddress(_vdpColorTableAddr);
     do {
 
@@ -1158,23 +1170,26 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       start++;
     } while (start != end);
 
-    vdp_setWriteAddress(_vdpColorTableAddr + 2048);
-    start = colorTable;
-    do {
+    if (_vdpSplitThirds) {
 
-      IO_VDPDATA = *start;
+      vdp_setWriteAddress(_vdpColorTableAddr + 2048);
+      start = colorTable;
+      do {
 
-      start++;
-    } while (start != end);
+        IO_VDPDATA = *start;
 
-    vdp_setWriteAddress(_vdpColorTableAddr + 4096);
-    start = colorTable;
-    do {
+        start++;
+      } while (start != end);
 
-      IO_VDPDATA = *start;
+      vdp_setWriteAddress(_vdpColorTableAddr + 4096);
+      start = colorTable;
+      do {
 
-      start++;
-    } while (start != end);
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+    }
   }
 
   void vdp_colorizePattern(uint8_t patternId, uint8_t fg, uint8_t bg) {
@@ -1187,13 +1202,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     for (uint8_t i = 0; i < 8; i++)
       IO_VDPDATA = c;
 
-    vdp_setWriteAddress(_vdpColorTableAddr + 2048  + pt);
-    for (uint8_t i = 0; i < 8; i++)
-      IO_VDPDATA = c;
+    if (_vdpSplitThirds) {
 
-    vdp_setWriteAddress(_vdpColorTableAddr + 4096 + pt);
-    for (uint8_t i = 0; i < 8; i++)
-      IO_VDPDATA = c;
+      vdp_setWriteAddress(_vdpColorTableAddr + 2048  + pt);
+      for (uint8_t i = 0; i < 8; i++)
+        IO_VDPDATA = c;
+
+      vdp_setWriteAddress(_vdpColorTableAddr + 4096 + pt);
+      for (uint8_t i = 0; i < 8; i++)
+        IO_VDPDATA = c;
+    }
   }
 
   void vdp_plotHires(uint8_t x, uint8_t y, uint8_t color1, uint8_t color2) {

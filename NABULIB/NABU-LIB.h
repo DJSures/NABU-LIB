@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on March 6, 2023 (v2023.03.07.00)
+// Last updated on March 11, 2023 (v2023.03.11.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -368,6 +368,7 @@ uint8_t _ORIGINAL_INT_MASK = 0;
   uint8_t        _vdpMode;
   bool           _autoScroll;
   bool           _vdpInterruptEnabled = false;
+  bool           _vdpSplitThirds;
 
   // used for the vdp_enableVDPReadyInt()
   volatile uint8_t vdpStatusRegVal = 0x00;
@@ -996,7 +997,7 @@ inline uint8_t ayRead(uint8_t reg);
   //   initNABULib();
   //
   //   // switch to the graphic mode 
-  //   vdp_initG2Mode(0, true, false, false);
+  //   vdp_initG2Mode(0, true, false, false, false);
   //
   //   // enable the VDP sync
   //   vdp_enableVDPReadyInt();
@@ -1104,9 +1105,12 @@ inline uint8_t ayRead(uint8_t reg);
   //               You will still provide the sprite size specified from 'spriteSize' but
   //               they will be double the size when put on the screen 
   // autoScroll:   Will text scroll when it reaches bottom of the screen
+  // splitThirds:  Splits the nametable and color generators into thirds in ram (0, 2048, 4096)
+  //               This must be TRUE if you want to use bitmap line drawing mode.
+  //               Otherwise, set this to FALSE because you don't need it
   // 
   // **************************************************************************
-  void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll);
+  void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds);
 
   // **************************************************************************
   // Initializes the VDP in 64x48 Multicolor Mode. Not really useful if more than 4k Video ram is available
@@ -1130,8 +1134,11 @@ inline uint8_t ayRead(uint8_t reg);
   //               You will still provide the sprite size specified from 'spriteSize' but
   //               they will be double the size when put on the screen 
   //  autoScroll:  Scrolls textmode vertically when your text is at the bottom of the screen 
+  // splitThirds:  Splits the nametable and color generators into thirds in ram (0, 2048, 4096)
+  //               This must be TRUE if you want to use bitmap line drawing mode.
+  //               Otherwise, set this to FALSE because you don't need it
   // **************************************************************************
-  void vdp_init(uint8_t mode, uint8_t fgColor, uint8_t bgColor, bool big_sprites, bool magnify, bool autoScroll);
+  void vdp_init(uint8_t mode, uint8_t fgColor, uint8_t bgColor, bool big_sprites, bool magnify, bool autoScroll, bool splitThirds);
 
   // **************************************************************************
   // Clear all VRAM set to 0's
@@ -1238,6 +1245,8 @@ inline uint8_t ayRead(uint8_t reg);
   // - y
   // - color1 Color of pixel at (x,y). If NULL, plot a pixel with color2
   // - color2 Color of the pixels not set or color of pixel at (x,y) when color1 == NULL
+  //
+  // *NOTE: This requires SPLIT THIRDS to be specified in init_gtMode() 
   // **************************************************************************
   void vdp_plotHires(uint8_t x, uint8_t y, uint8_t color1, uint8_t color2);
 
@@ -1248,6 +1257,8 @@ inline uint8_t ayRead(uint8_t reg);
   // - x
   // - y
   // - color
+  //
+  // *NOTE: This requires SPLIT THIRDS to be specified in init_gtMode() 
   // **************************************************************************
   void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color);
 
