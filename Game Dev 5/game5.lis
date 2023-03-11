@@ -1,4 +1,4 @@
-C:/Users/dj/AppData/Local/Temp/zcc00001050DA5F4.asm:
+C:/Users/dj/AppData/Local/Temp/zcc00001550C3934.asm:
      1                          MODULE cpm_crt0_asm
      2                          LINE 0, "c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm"
 c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
@@ -26,7 +26,7 @@ c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
     21                          
     22                              defc    crt0 = 1
     23                              INCLUDE "zcc_opt.def"
-C:/Users/dj/AppData/Local/Temp/zcc00001050DA5F3/zcc_opt.def:
+C:/Users/dj/AppData/Local/Temp/zcc00001550C3933/zcc_opt.def:
      1                          
 c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
     24                          
@@ -1312,58 +1312,58 @@ c:/z88dk/lib/config/../../lib/crt/classic/crt_section_code.inc:
      6                              SECTION code_crt_exit
      7                              SECTION code_crt_exit_exit
      8                              SECTION code_driver
-     9                              SECTION rodata_driver       ;Keep it in low memoey
-    10                              SECTION code_compiler
-    11                              SECTION code_clib
-    12                              SECTION code_l
-    13                              SECTION code_l_sdcc
-    14                              SECTION code_l_sccz80
-    15                              SECTION code_compress_zx7
-    16                              SECTION code_compress_zx0
-    17                              SECTION code_compress_zx1
-    18                              SECTION code_compress_zx2
-    19                              SECTION code_compress_aplib
-    20                              SECTION code_ctype
-    21                              SECTION code_esxdos
-    22                              SECTION code_fp
-    23                              SECTION code_fp_math48
-    24                              SECTION code_fp_math32
-    25                              SECTION code_fp_math16
-    26                              SECTION code_fp_mbf32
-    27                              SECTION code_fp_mbf64
-    28                              SECTION code_fp_am9511
-    29                              SECTION code_fp_dai32
-    30                              SECTION code_math
-    31                              SECTION code_error
-    32                              SECTION code_stdlib
-    33                              SECTION code_string
-    34                              SECTION code_adt_b_array
-    35                              SECTION code_adt_b_vector
-    36                              SECTION code_adt_ba_priority_queue
-    37                              SECTION code_adt_ba_stack
-    38                              SECTION code_adt_bv_priority_queue
-    39                              SECTION code_adt_bv_stack
-    40                              SECTION code_adt_p_forward_list
-    41                              SECTION code_adt_p_forward_list_alt
-    42                              SECTION code_adt_p_list
-    43                              SECTION code_adt_p_queue
-    44                              SECTION code_adt_p_stack
-    45                              SECTION code_adt_w_array
-    46                              SECTION code_adt_w_vector
-    47                              SECTION code_adt_wa_priority_queue
-    48                              SECTION code_adt_wa_stack
-    49                              SECTION code_adt_wv_priority_queue
-    50                              SECTION code_adt_wv_stack
-    51                              SECTION code_alloc_balloc
-    52                              SECTION code_alloc_obstack
-    53                              SECTION code_arch
-    54                              SECTION code_font
-    55                              SECTION code_font_fzx
-    56                              SECTION code_psg
-    57                              SECTION code_sound_ay
-    58                              SECTION code_PSGlib
-    59                              SECTION code_time
-    60                              SECTION code_z80
+     9                              SECTION code_l		;Keep these in "low" memory
+    10                              SECTION code_l_sdcc
+    11                              SECTION code_l_sccz80
+    12                              SECTION code_z80
+    13                              SECTION rodata_driver       ;Keep it in low memoey
+    14                              SECTION code_compiler
+    15                              SECTION code_clib
+    16                              SECTION code_compress_zx7
+    17                              SECTION code_compress_zx0
+    18                              SECTION code_compress_zx1
+    19                              SECTION code_compress_zx2
+    20                              SECTION code_compress_aplib
+    21                              SECTION code_ctype
+    22                              SECTION code_esxdos
+    23                              SECTION code_fp
+    24                              SECTION code_fp_math48
+    25                              SECTION code_fp_math32
+    26                              SECTION code_fp_math16
+    27                              SECTION code_fp_mbf32
+    28                              SECTION code_fp_mbf64
+    29                              SECTION code_fp_am9511
+    30                              SECTION code_fp_dai32
+    31                              SECTION code_math
+    32                              SECTION code_error
+    33                              SECTION code_stdlib
+    34                              SECTION code_string
+    35                              SECTION code_adt_b_array
+    36                              SECTION code_adt_b_vector
+    37                              SECTION code_adt_ba_priority_queue
+    38                              SECTION code_adt_ba_stack
+    39                              SECTION code_adt_bv_priority_queue
+    40                              SECTION code_adt_bv_stack
+    41                              SECTION code_adt_p_forward_list
+    42                              SECTION code_adt_p_forward_list_alt
+    43                              SECTION code_adt_p_list
+    44                              SECTION code_adt_p_queue
+    45                              SECTION code_adt_p_stack
+    46                              SECTION code_adt_w_array
+    47                              SECTION code_adt_w_vector
+    48                              SECTION code_adt_wa_priority_queue
+    49                              SECTION code_adt_wa_stack
+    50                              SECTION code_adt_wv_priority_queue
+    51                              SECTION code_adt_wv_stack
+    52                              SECTION code_alloc_balloc
+    53                              SECTION code_alloc_obstack
+    54                              SECTION code_arch
+    55                              SECTION code_font
+    56                              SECTION code_font_fzx
+    57                              SECTION code_psg
+    58                              SECTION code_sound_ay
+    59                              SECTION code_PSGlib
+    60                              SECTION code_time
     61                              SECTION code_sprite_sp1
     62                              SECTION code_temp_sp1
     63                              SECTION code_splib2

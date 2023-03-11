@@ -14,8 +14,6 @@
 
 #define BIN_TYPE BIN_CPM
 
-#define RX_BUFFER_SIZE 156
-
 #define DISABLE_CURSOR
 
 #include <stdlib.h>
@@ -94,6 +92,9 @@ unsigned char SPRITE_DATA[]={
 
 #define SCREEN_MAX_Y 176
 #define SCREEN_MIN_Y 8
+
+#define IMG_BUF_SIZE 128
+uint8_t _imgBuf[IMG_BUF_SIZE];
 
 uint8_t tb[64];
 uint8_t PLAYER_LIVES = 3;
@@ -866,9 +867,6 @@ void doGameLoop() {
 // Loads a SC2 Image to Graphics Mode 2
 // ********************************************************************************************
 void loadImage(uint8_t filenameLen, uint8_t *filename) {
-
-#define BUF_SIZE 128
-  uint8_t buf[BUF_SIZE];
   
   uint8_t fileId = rn_fileOpen(filenameLen, filename, OPEN_FILE_FLAG_READONLY, 0xff);
 
@@ -879,13 +877,13 @@ void loadImage(uint8_t filenameLen, uint8_t *filename) {
   playNoteDelay(0, 0, 100);        
   while (true) {
 
-    uint16_t read = rn_fileHandleReadSeq(fileId, buf, 0, BUF_SIZE);
+    uint8_t read = rn_fileHandleReadSeq(fileId, _imgBuf, 0, IMG_BUF_SIZE);
 
     if (read == 0)
       break;
 
-    for (uint16_t i = 0; i < read; i++)
-      IO_VDPDATA = buf[i];
+    for (uint8_t i = 0; i < read; i++)
+      IO_VDPDATA = _imgBuf[i];
   }
 
   rn_fileHandleClose(fileId);
@@ -904,7 +902,7 @@ void initMenu() {
     doStars();
 
   vdp_setCursor2(28, 23);
-  vdp_print("v0.8");
+  vdp_print("v1.0");
 
   vdp_setCursor2(4, 20);
   vdp_print("(PRESS Q IN GAME TO EXIT)");
@@ -974,7 +972,7 @@ void main() {
 
   vdp_clearVRAM();
 
-  vdp_initG2Mode(0, true, false, false);
+  vdp_initG2Mode(0, true, false, false, false);
 
   vdp_loadPatternTable(PATTERN, sizeof(PATTERN));
   vdp_loadColorTable(COLOR, sizeof(COLOR));
