@@ -67,6 +67,9 @@ pause
 
 # Version Notes
 
+## v2023.03.11.00
+Added a new parameter for splitThirds for vdp_init that splits the nametable and color table generator into thirds. this is needed for bitmap graphics (i.e. drawing lines and stuff). See the Graphic Bitmap Test example project of how it works. Otherwise, just set this to FALSE for your projects because you probably don't use it
+
 ## v2023.02.13.00
 Huge performance improvements on scrolling, hcca and other stuff. A few bug fixes. Also the retronet tcp client library is checked in. Requires the IA to be updated to 2023.02.14.00
 
