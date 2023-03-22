@@ -805,6 +805,10 @@ inline uint8_t ayRead(uint8_t reg);
   // 1 LPT
   __at (0xff13) uint8_t _LIST_DEVICE; 
 
+  // Current screen color
+  __at (0xff25) volatile uint8_t  _SCREEN_COLOR;
+
+
   void vt_clearToEndOfScreen();
 
   void vt_clearToEndOfLine();
