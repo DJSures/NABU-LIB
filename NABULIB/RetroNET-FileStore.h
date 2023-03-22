@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023 
 // https://nabu.ca
 // 
-// Last updated on March 6, 2023 (v2023.03.06.01)
+// Last updated on March 22, 2023 (v2023.03.22.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -338,9 +338,9 @@ void rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t des
 // 
 // Examples
 // - uint16_t fileCnt =  rn_fileList(1, "\\",  1, "*", FILE_LIST_FLAG_INCLUDE_FILES | FILE_LIST_FLAG_INCLUDE_DIRECTORIES);
-// - uint16_t fileCnt =  rn_fileList(1, "\\", 3, "*.*");
-// - uint16_t fileCnt =  rn_fileList(8, "c:\\myApp", 3, "*.*");
-// - uint16_t fileCnt =  rn_fileList(6, "a:\\cpm", 7, "zo*.cmd");
+// - uint16_t fileCnt =  rn_fileList(1, "\\", 3, "*.*", FILE_LIST_FLAG_INCLUDE_FILES);
+// - uint16_t fileCnt =  rn_fileList(8, "c:\\myApp", 3, "*.*", FILE_LIST_FLAG_INCLUDE_FILES);
+// - uint16_t fileCnt =  rn_fileList(6, "a:\\cpm", 7, "zo*.cmd", FILE_LIST_FLAG_INCLUDE_FILES);
 // 
 // - pathLen is the length of the path string
 // - path is a pointer to the path string

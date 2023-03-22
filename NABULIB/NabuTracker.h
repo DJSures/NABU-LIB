@@ -4,7 +4,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on Feb 5, 2023 (v2023.02.05.00)
+// Last updated on March 22, 2023 (v2023.03.22.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -39,7 +39,7 @@
 
 // No touchy
 uint16_t _itemCntr;
-uint8_t _beatCntr;
+uint16_t _beatCntr;
 uint8_t *_song;
 
 // ***************************************************************************

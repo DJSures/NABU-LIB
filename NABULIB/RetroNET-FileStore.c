@@ -12,6 +12,7 @@
 
 
 
+uint8_t _rnFS_INT_BACKUP = 0;
 
 
 // **************************************************************************
@@ -24,17 +25,16 @@
 // **************************************************************************
 void hcca_DiFocusInterrupts() {
 
-  // temporarily disable all other interrupts while we perform an expensive hcca read
-  // we let hcca_DiWriteByte set the interrupt for us
-
   NABU_DisableInterrupts();
-  
+
+  _rnFS_INT_BACKUP = ayRead(IOPORTA);
+
   ayWrite(IOPORTA, INT_MASK_HCCARX);
 }
 
 void hcca_DiRestoreInterrupts() {
 
-  ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+  ayWrite(IOPORTA, _rnFS_INT_BACKUP);
 
   NABU_EnableInterrupts();
 }

@@ -76,26 +76,28 @@ void initNABULib() {
 
   __endasm;
 
+  uint8_t origIntMask;
+
   #if BIN_TYPE == BIN_HOMEBREW
 
     // A homebrew would not have existing interupts, so we start with a nice clean 0
-    _ORIGINAL_INT_MASK = 0;
+    origIntMask = 0;
   #elif BIN_TYPE == BIN_CPM
 
     // if cpm, we get the previous interrupt settings that the BIOS set because we only override 
     // what we want to use in NABULib. 
-    _ORIGINAL_INT_MASK = ayRead(IOPORTA);
+    origIntMask = ayRead(IOPORTA);
   #endif
 
   #ifndef DISABLE_HCCA_RX_INT
-    _ORIGINAL_INT_MASK |= INT_MASK_HCCARX;
+    origIntMask |= INT_MASK_HCCARX;
   #endif
 
   #ifndef DISABLE_KEYBOARD_INT
-    _ORIGINAL_INT_MASK |= INT_MASK_KEYBOARD;
+    origIntMask |= INT_MASK_KEYBOARD;
   #endif
 
-  ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+  ayWrite(IOPORTA, origIntMask);
 
   NABU_EnableInterrupts();
 
@@ -665,6 +667,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     NABU_DisableInterrupts();
     
+    uint8_t origIntMask = ayRead(IOPORTA);
+
     ayWrite(IOPORTA, INT_MASK_HCCATX);
 
     IO_AYLATCH = IOPORTB;
@@ -672,7 +676,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     IO_HCCA = c;
 
-    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+    ayWrite(IOPORTA, origIntMask);
 
     NABU_EnableInterrupts();
   }
@@ -788,9 +792,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     __endasm;
 
-    _ORIGINAL_INT_MASK |= INT_MASK_VDP;
+    uint8_t origIntMask = ayRead(IOPORTA);
+    
+    origIntMask |= INT_MASK_VDP;
 
-    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+    ayWrite(IOPORTA, origIntMask);
 
     NABU_EnableInterrupts();
 
@@ -825,10 +831,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // clear any existing interrupts status
     uint8_t tmp = IO_AYLATCH;
 
-    if (_ORIGINAL_INT_MASK & INT_MASK_VDP)
-      _ORIGINAL_INT_MASK ^= INT_MASK_VDP;
+    uint8_t origIntMask = ayRead(IOPORTA);
 
-    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+    if (origIntMask & INT_MASK_VDP)
+      origIntMask ^= INT_MASK_VDP;
+
+    ayWrite(IOPORTA, origIntMask);
 
     NABU_EnableInterrupts();
   }
@@ -847,9 +855,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     __endasm;
 
-    _ORIGINAL_INT_MASK |= INT_MASK_VDP;
+    uint8_t origIntMask = ayRead(IOPORTA);
 
-    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+    origIntMask |= INT_MASK_VDP;
+
+    ayWrite(IOPORTA, origIntMask);
 
     NABU_EnableInterrupts();
 
@@ -868,10 +878,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // clear any existing interrupts status
     uint8_t tmp = IO_AYLATCH;
 
-    if (_ORIGINAL_INT_MASK & INT_MASK_VDP)
-      _ORIGINAL_INT_MASK ^= INT_MASK_VDP;
+    uint8_t origIntMask = ayRead(IOPORTA);
 
-    ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+    if (origIntMask & INT_MASK_VDP)
+      origIntMask ^= INT_MASK_VDP;
+
+    ayWrite(IOPORTA, origIntMask);
 
     NABU_EnableInterrupts();
   }
@@ -1525,6 +1537,28 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     _vdp_textBuffer[y * _vdpCursorMaxXFull + x] = c;
   }
 
+  void vdp_refreshViewPort() {
+  
+    vdp_setWriteAddress(_vdpPatternNameTableAddr);
+
+    __asm
+        ld hl, __vdp_textBuffer;
+        ld b, 0;
+        ld c, 0xA0;
+        otir;
+        otir;
+        otir;
+    __endasm;
+
+    if (_vdpCursorMaxXFull == 40)
+      __asm
+        ld hl, __vdp_textBuffer + 768;
+        ld b, 192;
+        ld c, 0xA0;
+        otir;
+      __endasm;
+  }
+
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow) {
 
     vdp_setWriteAddress(_vdpPatternNameTableAddr + (topRow * _vdpCursorMaxXFull));
@@ -1583,66 +1617,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       v++;
     } while (v != e);
-  }
-
-  void vdp_writeUInt32(uint32_t v) {
-
-    // 4294967295
-    uint8_t tb[11];
-
-    sprintf(tb, "%u", v);
-
-    vdp_print(tb);
-  }
-
-  void vdp_writeInt32(int32_t v) {
-
-    // -2147483648
-    uint8_t tb[12];
-
-    sprintf(tb, "%d", v);
-
-    vdp_print(tb);
-  }
-
-  void vdp_writeUInt16(uint16_t v) {
-
-    // 12,345
-    uint8_t tb[6];
-
-    sprintf(tb, "%u", v);
-    
-    vdp_print(tb);
-  }
-
-  void vdp_writeInt16(int16_t v) {
-
-    // -23,456
-    uint8_t tb[7];
-
-    sprintf(tb, "%d", v);
-    
-    vdp_print(tb);
-  }
-
-  void vdp_writeUInt8(uint8_t v) {
-
-    // 123
-    uint8_t tb[4];
-
-    sprintf(tb, "%u", v);
-
-    vdp_print(tb);
-  }
-  
-  void vdp_writeInt8(int8_t v) {
-
-    // -234
-    uint8_t tb[5];
-
-    sprintf(tb, "%d", v);
-
-    vdp_print(tb);
   }
 
   void vdp_writeUInt8ToBinary(uint8_t v) {

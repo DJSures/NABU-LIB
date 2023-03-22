@@ -4,7 +4,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on March 6, 2023 (v2023.03.06.00)
+// Last updated on March 22, 2023 (v2023.03.22.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -30,18 +30,14 @@ void ia_focusInterrupts() {
 
   NABU_DisableInterrupts();
 
-  _ia_TmpOriginalInterrupt = _ORIGINAL_INT_MASK;  
-  _ORIGINAL_INT_MASK = INT_MASK_HCCARX;
+  _ia_TmpOriginalInterrupt = ayRead(IOPORTA);
 
-  NABU_EnableInterrupts();
+  ayWrite(IOPORTA, INT_MASK_HCCARX);
 }
 
 void ia_restoreInterrupts() {
 
-  NABU_DisableInterrupts();
-
-  _ORIGINAL_INT_MASK = _ia_TmpOriginalInterrupt;  
-  ayWrite(IOPORTA, _ORIGINAL_INT_MASK);
+  ayWrite(IOPORTA, _ia_TmpOriginalInterrupt);
 
   NABU_EnableInterrupts();
 }
