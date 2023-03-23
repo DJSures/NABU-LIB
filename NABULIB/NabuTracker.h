@@ -40,12 +40,12 @@
 // No touchy
 uint16_t _itemCntr;
 uint16_t _beatCntr;
-uint8_t *_song;
+uint16_t *_song;
 
 // ***************************************************************************
 // Initialize the tracker with the specified song
 // ***************************************************************************
-void nt_init(uint8_t *song);
+void nt_init(uint16_t *song);
 
 // ***************************************************************************
 // Called on each iteration of your program that advances the music by 1/16

@@ -175,6 +175,27 @@
 
 
 // **************************************************************************
+// 
+// DEBUG VDP INT
+// =============
+// 
+// You can enable a debug to see if your code takes too long before the vdp interrupt
+// triggers. You see, you should only update the VDP before or after an interrupt.
+// Ideally directly after. This ensures the VDP ram is all happy comfortable for the
+// VDP to render it for display. If your code takes too long and an interrupt triggers,
+// you can see if that happens by adding this #define above the #include in main.c.
+// This will cause the ALERT LED to flash if the vdp int was triggered before calling
+// vdp_waitVDPReadyInt().
+//
+// *Note: You do not need this enabled when your program is released because it does
+//        take a few instructions to run.
+//
+// Add this #define above your #include in the main.c to debug VDP Interrupt
+// **************************************************************************
+// #define DEBUG_VDP_INT
+
+
+// **************************************************************************
 //
 // DISABLE CURSOR
 // ==============
@@ -1008,7 +1029,7 @@ inline uint8_t ayRead(uint8_t reg);
   //
   // 1) uint8_t  vdpStatusRegVal - contains the value of the VDP Status Register (Check TMS9918a manual for collision bit)
   // 2) bool     vdpIsReady      - TRUE if the VDP has just completed a vsync. But you will normally not
-  //                               use this because you'll be calling vdp_waitVDPReadyInt()
+  //                                use this because you'll be calling vdp_waitVDPReadyInt()
   //
   // Here is an example of how to use this...
   //

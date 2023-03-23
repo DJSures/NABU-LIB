@@ -810,10 +810,14 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // set prior to your program calling vdp_waitVDPReadyInt(). That means your program took
     // too long and missed the vertical screen refresh.
 
-    // if (vdpIsReady)
-    //   IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF | CONTROL_LED_PAUSE;
-    // else
-    //   IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF;
+    #ifdef DEBUG_VDP_INT
+
+      if (vdpIsReady)
+        IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF | CONTROL_LED_ALERT;
+      else
+        IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF;
+
+    #endif
 
     while (!vdpIsReady);
 

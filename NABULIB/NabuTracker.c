@@ -1,4 +1,4 @@
-void nt_init(uint8_t *song) {
+void nt_init(uint16_t *song) {
 
   _song = song;
   
