@@ -1554,13 +1554,15 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         otir;
     __endasm;
 
-    if (_vdpCursorMaxXFull == 40)
+    if (_vdpCursorMaxXFull == 40) {
+
       __asm
         ld hl, __vdp_textBuffer + 768;
         ld b, 192;
         ld c, 0xA0;
         otir;
       __endasm;
+    }
   }
 
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow) {
