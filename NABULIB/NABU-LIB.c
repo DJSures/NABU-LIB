@@ -1546,29 +1546,29 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     vdp_setWriteAddress(_vdpPatternNameTableAddr);
 
     __asm
-        ld	d,0x03
-        ld	e,0x00        //; 0x300 bytes
+        ld	d,0x03;
+        ld	e,0x00;        //; 0x300 bytes
 
-        ld	c,0xA0		    //; the I/O port number
-        ld  hl, __vdp_textBuffer
-      1$:
-        outi
-        dec	de
-        ld	a,d
-        or  e
-        jp	nz,1$
+        ld	c,0xA0;		    //; the I/O port number
+        ld  hl, __vdp_textBuffer;
+      1$:;
+        outi;
+        dec	de;
+        ld	a,d;
+        or  e;
+        jp	nz,1$;
     __endasm;
 
     if (_vdpCursorMaxXFull == 40) {
 
       __asm
-        ld hl, __vdp_textBuffer + 768
-      2$:
-        outi
-        dec	de
-        ld	a,d
-        or  e
-        jp	nz,2$
+        ld hl, __vdp_textBuffer + 768;
+      2$:;
+        outi;
+        dec	de;
+        ld	a,d;
+        or  e;
+        jp	nz,2$;
       __endasm;
     }
   }
