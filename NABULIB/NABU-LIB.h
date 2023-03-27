@@ -366,7 +366,7 @@ volatile uint8_t _randomSeed = 0;
   // the text mode.
   // **************************************************************************
   #define TEXT_BUFFER_SIZE 960
-  volatile uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
+  uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
 
 
   // **************************************************************************
@@ -1509,8 +1509,12 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   void vdp_writeUInt32ToBinary(uint32_t v);
 
+  // **************************************************************************
+  // Refresh the viewport using assembly routines snagged from John's Basement.
+  // https://github.com/Z80-Retro/example-filesystem/blob/967dcc009191ebf6698223073ce90e47a2a1de36/progs/tms9118/sprites.asm#L279
+  // This routine is a bit slower than the one previously in the NABU-LIB
+  // **************************************************************************
   void vdp_refreshViewPort();
-  extern void vdp_paint() __z88dk_callee;
 #endif
 
 

@@ -202,10 +202,10 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
   void isrKeyboard() __naked {
 
     __asm
-      push af;
-      push iy;
-      ld iy, 0;
-      exx;
+      push af
+      push iy
+      ld iy, 0
+      exx
     __endasm;
 
     uint8_t inKey = IO_KEYBOARD;
@@ -1545,23 +1545,30 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   
     vdp_setWriteAddress(_vdpPatternNameTableAddr);
 
-    vdp_paint();    // Calls the vdp paint routine in NABU-LIB.asm
-    // __asm
-    //     ld hl, __vdp_textBuffer;
-    //     ld b, 0;
-    //     ld c, 0xA0;
-    //     otir;
-    //     otir;
-    //     otir;
-    // __endasm;
+    __asm
+        ld	d,0x03
+        ld	e,0x00        //; 0x300 bytes
+
+        ld	c,0xA0		    //; the I/O port number
+        ld  hl, __vdp_textBuffer
+      1$:
+        outi
+        dec	de
+        ld	a,d
+        or  e
+        jp	nz,1$
+    __endasm;
 
     if (_vdpCursorMaxXFull == 40) {
 
       __asm
-        ld hl, __vdp_textBuffer + 768;
-        ld b, 192;
-        ld c, 0xA0;
-        otir;
+        ld hl, __vdp_textBuffer + 768
+      2$:
+        outi
+        dec	de
+        ld	a,d
+        or  e
+        jp	nz,2$
       __endasm;
     }
   }
