@@ -32,6 +32,8 @@ uint8_t _dBuffer[DB_BUFFER_LEN];
 
 void invalidateScreen() {
 
+  // The main loop drawing takes too long (probably Line()) so we
+  // reset the vdpIsReady flag and wait for the next interrupt
   vdpIsReady = false;
   vdp_waitVDPReadyInt();
 
@@ -64,12 +66,13 @@ void invalidateScreen() {
 
 void putPixel(bool c, uint8_t x, uint8_t y) {
   
-  uint16_t offset = (8 * (x >> 3) ) + ( y % 8 ) + ( 256 * (y >> 3) ) ;
-
+  uint8_t *buf = _dBuffer;
+  buf += (8 * (x >> 3) ) + ( y % 8 ) + ( 256 * (y >> 3) ) ;
+  
   if (c) 
-    _dBuffer[offset] |= 0x80 >> (x % 8); // Set bit a "1"
+    *buf |= 0x80 >> (x % 8); // Set bit a "1"
   else 
-    _dBuffer[offset] &= ~(0x80 >> (x % 8)); // Set bit as "0"
+    *buf &= ~(0x80 >> (x % 8)); // Set bit as "0"
 }
 
 void line(bool color, int x0, int y0, int x1, int y1) {
@@ -151,7 +154,7 @@ void main() {
   initDisplay();
 
   uint8_t i = 20;
-  for (; i < 150; i++) {
+  for (; i < 100; i++) {
 
     window(true, i, 50 , i + 60, 80);
 
@@ -159,7 +162,10 @@ void main() {
 
     invalidateScreen();
 
-    window(false, i, 50, i + 60, 80);    
+    window(false, i, 50, i + 60, 80);
+    
+    if (isKeyPressed())
+      break;
   }
   
   window(true, i, 50 , i + 60, 80);

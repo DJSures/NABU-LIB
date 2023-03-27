@@ -1,4 +1,4 @@
-C:/Users/user/AppData/Local/Temp/zcc00000FD0F8232.asm:
+C:/Users/user/AppData/Local/Temp/zcc00000908009C2.asm:
      1                          MODULE main_c
      2                          LINE 0, "main.c"
 main.c:
@@ -6759,498 +6759,500 @@ main.c:
   5806  17b3  dde5              	push	ix
   5807  17b5  dd210000          	ld	ix,0
   5808  17b9  dd39              	add	ix,sp
-  5809  17bb  dd7e05            	ld	a,(ix+5)
-  5810  17be  0f                	rrca
-  5811  17bf  0f                	rrca
-  5812  17c0  0f                	rrca
-  5813  17c1  e61f              	and	a,0x1f
-  5814  17c3  2600              	ld	h,0x00
-  5815  17c5  6f                	ld	l, a
-  5816  17c6  29                	add	hl, hl
-  5817  17c7  29                	add	hl, hl
-  5818  17c8  29                	add	hl, hl
-  5819  17c9  dd7e06            	ld	a,(ix+6)
-  5820  17cc  e607              	and	a,0x07
-  5821  17ce  1600              	ld	d,0x00
-  5822  17d0  5f                	ld	e, a
-  5823  17d1  19                	add	hl, de
-  5824  17d2  dd7e06            	ld	a,(ix+6)
-  5825  17d5  0f                	rrca
-  5826  17d6  0f                	rrca
-  5827  17d7  0f                	rrca
-  5828  17d8  e61f              	and	a,0x1f
-  5829  17da  57                	ld	d, a
-  5830  17db  1e00              	ld	e,0x00
-  5831  17dd  19                	add	hl, de
-  5832  17de  eb                	ex	de, hl
-  5833  17df  dd7e05            	ld	a,(ix+5)
-  5834  17e2  e607              	and	a,0x07
-  5835  17e4  6f                	ld	l, a
-  5836  17e5  018000            	ld	bc,0x0080
-  5837  17e8  2c                	inc	l
-  5838  17e9  1804              	jr	l_putPixel_00112
-  5839                          l_putPixel_00111:
-  5840  17eb  cb28              	sra	b
-  5841  17ed  cb19              	rr	c
-  5842                          l_putPixel_00112:
-  5843  17ef  2d                	dec	l
-  5844  17f0  20f9              	jr	NZ, l_putPixel_00111
-  5845  17f2  dd7e04            	ld	a,(ix+4)
-  5846  17f5  b7                	or	a, a
-  5847  17f6  2809              	jr	Z,l_putPixel_00102
-  5848  17f8  21d405            	ld	hl,__dBuffer+0
-  5849  17fb  19                	add	hl, de
-  5850  17fc  7e                	ld	a, (hl)
-  5851  17fd  b1                	or	a, c
-  5852  17fe  77                	ld	(hl), a
-  5853  17ff  1809              	jr	l_putPixel_00104
-  5854                          l_putPixel_00102:
-  5855  1801  21d405            	ld	hl,__dBuffer
-  5856  1804  19                	add	hl, de
-  5857  1805  5e                	ld	e, (hl)
-  5858  1806  79                	ld	a, c
-  5859  1807  2f                	cpl
-  5860  1808  a3                	and	a, e
-  5861  1809  77                	ld	(hl), a
-  5862                          l_putPixel_00104:
-  5863  180a  dde1              	pop	ix
-  5864  180c  c9                	ret
-  5865                          	SECTION code_compiler
-  5866                          ;	---------------------------------
-  5867                          ; Function line
-  5868                          ; ---------------------------------
-  5869                          _line:
-  5870  180d  dde5              	push	ix
-  5871  180f  dd210000          	ld	ix,0
-  5872  1813  dd39              	add	ix,sp
-  5873  1815  21f8ff            	ld	hl, -8
-  5874  1818  39                	add	hl, sp
-  5875  1819  f9                	ld	sp, hl
-  5876  181a  dd7e09            	ld	a,(ix+9)
-  5877  181d  dd9605            	sub	a,(ix+5)
-  5878  1820  6f                	ld	l, a
-  5879  1821  dd7e0a            	ld	a,(ix+10)
-  5880  1824  dd9e06            	sbc	a,(ix+6)
-  5881  1827  67                	ld	h, a
-  5882  1828  cd0000            	call	_abs
-  5883  182b  e3                	ex	(sp), hl
-  5884  182c  dd7e05            	ld	a,(ix+5)
-  5885  182f  dd9609            	sub	a,(ix+9)
-  5886  1832  dd7e06            	ld	a,(ix+6)
-  5887  1835  dd9e0a            	sbc	a,(ix+10)
-  5888  1838  e23d18            	jp	PO, l_line_00152
-  5889  183b  ee80              	xor	a,0x80
-  5890                          l_line_00152:
-  5891  183d  f24518            	jp	P, l_line_00111
-  5892  1840  010100            	ld	bc,0x0001
-  5893  1843  1803              	jr	l_line_00112
-  5894                          l_line_00111:
-  5895  1845  01ffff            	ld	bc,0xffff
-  5896                          l_line_00112:
-  5897  1848  dd71fa            	ld	(ix-6),c
-  5898  184b  dd70fb            	ld	(ix-5),b
-  5899  184e  dd7e0b            	ld	a,(ix+11)
-  5900  1851  dd9607            	sub	a,(ix+7)
-  5901  1854  6f                	ld	l, a
-  5902  1855  dd7e0c            	ld	a,(ix+12)
-  5903  1858  dd9e08            	sbc	a,(ix+8)
-  5904  185b  67                	ld	h, a
-  5905  185c  cd0000            	call	_abs
-  5906  185f  eb                	ex	de, hl
-  5907  1860  dd7e07            	ld	a,(ix+7)
-  5908  1863  dd960b            	sub	a,(ix+11)
-  5909  1866  dd7e08            	ld	a,(ix+8)
-  5910  1869  dd9e0c            	sbc	a,(ix+12)
-  5911  186c  e27118            	jp	PO, l_line_00153
-  5912  186f  ee80              	xor	a,0x80
-  5913                          l_line_00153:
-  5914  1871  f27918            	jp	P, l_line_00113
-  5915  1874  010100            	ld	bc,0x0001
-  5916  1877  1803              	jr	l_line_00114
-  5917                          l_line_00113:
-  5918  1879  01ffff            	ld	bc,0xffff
-  5919                          l_line_00114:
-  5920  187c  dd71fc            	ld	(ix-4),c
-  5921  187f  dd70fd            	ld	(ix-3),b
-  5922  1882  7b                	ld	a, e
-  5923  1883  dd96f8            	sub	a,(ix-8)
-  5924  1886  7a                	ld	a, d
-  5925  1887  dd9ef9            	sbc	a,(ix-7)
-  5926  188a  e28f18            	jp	PO, l_line_00154
-  5927  188d  ee80              	xor	a,0x80
-  5928                          l_line_00154:
-  5929  188f  f29618            	jp	P, l_line_00115
-  5930  1892  e1                	pop	hl
-  5931  1893  e5                	push	hl
-  5932  1894  1806              	jr	l_line_00116
-  5933                          l_line_00115:
-  5934  1896  210000            	ld	hl,0x0000
-  5935  1899  bf                	cp	a, a
-  5936  189a  ed52              	sbc	hl, de
-  5937                          l_line_00116:
-  5938  189c  cb2c              	sra	h
-  5939  189e  cb1d              	rr	l
-  5940  18a0  af                	xor	a, a
-  5941  18a1  dd96f8            	sub	a,(ix-8)
-  5942  18a4  dd77fe            	ld	(ix-2),a
-  5943  18a7  9f                	sbc	a, a
-  5944  18a8  dd96f9            	sub	a,(ix-7)
-  5945  18ab  dd77ff            	ld	(ix-1),a
-  5946                          l_line_00106:
-  5947  18ae  dd7e05            	ld	a,(ix+5)
-  5948  18b1  dd9609            	sub	a,(ix+9)
-  5949  18b4  2018              	jr	NZ,l_line_00107
-  5950  18b6  dd7e06            	ld	a,(ix+6)
-  5951  18b9  dd960a            	sub	a,(ix+10)
-  5952  18bc  2010              	jr	NZ,l_line_00107
-  5953  18be  dd7e07            	ld	a,(ix+7)
-  5954  18c1  dd960b            	sub	a,(ix+11)
-  5955  18c4  2008              	jr	NZ,l_line_00157
-  5956  18c6  dd7e08            	ld	a,(ix+8)
-  5957  18c9  dd960c            	sub	a,(ix+12)
-  5958  18cc  2863              	jr	Z,l_line_00109
-  5959                          l_line_00157:
-  5960                          l_line_00107:
-  5961  18ce  dd4607            	ld	b,(ix+7)
-  5962  18d1  dd7e05            	ld	a,(ix+5)
-  5963  18d4  e5                	push	hl
-  5964  18d5  d5                	push	de
-  5965  18d6  c5                	push	bc
-  5966  18d7  33                	inc	sp
-  5967  18d8  f5                	push	af
-  5968  18d9  33                	inc	sp
-  5969  18da  dd7e04            	ld	a,(ix+4)
-  5970  18dd  f5                	push	af
-  5971  18de  33                	inc	sp
-  5972  18df  cdb317            	call	_putPixel
-  5973  18e2  f1                	pop	af
-  5974  18e3  33                	inc	sp
-  5975  18e4  d1                	pop	de
-  5976  18e5  e1                	pop	hl
-  5977  18e6  4d                	ld	c, l
-  5978  18e7  44                	ld	b, h
-  5979  18e8  dd7efe            	ld	a,(ix-2)
-  5980  18eb  95                	sub	a, l
-  5981  18ec  dd7eff            	ld	a,(ix-1)
-  5982  18ef  9c                	sbc	a, h
-  5983  18f0  e2f518            	jp	PO, l_line_00158
-  5984  18f3  ee80              	xor	a,0x80
-  5985                          l_line_00158:
-  5986  18f5  f20d19            	jp	P, l_line_00102
-  5987  18f8  bf                	cp	a, a
-  5988  18f9  ed52              	sbc	hl, de
-  5989  18fb  dd7e05            	ld	a,(ix+5)
-  5990  18fe  dd86fa            	add	a,(ix-6)
-  5991  1901  dd7705            	ld	(ix+5),a
-  5992  1904  dd7e06            	ld	a,(ix+6)
-  5993  1907  dd8efb            	adc	a,(ix-5)
-  5994  190a  dd7706            	ld	(ix+6),a
-  5995                          l_line_00102:
-  5996  190d  79                	ld	a, c
-  5997  190e  93                	sub	a, e
-  5998  190f  78                	ld	a, b
-  5999  1910  9a                	sbc	a, d
-  6000  1911  e21619            	jp	PO, l_line_00159
-  6001  1914  ee80              	xor	a,0x80
-  6002                          l_line_00159:
-  6003  1916  f2ae18            	jp	P, l_line_00106
-  6004  1919  c1                	pop	bc
-  6005  191a  c5                	push	bc
-  6006  191b  09                	add	hl, bc
-  6007  191c  dd7efc            	ld	a,(ix-4)
-  6008  191f  dd8607            	add	a,(ix+7)
-  6009  1922  dd7707            	ld	(ix+7),a
-  6010  1925  dd7efd            	ld	a,(ix-3)
-  6011  1928  dd8e08            	adc	a,(ix+8)
-  6012  192b  dd7708            	ld	(ix+8),a
-  6013  192e  c3ae18            	jp	l_line_00106
-  6014                          l_line_00109:
-  6015  1931  ddf9              	ld	sp, ix
-  6016  1933  dde1              	pop	ix
-  6017  1935  c9                	ret
-  6018                          	SECTION code_compiler
-  6019                          ;	---------------------------------
-  6020                          ; Function window
-  6021                          ; ---------------------------------
-  6022                          _window:
-  6023  1936  dde5              	push	ix
-  6024  1938  dd210000          	ld	ix,0
-  6025  193c  dd39              	add	ix,sp
-  6026  193e  dd6e06            	ld	l,(ix+6)
-  6027  1941  2600              	ld	h,0x00
-  6028  1943  fde5              	push	iy
+  5809  17bb  01d405            	ld	bc,__dBuffer+0
+  5810  17be  dd7e05            	ld	a,(ix+5)
+  5811  17c1  0f                	rrca
+  5812  17c2  0f                	rrca
+  5813  17c3  0f                	rrca
+  5814  17c4  e61f              	and	a,0x1f
+  5815  17c6  6f                	ld	l, a
+  5816  17c7  2600              	ld	h,0x00
+  5817  17c9  29                	add	hl, hl
+  5818  17ca  29                	add	hl, hl
+  5819  17cb  29                	add	hl, hl
+  5820  17cc  dd7e06            	ld	a,(ix+6)
+  5821  17cf  e607              	and	a,0x07
+  5822  17d1  1600              	ld	d,0x00
+  5823  17d3  5f                	ld	e, a
+  5824  17d4  19                	add	hl, de
+  5825  17d5  dd7e06            	ld	a,(ix+6)
+  5826  17d8  0f                	rrca
+  5827  17d9  0f                	rrca
+  5828  17da  0f                	rrca
+  5829  17db  e61f              	and	a,0x1f
+  5830  17dd  57                	ld	d, a
+  5831  17de  1e00              	ld	e,0x00
+  5832  17e0  19                	add	hl, de
+  5833  17e1  09                	add	hl, bc
+  5834  17e2  eb                	ex	de, hl
+  5835  17e3  1a                	ld	a, (de)
+  5836  17e4  4f                	ld	c, a
+  5837  17e5  dd7e05            	ld	a,(ix+5)
+  5838  17e8  e607              	and	a,0x07
+  5839  17ea  47                	ld	b, a
+  5840  17eb  218000            	ld	hl,0x0080
+  5841  17ee  04                	inc	b
+  5842  17ef  1804              	jr	l_putPixel_00112
+  5843                          l_putPixel_00111:
+  5844  17f1  cb2c              	sra	h
+  5845  17f3  cb1d              	rr	l
+  5846                          l_putPixel_00112:
+  5847  17f5  10fa              	djnz	l_putPixel_00111
+  5848  17f7  dd7e04            	ld	a,(ix+4)
+  5849  17fa  b7                	or	a, a
+  5850  17fb  2805              	jr	Z,l_putPixel_00102
+  5851  17fd  7d                	ld	a, l
+  5852  17fe  b1                	or	a, c
+  5853  17ff  12                	ld	(de), a
+  5854  1800  1804              	jr	l_putPixel_00104
+  5855                          l_putPixel_00102:
+  5856  1802  7d                	ld	a, l
+  5857  1803  2f                	cpl
+  5858  1804  a1                	and	a, c
+  5859  1805  12                	ld	(de), a
+  5860                          l_putPixel_00104:
+  5861  1806  dde1              	pop	ix
+  5862  1808  c9                	ret
+  5863                          	SECTION code_compiler
+  5864                          ;	---------------------------------
+  5865                          ; Function line
+  5866                          ; ---------------------------------
+  5867                          _line:
+  5868  1809  dde5              	push	ix
+  5869  180b  dd210000          	ld	ix,0
+  5870  180f  dd39              	add	ix,sp
+  5871  1811  21f8ff            	ld	hl, -8
+  5872  1814  39                	add	hl, sp
+  5873  1815  f9                	ld	sp, hl
+  5874  1816  dd7e09            	ld	a,(ix+9)
+  5875  1819  dd9605            	sub	a,(ix+5)
+  5876  181c  6f                	ld	l, a
+  5877  181d  dd7e0a            	ld	a,(ix+10)
+  5878  1820  dd9e06            	sbc	a,(ix+6)
+  5879  1823  67                	ld	h, a
+  5880  1824  cd0000            	call	_abs
+  5881  1827  e3                	ex	(sp), hl
+  5882  1828  dd7e05            	ld	a,(ix+5)
+  5883  182b  dd9609            	sub	a,(ix+9)
+  5884  182e  dd7e06            	ld	a,(ix+6)
+  5885  1831  dd9e0a            	sbc	a,(ix+10)
+  5886  1834  e23918            	jp	PO, l_line_00152
+  5887  1837  ee80              	xor	a,0x80
+  5888                          l_line_00152:
+  5889  1839  f24118            	jp	P, l_line_00111
+  5890  183c  010100            	ld	bc,0x0001
+  5891  183f  1803              	jr	l_line_00112
+  5892                          l_line_00111:
+  5893  1841  01ffff            	ld	bc,0xffff
+  5894                          l_line_00112:
+  5895  1844  dd71fa            	ld	(ix-6),c
+  5896  1847  dd70fb            	ld	(ix-5),b
+  5897  184a  dd7e0b            	ld	a,(ix+11)
+  5898  184d  dd9607            	sub	a,(ix+7)
+  5899  1850  6f                	ld	l, a
+  5900  1851  dd7e0c            	ld	a,(ix+12)
+  5901  1854  dd9e08            	sbc	a,(ix+8)
+  5902  1857  67                	ld	h, a
+  5903  1858  cd0000            	call	_abs
+  5904  185b  eb                	ex	de, hl
+  5905  185c  dd7e07            	ld	a,(ix+7)
+  5906  185f  dd960b            	sub	a,(ix+11)
+  5907  1862  dd7e08            	ld	a,(ix+8)
+  5908  1865  dd9e0c            	sbc	a,(ix+12)
+  5909  1868  e26d18            	jp	PO, l_line_00153
+  5910  186b  ee80              	xor	a,0x80
+  5911                          l_line_00153:
+  5912  186d  f27518            	jp	P, l_line_00113
+  5913  1870  010100            	ld	bc,0x0001
+  5914  1873  1803              	jr	l_line_00114
+  5915                          l_line_00113:
+  5916  1875  01ffff            	ld	bc,0xffff
+  5917                          l_line_00114:
+  5918  1878  dd71fc            	ld	(ix-4),c
+  5919  187b  dd70fd            	ld	(ix-3),b
+  5920  187e  7b                	ld	a, e
+  5921  187f  dd96f8            	sub	a,(ix-8)
+  5922  1882  7a                	ld	a, d
+  5923  1883  dd9ef9            	sbc	a,(ix-7)
+  5924  1886  e28b18            	jp	PO, l_line_00154
+  5925  1889  ee80              	xor	a,0x80
+  5926                          l_line_00154:
+  5927  188b  f29218            	jp	P, l_line_00115
+  5928  188e  e1                	pop	hl
+  5929  188f  e5                	push	hl
+  5930  1890  1806              	jr	l_line_00116
+  5931                          l_line_00115:
+  5932  1892  210000            	ld	hl,0x0000
+  5933  1895  bf                	cp	a, a
+  5934  1896  ed52              	sbc	hl, de
+  5935                          l_line_00116:
+  5936  1898  cb2c              	sra	h
+  5937  189a  cb1d              	rr	l
+  5938  189c  af                	xor	a, a
+  5939  189d  dd96f8            	sub	a,(ix-8)
+  5940  18a0  dd77fe            	ld	(ix-2),a
+  5941  18a3  9f                	sbc	a, a
+  5942  18a4  dd96f9            	sub	a,(ix-7)
+  5943  18a7  dd77ff            	ld	(ix-1),a
+  5944                          l_line_00106:
+  5945  18aa  dd7e05            	ld	a,(ix+5)
+  5946  18ad  dd9609            	sub	a,(ix+9)
+  5947  18b0  2018              	jr	NZ,l_line_00107
+  5948  18b2  dd7e06            	ld	a,(ix+6)
+  5949  18b5  dd960a            	sub	a,(ix+10)
+  5950  18b8  2010              	jr	NZ,l_line_00107
+  5951  18ba  dd7e07            	ld	a,(ix+7)
+  5952  18bd  dd960b            	sub	a,(ix+11)
+  5953  18c0  2008              	jr	NZ,l_line_00157
+  5954  18c2  dd7e08            	ld	a,(ix+8)
+  5955  18c5  dd960c            	sub	a,(ix+12)
+  5956  18c8  2863              	jr	Z,l_line_00109
+  5957                          l_line_00157:
+  5958                          l_line_00107:
+  5959  18ca  dd4607            	ld	b,(ix+7)
+  5960  18cd  dd7e05            	ld	a,(ix+5)
+  5961  18d0  e5                	push	hl
+  5962  18d1  d5                	push	de
+  5963  18d2  c5                	push	bc
+  5964  18d3  33                	inc	sp
+  5965  18d4  f5                	push	af
+  5966  18d5  33                	inc	sp
+  5967  18d6  dd7e04            	ld	a,(ix+4)
+  5968  18d9  f5                	push	af
+  5969  18da  33                	inc	sp
+  5970  18db  cdb317            	call	_putPixel
+  5971  18de  f1                	pop	af
+  5972  18df  33                	inc	sp
+  5973  18e0  d1                	pop	de
+  5974  18e1  e1                	pop	hl
+  5975  18e2  4d                	ld	c, l
+  5976  18e3  44                	ld	b, h
+  5977  18e4  dd7efe            	ld	a,(ix-2)
+  5978  18e7  95                	sub	a, l
+  5979  18e8  dd7eff            	ld	a,(ix-1)
+  5980  18eb  9c                	sbc	a, h
+  5981  18ec  e2f118            	jp	PO, l_line_00158
+  5982  18ef  ee80              	xor	a,0x80
+  5983                          l_line_00158:
+  5984  18f1  f20919            	jp	P, l_line_00102
+  5985  18f4  bf                	cp	a, a
+  5986  18f5  ed52              	sbc	hl, de
+  5987  18f7  dd7e05            	ld	a,(ix+5)
+  5988  18fa  dd86fa            	add	a,(ix-6)
+  5989  18fd  dd7705            	ld	(ix+5),a
+  5990  1900  dd7e06            	ld	a,(ix+6)
+  5991  1903  dd8efb            	adc	a,(ix-5)
+  5992  1906  dd7706            	ld	(ix+6),a
+  5993                          l_line_00102:
+  5994  1909  79                	ld	a, c
+  5995  190a  93                	sub	a, e
+  5996  190b  78                	ld	a, b
+  5997  190c  9a                	sbc	a, d
+  5998  190d  e21219            	jp	PO, l_line_00159
+  5999  1910  ee80              	xor	a,0x80
+  6000                          l_line_00159:
+  6001  1912  f2aa18            	jp	P, l_line_00106
+  6002  1915  c1                	pop	bc
+  6003  1916  c5                	push	bc
+  6004  1917  09                	add	hl, bc
+  6005  1918  dd7efc            	ld	a,(ix-4)
+  6006  191b  dd8607            	add	a,(ix+7)
+  6007  191e  dd7707            	ld	(ix+7),a
+  6008  1921  dd7efd            	ld	a,(ix-3)
+  6009  1924  dd8e08            	adc	a,(ix+8)
+  6010  1927  dd7708            	ld	(ix+8),a
+  6011  192a  c3aa18            	jp	l_line_00106
+  6012                          l_line_00109:
+  6013  192d  ddf9              	ld	sp, ix
+  6014  192f  dde1              	pop	ix
+  6015  1931  c9                	ret
+  6016                          	SECTION code_compiler
+  6017                          ;	---------------------------------
+  6018                          ; Function window
+  6019                          ; ---------------------------------
+  6020                          _window:
+  6021  1932  dde5              	push	ix
+  6022  1934  dd210000          	ld	ix,0
+  6023  1938  dd39              	add	ix,sp
+  6024  193a  dd6e06            	ld	l,(ix+6)
+  6025  193d  2600              	ld	h,0x00
+  6026  193f  fde5              	push	iy
+  6027  1941  e3                	ex	(sp), hl
+  6028  1942  dd6e07            	ld	l,(ix+7)
   6029  1945  e3                	ex	(sp), hl
-  6030  1946  dd6e07            	ld	l,(ix+7)
-  6031  1949  e3                	ex	(sp), hl
-  6032  194a  e3                	ex	(sp), hl
-  6033  194b  2600              	ld	h,0x00
-  6034  194d  e3                	ex	(sp), hl
-  6035  194e  fde1              	pop	iy
-  6036  1950  dd4e05            	ld	c,(ix+5)
-  6037  1953  0600              	ld	b,0x00
-  6038  1955  e5                	push	hl
-  6039  1956  c5                	push	bc
-  6040  1957  fde5              	push	iy
-  6041  1959  e5                	push	hl
-  6042  195a  fde5              	push	iy
-  6043  195c  e5                	push	hl
-  6044  195d  c5                	push	bc
-  6045  195e  dd7e04            	ld	a,(ix+4)
-  6046  1961  f5                	push	af
-  6047  1962  33                	inc	sp
-  6048  1963  cd0d18            	call	_line
-  6049  1966  210900            	ld	hl,9
-  6050  1969  39                	add	hl, sp
-  6051  196a  f9                	ld	sp, hl
-  6052  196b  fde1              	pop	iy
-  6053  196d  c1                	pop	bc
-  6054  196e  e1                	pop	hl
-  6055  196f  dd5e08            	ld	e,(ix+8)
-  6056  1972  1600              	ld	d,0x00
-  6057  1974  e5                	push	hl
-  6058  1975  c5                	push	bc
-  6059  1976  d5                	push	de
-  6060  1977  fde5              	push	iy
-  6061  1979  d5                	push	de
-  6062  197a  fde5              	push	iy
-  6063  197c  e5                	push	hl
-  6064  197d  fde5              	push	iy
-  6065  197f  dd7e04            	ld	a,(ix+4)
-  6066  1982  f5                	push	af
-  6067  1983  33                	inc	sp
-  6068  1984  cd0d18            	call	_line
-  6069  1987  210900            	ld	hl,9
-  6070  198a  39                	add	hl, sp
-  6071  198b  f9                	ld	sp, hl
-  6072  198c  fde1              	pop	iy
-  6073  198e  d1                	pop	de
-  6074  198f  c1                	pop	bc
-  6075  1990  c5                	push	bc
-  6076  1991  d5                	push	de
-  6077  1992  d5                	push	de
-  6078  1993  c5                	push	bc
-  6079  1994  d5                	push	de
-  6080  1995  fde5              	push	iy
-  6081  1997  dd7e04            	ld	a,(ix+4)
-  6082  199a  f5                	push	af
-  6083  199b  33                	inc	sp
-  6084  199c  cd0d18            	call	_line
-  6085  199f  210900            	ld	hl,9
-  6086  19a2  39                	add	hl, sp
-  6087  19a3  f9                	ld	sp, hl
-  6088  19a4  d1                	pop	de
-  6089  19a5  c1                	pop	bc
-  6090  19a6  c5                	push	bc
-  6091  19a7  d5                	push	de
-  6092  19a8  c5                	push	bc
-  6093  19a9  dd7e04            	ld	a,(ix+4)
-  6094  19ac  f5                	push	af
-  6095  19ad  33                	inc	sp
-  6096  19ae  cd0d18            	call	_line
-  6097  19b1  210900            	ld	hl,9
-  6098  19b4  39                	add	hl, sp
-  6099  19b5  f9                	ld	sp, hl
-  6100  19b6  dde1              	pop	ix
-  6101  19b8  c9                	ret
-  6102                          	SECTION code_compiler
-  6103                          ;	---------------------------------
-  6104                          ; Function initDisplay
-  6105                          ; ---------------------------------
-  6106                          _initDisplay:
-  6107  19b9  cdac08            	call	_vdp_waitVDPReadyInt
-  6108  19bc  2acb05            	ld	hl, (__vdpPatternGeneratorTableAddr)
-  6109  19bf  e5                	push	hl
-  6110  19c0  cd4308            	call	_vdp_setWriteAddress
-  6111  19c3  f1                	pop	af
-  6112  19c4  010000            	ld	bc,0x0000
-  6113                          l_initDisplay_00105:
-  6114  19c7  78                	ld	a, b
-  6115  19c8  ee80              	xor	a,0x80
-  6116  19ca  d698              	sub	a,0x98
-  6117  19cc  300d              	jr	NC,l_initDisplay_00101
-  6118  19ce  3e00              	ld	a,0x00
-  6119  19d0  d3a0              	out	(_IO_VDPDATA), a
-  6120  19d2  21d405            	ld	hl,__dBuffer
-  6121  19d5  09                	add	hl, bc
-  6122  19d6  3600              	ld	(hl),0x00
-  6123  19d8  03                	inc	bc
-  6124  19d9  18ec              	jr	l_initDisplay_00105
-  6125                          l_initDisplay_00101:
-  6126  19db  2ac905            	ld	hl, (__vdpColorTableAddr)
-  6127  19de  e5                	push	hl
-  6128  19df  cd4308            	call	_vdp_setWriteAddress
-  6129  19e2  f1                	pop	af
-  6130  19e3  010000            	ld	bc,0x0000
-  6131                          l_initDisplay_00108:
-  6132  19e6  78                	ld	a, b
-  6133  19e7  ee80              	xor	a,0x80
-  6134  19e9  d698              	sub	a,0x98
-  6135  19eb  3007              	jr	NC,l_initDisplay_00102
-  6136  19ed  3ef0              	ld	a,0xf0
-  6137  19ef  d3a0              	out	(_IO_VDPDATA), a
-  6138  19f1  03                	inc	bc
-  6139  19f2  18f2              	jr	l_initDisplay_00108
-  6140                          l_initDisplay_00102:
-  6141  19f4  2ac705            	ld	hl, (__vdpPatternNameTableAddr)
-  6142  19f7  e5                	push	hl
-  6143  19f8  cd4308            	call	_vdp_setWriteAddress
-  6144  19fb  f1                	pop	af
-  6145  19fc  010000            	ld	bc,0x0000
-  6146                          l_initDisplay_00111:
-  6147  19ff  78                	ld	a, b
-  6148  1a00  ee80              	xor	a,0x80
-  6149  1a02  d683              	sub	a,0x83
-  6150  1a04  d0                	ret	NC
-  6151  1a05  210002            	ld	hl,__vdp_textBuffer+0
-  6152  1a08  09                	add	hl, bc
-  6153  1a09  c5                	push	bc
+  6030  1946  e3                	ex	(sp), hl
+  6031  1947  2600              	ld	h,0x00
+  6032  1949  e3                	ex	(sp), hl
+  6033  194a  fde1              	pop	iy
+  6034  194c  dd4e05            	ld	c,(ix+5)
+  6035  194f  0600              	ld	b,0x00
+  6036  1951  e5                	push	hl
+  6037  1952  c5                	push	bc
+  6038  1953  fde5              	push	iy
+  6039  1955  e5                	push	hl
+  6040  1956  fde5              	push	iy
+  6041  1958  e5                	push	hl
+  6042  1959  c5                	push	bc
+  6043  195a  dd7e04            	ld	a,(ix+4)
+  6044  195d  f5                	push	af
+  6045  195e  33                	inc	sp
+  6046  195f  cd0918            	call	_line
+  6047  1962  210900            	ld	hl,9
+  6048  1965  39                	add	hl, sp
+  6049  1966  f9                	ld	sp, hl
+  6050  1967  fde1              	pop	iy
+  6051  1969  c1                	pop	bc
+  6052  196a  e1                	pop	hl
+  6053  196b  dd5e08            	ld	e,(ix+8)
+  6054  196e  1600              	ld	d,0x00
+  6055  1970  e5                	push	hl
+  6056  1971  c5                	push	bc
+  6057  1972  d5                	push	de
+  6058  1973  fde5              	push	iy
+  6059  1975  d5                	push	de
+  6060  1976  fde5              	push	iy
+  6061  1978  e5                	push	hl
+  6062  1979  fde5              	push	iy
+  6063  197b  dd7e04            	ld	a,(ix+4)
+  6064  197e  f5                	push	af
+  6065  197f  33                	inc	sp
+  6066  1980  cd0918            	call	_line
+  6067  1983  210900            	ld	hl,9
+  6068  1986  39                	add	hl, sp
+  6069  1987  f9                	ld	sp, hl
+  6070  1988  fde1              	pop	iy
+  6071  198a  d1                	pop	de
+  6072  198b  c1                	pop	bc
+  6073  198c  c5                	push	bc
+  6074  198d  d5                	push	de
+  6075  198e  d5                	push	de
+  6076  198f  c5                	push	bc
+  6077  1990  d5                	push	de
+  6078  1991  fde5              	push	iy
+  6079  1993  dd7e04            	ld	a,(ix+4)
+  6080  1996  f5                	push	af
+  6081  1997  33                	inc	sp
+  6082  1998  cd0918            	call	_line
+  6083  199b  210900            	ld	hl,9
+  6084  199e  39                	add	hl, sp
+  6085  199f  f9                	ld	sp, hl
+  6086  19a0  d1                	pop	de
+  6087  19a1  c1                	pop	bc
+  6088  19a2  c5                	push	bc
+  6089  19a3  d5                	push	de
+  6090  19a4  c5                	push	bc
+  6091  19a5  dd7e04            	ld	a,(ix+4)
+  6092  19a8  f5                	push	af
+  6093  19a9  33                	inc	sp
+  6094  19aa  cd0918            	call	_line
+  6095  19ad  210900            	ld	hl,9
+  6096  19b0  39                	add	hl, sp
+  6097  19b1  f9                	ld	sp, hl
+  6098  19b2  dde1              	pop	ix
+  6099  19b4  c9                	ret
+  6100                          	SECTION code_compiler
+  6101                          ;	---------------------------------
+  6102                          ; Function initDisplay
+  6103                          ; ---------------------------------
+  6104                          _initDisplay:
+  6105  19b5  cdac08            	call	_vdp_waitVDPReadyInt
+  6106  19b8  2acb05            	ld	hl, (__vdpPatternGeneratorTableAddr)
+  6107  19bb  e5                	push	hl
+  6108  19bc  cd4308            	call	_vdp_setWriteAddress
+  6109  19bf  f1                	pop	af
+  6110  19c0  010000            	ld	bc,0x0000
+  6111                          l_initDisplay_00105:
+  6112  19c3  78                	ld	a, b
+  6113  19c4  ee80              	xor	a,0x80
+  6114  19c6  d698              	sub	a,0x98
+  6115  19c8  300d              	jr	NC,l_initDisplay_00101
+  6116  19ca  3e00              	ld	a,0x00
+  6117  19cc  d3a0              	out	(_IO_VDPDATA), a
+  6118  19ce  21d405            	ld	hl,__dBuffer
+  6119  19d1  09                	add	hl, bc
+  6120  19d2  3600              	ld	(hl),0x00
+  6121  19d4  03                	inc	bc
+  6122  19d5  18ec              	jr	l_initDisplay_00105
+  6123                          l_initDisplay_00101:
+  6124  19d7  2ac905            	ld	hl, (__vdpColorTableAddr)
+  6125  19da  e5                	push	hl
+  6126  19db  cd4308            	call	_vdp_setWriteAddress
+  6127  19de  f1                	pop	af
+  6128  19df  010000            	ld	bc,0x0000
+  6129                          l_initDisplay_00108:
+  6130  19e2  78                	ld	a, b
+  6131  19e3  ee80              	xor	a,0x80
+  6132  19e5  d698              	sub	a,0x98
+  6133  19e7  3007              	jr	NC,l_initDisplay_00102
+  6134  19e9  3ef0              	ld	a,0xf0
+  6135  19eb  d3a0              	out	(_IO_VDPDATA), a
+  6136  19ed  03                	inc	bc
+  6137  19ee  18f2              	jr	l_initDisplay_00108
+  6138                          l_initDisplay_00102:
+  6139  19f0  2ac705            	ld	hl, (__vdpPatternNameTableAddr)
+  6140  19f3  e5                	push	hl
+  6141  19f4  cd4308            	call	_vdp_setWriteAddress
+  6142  19f7  f1                	pop	af
+  6143  19f8  010000            	ld	bc,0x0000
+  6144                          l_initDisplay_00111:
+  6145  19fb  78                	ld	a, b
+  6146  19fc  ee80              	xor	a,0x80
+  6147  19fe  d683              	sub	a,0x83
+  6148  1a00  d0                	ret	NC
+  6149  1a01  210002            	ld	hl,__vdp_textBuffer+0
+  6150  1a04  09                	add	hl, bc
+  6151  1a05  c5                	push	bc
+  6152  1a06  e5                	push	hl
+  6153  1a07  210001            	ld	hl,0x0100
   6154  1a0a  e5                	push	hl
-  6155  1a0b  210001            	ld	hl,0x0100
-  6156  1a0e  e5                	push	hl
-  6157  1a0f  c5                	push	bc
-  6158  1a10  cd0000            	call	__modsint_callee
-  6159  1a13  d1                	pop	de
-  6160  1a14  c1                	pop	bc
-  6161  1a15  7d                	ld	a, l
-  6162  1a16  12                	ld	(de), a
-  6163  1a17  d3a0              	out	(_IO_VDPDATA), a
-  6164  1a19  03                	inc	bc
-  6165  1a1a  18e3              	jr	l_initDisplay_00111
-  6166                          	SECTION code_compiler
-  6167                          ;	---------------------------------
-  6168                          ; Function main
-  6169                          ; ---------------------------------
-  6170                          _main:
-  6171  1a1c  cd0000            	call	_initNABULib
-  6172  1a1f  3e01              	ld	a,0x01
-  6173  1a21  f5                	push	af
-  6174  1a22  33                	inc	sp
-  6175  1a23  af                	xor	a, a
-  6176  1a24  f5                	push	af
-  6177  1a25  33                	inc	sp
-  6178  1a26  af                	xor	a, a
-  6179  1a27  f5                	push	af
-  6180  1a28  33                	inc	sp
-  6181  1a29  af                	xor	a, a
-  6182  1a2a  f5                	push	af
-  6183  1a2b  33                	inc	sp
-  6184  1a2c  af                	xor	a, a
-  6185  1a2d  f5                	push	af
-  6186  1a2e  33                	inc	sp
-  6187  1a2f  cd820b            	call	_vdp_initG2Mode
-  6188  1a32  f1                	pop	af
-  6189  1a33  f1                	pop	af
-  6190  1a34  33                	inc	sp
-  6191  1a35  cd7a08            	call	_vdp_enableVDPReadyInt
-  6192  1a38  cdb919            	call	_initDisplay
-  6193  1a3b  0e14              	ld	c,0x14
-  6194                          l_main_00103:
-  6195  1a3d  79                	ld	a, c
-  6196  1a3e  c63c              	add	a,0x3c
-  6197  1a40  47                	ld	b, a
-  6198  1a41  79                	ld	a, c
-  6199  1a42  d696              	sub	a,0x96
-  6200  1a44  304b              	jr	NC,l_main_00101
-  6201  1a46  c5                	push	bc
-  6202  1a47  3e50              	ld	a,0x50
-  6203  1a49  f5                	push	af
-  6204  1a4a  33                	inc	sp
-  6205  1a4b  c5                	push	bc
-  6206  1a4c  33                	inc	sp
-  6207  1a4d  3e32              	ld	a,0x32
-  6208  1a4f  f5                	push	af
-  6209  1a50  33                	inc	sp
-  6210  1a51  51                	ld	d, c
-  6211  1a52  1e01              	ld	e,0x01
-  6212  1a54  d5                	push	de
-  6213  1a55  cd3619            	call	_window
-  6214  1a58  f1                	pop	af
-  6215  1a59  f1                	pop	af
-  6216  1a5a  33                	inc	sp
-  6217  1a5b  216400            	ld	hl,0x0064
-  6218  1a5e  e5                	push	hl
-  6219  1a5f  2eb4              	ld	l,0xb4
-  6220  1a61  e5                	push	hl
-  6221  1a62  2e14              	ld	l,0x14
-  6222  1a64  e5                	push	hl
-  6223  1a65  e5                	push	hl
-  6224  1a66  3e01              	ld	a,0x01
-  6225  1a68  f5                	push	af
-  6226  1a69  33                	inc	sp
-  6227  1a6a  cd0d18            	call	_line
-  6228  1a6d  210900            	ld	hl,9
-  6229  1a70  39                	add	hl, sp
-  6230  1a71  f9                	ld	sp, hl
-  6231  1a72  cd8e17            	call	_invalidateScreen
-  6232  1a75  c1                	pop	bc
-  6233  1a76  c5                	push	bc
-  6234  1a77  3e50              	ld	a,0x50
-  6235  1a79  f5                	push	af
-  6236  1a7a  33                	inc	sp
-  6237  1a7b  c5                	push	bc
-  6238  1a7c  33                	inc	sp
-  6239  1a7d  3e32              	ld	a,0x32
-  6240  1a7f  f5                	push	af
-  6241  1a80  33                	inc	sp
-  6242  1a81  79                	ld	a, c
-  6243  1a82  f5                	push	af
-  6244  1a83  33                	inc	sp
-  6245  1a84  af                	xor	a, a
-  6246  1a85  f5                	push	af
-  6247  1a86  33                	inc	sp
-  6248  1a87  cd3619            	call	_window
-  6249  1a8a  f1                	pop	af
-  6250  1a8b  f1                	pop	af
-  6251  1a8c  33                	inc	sp
+  6155  1a0b  c5                	push	bc
+  6156  1a0c  cd0000            	call	__modsint_callee
+  6157  1a0f  d1                	pop	de
+  6158  1a10  c1                	pop	bc
+  6159  1a11  7d                	ld	a, l
+  6160  1a12  12                	ld	(de), a
+  6161  1a13  d3a0              	out	(_IO_VDPDATA), a
+  6162  1a15  03                	inc	bc
+  6163  1a16  18e3              	jr	l_initDisplay_00111
+  6164                          	SECTION code_compiler
+  6165                          ;	---------------------------------
+  6166                          ; Function main
+  6167                          ; ---------------------------------
+  6168                          _main:
+  6169  1a18  cd0000            	call	_initNABULib
+  6170  1a1b  3e01              	ld	a,0x01
+  6171  1a1d  f5                	push	af
+  6172  1a1e  33                	inc	sp
+  6173  1a1f  af                	xor	a, a
+  6174  1a20  f5                	push	af
+  6175  1a21  33                	inc	sp
+  6176  1a22  af                	xor	a, a
+  6177  1a23  f5                	push	af
+  6178  1a24  33                	inc	sp
+  6179  1a25  af                	xor	a, a
+  6180  1a26  f5                	push	af
+  6181  1a27  33                	inc	sp
+  6182  1a28  af                	xor	a, a
+  6183  1a29  f5                	push	af
+  6184  1a2a  33                	inc	sp
+  6185  1a2b  cd820b            	call	_vdp_initG2Mode
+  6186  1a2e  f1                	pop	af
+  6187  1a2f  f1                	pop	af
+  6188  1a30  33                	inc	sp
+  6189  1a31  cd7a08            	call	_vdp_enableVDPReadyInt
+  6190  1a34  cdb519            	call	_initDisplay
+  6191  1a37  0e14              	ld	c,0x14
+  6192                          l_main_00105:
+  6193  1a39  79                	ld	a, c
+  6194  1a3a  c63c              	add	a,0x3c
+  6195  1a3c  47                	ld	b, a
+  6196  1a3d  79                	ld	a, c
+  6197  1a3e  d664              	sub	a,0x64
+  6198  1a40  3052              	jr	NC,l_main_00103
+  6199  1a42  c5                	push	bc
+  6200  1a43  3e50              	ld	a,0x50
+  6201  1a45  f5                	push	af
+  6202  1a46  33                	inc	sp
+  6203  1a47  c5                	push	bc
+  6204  1a48  33                	inc	sp
+  6205  1a49  3e32              	ld	a,0x32
+  6206  1a4b  f5                	push	af
+  6207  1a4c  33                	inc	sp
+  6208  1a4d  51                	ld	d, c
+  6209  1a4e  1e01              	ld	e,0x01
+  6210  1a50  d5                	push	de
+  6211  1a51  cd3219            	call	_window
+  6212  1a54  f1                	pop	af
+  6213  1a55  f1                	pop	af
+  6214  1a56  33                	inc	sp
+  6215  1a57  216400            	ld	hl,0x0064
+  6216  1a5a  e5                	push	hl
+  6217  1a5b  2eb4              	ld	l,0xb4
+  6218  1a5d  e5                	push	hl
+  6219  1a5e  2e14              	ld	l,0x14
+  6220  1a60  e5                	push	hl
+  6221  1a61  e5                	push	hl
+  6222  1a62  3e01              	ld	a,0x01
+  6223  1a64  f5                	push	af
+  6224  1a65  33                	inc	sp
+  6225  1a66  cd0918            	call	_line
+  6226  1a69  210900            	ld	hl,9
+  6227  1a6c  39                	add	hl, sp
+  6228  1a6d  f9                	ld	sp, hl
+  6229  1a6e  cd8e17            	call	_invalidateScreen
+  6230  1a71  c1                	pop	bc
+  6231  1a72  c5                	push	bc
+  6232  1a73  3e50              	ld	a,0x50
+  6233  1a75  f5                	push	af
+  6234  1a76  33                	inc	sp
+  6235  1a77  c5                	push	bc
+  6236  1a78  33                	inc	sp
+  6237  1a79  3e32              	ld	a,0x32
+  6238  1a7b  f5                	push	af
+  6239  1a7c  33                	inc	sp
+  6240  1a7d  79                	ld	a, c
+  6241  1a7e  f5                	push	af
+  6242  1a7f  33                	inc	sp
+  6243  1a80  af                	xor	a, a
+  6244  1a81  f5                	push	af
+  6245  1a82  33                	inc	sp
+  6246  1a83  cd3219            	call	_window
+  6247  1a86  f1                	pop	af
+  6248  1a87  f1                	pop	af
+  6249  1a88  33                	inc	sp
+  6250  1a89  cdd204            	call	_isKeyPressed
+  6251  1a8c  7d                	ld	a, l
   6252  1a8d  c1                	pop	bc
-  6253  1a8e  0c                	inc	c
-  6254  1a8f  18ac              	jr	l_main_00103
-  6255                          l_main_00101:
-  6256  1a91  3e50              	ld	a,0x50
-  6257  1a93  f5                	push	af
-  6258  1a94  33                	inc	sp
-  6259  1a95  c5                	push	bc
-  6260  1a96  33                	inc	sp
-  6261  1a97  3e32              	ld	a,0x32
-  6262  1a99  f5                	push	af
-  6263  1a9a  33                	inc	sp
-  6264  1a9b  51                	ld	d, c
-  6265  1a9c  1e01              	ld	e,0x01
-  6266  1a9e  d5                	push	de
-  6267  1a9f  cd3619            	call	_window
-  6268  1aa2  f1                	pop	af
-  6269  1aa3  f1                	pop	af
-  6270  1aa4  33                	inc	sp
-  6271  1aa5  cd8e17            	call	_invalidateScreen
-  6272  1aa8  c3e704            	jp	_getChar
-  6273                          	SECTION data_compiler
-  6274                          __randomSeed:
-  6275  0000  00                	DEFB +0x00
-  6276                          __rxBufferReadPos:
-  6277  0001  00                	DEFB +0x00
-  6278                          __rxBufferWritePos:
-  6279  0002  00                	DEFB +0x00
-  6280                          __kbdBufferReadPos:
-  6281  0003  00                	DEFB +0x00
-  6282                          __kbdBufferWritePos:
-  6283  0004  00                	DEFB +0x00
-  6284                          __lastKeyboardIntVal:
-  6285  0005  00                	DEFB +0x00
-  6286                          __joyStatus:
-  6287  0006  00                	DEFB +0x00
-  6288  0007  00                	DEFB 0x00
-  6289  0008  00                	DEFB 0x00
-  6290  0009  00                	DEFB 0x00
-  6291                          _vdp_cursor:
-  6292  000a  00                	DEFB +0x00
-  6293  000b  00                	DEFB +0x00
-  6294                          __vdpReg1Val:
-  6295  000c  00                	DEFB +0x00
-  6296                          __vdpInterruptEnabled:
-  6297  000d  00                	DEFB +0x00
-  6298                          _vdpStatusRegVal:
-  6299  000e  00                	DEFB +0x00
-  6300                          _vdpIsReady:
-  6301  000f  00                	DEFB +0x00
-  6302                          	SECTION IGNORE
-  6303                          
+  6253  1a8e  b7                	or	a, a
+  6254  1a8f  2003              	jr	NZ,l_main_00103
+  6255  1a91  0c                	inc	c
+  6256  1a92  18a5              	jr	l_main_00105
+  6257                          l_main_00103:
+  6258  1a94  3e50              	ld	a,0x50
+  6259  1a96  f5                	push	af
+  6260  1a97  33                	inc	sp
+  6261  1a98  c5                	push	bc
+  6262  1a99  33                	inc	sp
+  6263  1a9a  3e32              	ld	a,0x32
+  6264  1a9c  f5                	push	af
+  6265  1a9d  33                	inc	sp
+  6266  1a9e  51                	ld	d, c
+  6267  1a9f  1e01              	ld	e,0x01
+  6268  1aa1  d5                	push	de
+  6269  1aa2  cd3219            	call	_window
+  6270  1aa5  f1                	pop	af
+  6271  1aa6  f1                	pop	af
+  6272  1aa7  33                	inc	sp
+  6273  1aa8  cd8e17            	call	_invalidateScreen
+  6274  1aab  c3e704            	jp	_getChar
+  6275                          	SECTION data_compiler
+  6276                          __randomSeed:
+  6277  0000  00                	DEFB +0x00
+  6278                          __rxBufferReadPos:
+  6279  0001  00                	DEFB +0x00
+  6280                          __rxBufferWritePos:
+  6281  0002  00                	DEFB +0x00
+  6282                          __kbdBufferReadPos:
+  6283  0003  00                	DEFB +0x00
+  6284                          __kbdBufferWritePos:
+  6285  0004  00                	DEFB +0x00
+  6286                          __lastKeyboardIntVal:
+  6287  0005  00                	DEFB +0x00
+  6288                          __joyStatus:
+  6289  0006  00                	DEFB +0x00
+  6290  0007  00                	DEFB 0x00
+  6291  0008  00                	DEFB 0x00
+  6292  0009  00                	DEFB 0x00
+  6293                          _vdp_cursor:
+  6294  000a  00                	DEFB +0x00
+  6295  000b  00                	DEFB +0x00
+  6296                          __vdpReg1Val:
+  6297  000c  00                	DEFB +0x00
+  6298                          __vdpInterruptEnabled:
+  6299  000d  00                	DEFB +0x00
+  6300                          _vdpStatusRegVal:
+  6301  000e  00                	DEFB +0x00
+  6302                          _vdpIsReady:
+  6303  000f  00                	DEFB +0x00
+  6304                          	SECTION IGNORE
+  6305                          
