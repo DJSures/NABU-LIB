@@ -18,6 +18,8 @@
 
 #define FONT_LM80C
 
+#define DEBUG_VDP_INT
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -25,42 +27,39 @@
 #include <math.h>
 #include "../NABULIB/patterns.h"
 
-uint8_t _dBuffer[6144];
-
-void invalideArea(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
-
-  vdp_waitVDPReadyInt();
-
-  uint8_t xStart = 8 * (x >> 3);
-
-  while (y < h) {  
-
-    uint16_t offset = ( y % 8 ) + ( 256 * (y >> 3) ) ;
-
-    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + offset + xStart);
-
-    for (uint8_t i = x; i < w; i++) 
-      IO_VDPDATA = _dBuffer[offset + i];
-    
-    y++;
-  }
-}
+#define DB_BUFFER_LEN 6144
+uint8_t _dBuffer[DB_BUFFER_LEN];
 
 void invalidateScreen() {
 
+  vdpIsReady = false;
   vdp_waitVDPReadyInt();
 
   vdp_setWriteAddress(_vdpPatternGeneratorTableAddr);
 
-  uint8_t *start   = _dBuffer;
-  uint8_t *end  = _dBuffer + 6144;
+  __asm
 
-  do {
+    push hl;
+    push de;
 
-    IO_VDPDATA = *start;
+    ld hl, __dBuffer;
+    ld de, DB_BUFFER_LEN; 
 
-    start++;
-  } while (start != end);    
+    invalidateScreenLoop:
+
+      ld a, (hl);
+      out (0xa0), a;
+
+      inc hl;
+      dec de;
+
+      ld A, D;                 
+      or E;                   
+      jp nz, invalidateScreenLoop;
+
+    pop de;
+    pop hl;
+  __endasm;
 }
 
 void putPixel(bool c, uint8_t x, uint8_t y) {
@@ -79,8 +78,10 @@ void line(bool color, int x0, int y0, int x1, int y1) {
   int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
   int err = (dx > dy ? dx : -dy) >> 1;
 
-  while (putPixel(color, x0, y0), x0 != x1 || y0 != y1) {
+  while (x0 != x1 || y0 != y1) {
 
+    putPixel(color, x0, y0);
+    
     int e2 = err;
 
     if (e2 > -dx) {
@@ -99,28 +100,10 @@ void line(bool color, int x0, int y0, int x1, int y1) {
 
 void window(bool color, uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
   
-  for (uint8_t xx = x; xx < w; xx++) {
-
-    putPixel(color, xx, y);
-  
-    putPixel(color, xx, y + 1);
-    putPixel(color, xx, y + 2);
-    putPixel(color, xx, y + 3);
-    putPixel(color, xx, y + 4);
-    putPixel(color, xx, y + 5);
-    putPixel(color, xx, y + 6);
-    putPixel(color, xx, y + 7);
-    putPixel(color, xx, y + 8);
-    putPixel(color, xx, y + 9);
-
-    putPixel(color, xx, h);
-  }
-
-  for (uint8_t yy = y; yy < h; yy++) {
-
-    putPixel(color, x, yy);
-    putPixel(color, w, yy);
-  }  
+  line(color, x, y, w, y);
+  line(color, w, y, w, h);
+  line(color, w, h, x, h);
+  line(color, x, h, x, y);
 }
 
 void initDisplay() {
@@ -176,7 +159,7 @@ void main() {
 
     invalidateScreen();
 
-    window(false, i, 50, i + 60, 80);
+    window(false, i, 50, i + 60, 80);    
   }
   
   window(true, i, 50 , i + 60, 80);

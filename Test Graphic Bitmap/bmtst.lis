@@ -1,4 +1,4 @@
-C:/Users/dj/AppData/Local/Temp/zcc00000E54C4EE4.asm:
+C:/Users/user/AppData/Local/Temp/zcc00000FD0F8234.asm:
      1                          MODULE cpm_crt0_asm
      2                          LINE 0, "c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm"
 c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
@@ -26,7 +26,7 @@ c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
     21                          
     22                              defc    crt0 = 1
     23                              INCLUDE "zcc_opt.def"
-C:/Users/dj/AppData/Local/Temp/zcc00000E54C4EE3/zcc_opt.def:
+C:/Users/user/AppData/Local/Temp/zcc00000FD0F8233/zcc_opt.def:
      1                          
 c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
     24                          
@@ -76,221 +76,279 @@ c:/z88dk/lib/config/../../lib/crt/classic/crt_rules.inc:
      1                          
      2                          ; Rules for setting up defaults for configuring the build
      3                          
+     4                             INCLUDE "crt/classic/crt_defaults.inc"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_defaults.inc:
+     1                          ;
+     2                          ; Default value
+     3                          
      4                          
-     5                             IFNDEF CRT_INITIALIZE_BSS
-     6                                defc CRT_INITIALIZE_BSS = 1
-     7                             ENDIF
-     8                          
-     9                             IFDEF REGISTER_SP
-    10                                defc __register_sp = REGISTER_SP
-    11                             ELSE
-    12                                IFDEF STACKPTR
-    13                                   defc __register_sp = STACKPTR
-    14                                ELSE
-    15                                   IFDEF TAR__register_sp
-    16                                      defc __register_sp = TAR__register_sp
-    17                                   ELSE
-    18                                      defc __register_sp = DEF__register_sp
-    19                                   ENDIF
-    20                                ENDIF
-    21                             ENDIF
-    22                          
-    23                             IFNDEF TAR__crt_enable_rst
-    24                                 defc TAR__crt_enable_rst = 0x0000
-    25                             ENDIF
-    26                          
-    27                             IFDEF CRT_ENABLE_RST
-    28                                defc __crt_enable_rst = CRT_ENABLE_RST | TAR__crt_enable_rst
-    29                             ELSE
-    30                                defc __crt_enable_rst = TAR__crt_enable_rst
-    31                             ENDIF
-    32                          
-    33                             IFDEF CRT_ENABLE_NMI
-    34                                defc __crt_enable_nmi = CRT_ENABLE_NMI
-    35                             ELSE
-    36                               IFNDEF TAR__crt_enable_nmi
-    37                                  defc TAR__crt_enable_nmi = 0
-    38                               ENDIF
-    39                               defc __crt_enable_nmi = TAR__crt_enable_nmi
-    40                             ENDIF
-    41                          
-    42                             ; By default we want to have stdio working for us
-    43                             IFNDEF CRT_ENABLE_STDIO
-    44                                 defc CRT_ENABLE_STDIO = 1
-    45                             ENDIF
-    46                          
-    47                             IFDEF CLIB_EXIT_STACK_SIZE
-    48                                defc __clib_exit_stack_size = CLIB_EXIT_STACK_SIZE
-    49                             ELSE
-    50                                IFDEF TAR__clib_exit_stack_size
-    51                                   defc __clib_exit_stack_size = TAR__clib_exit_stack_size
-    52                                ELSE
-    53                                   defc __clib_exit_stack_size = DEF__clib_exit_stack_size
-    54                                ENDIF
-    55                             ENDIF
-    56                          
-    57                             ; For each bank call we save 2 words on the temporary stack
-    58                             ; this controls the depth of calls we can make safely
-    59                             IFNDEF CLIB_BANKING_STACK_SIZE
-    60                                PUBLIC CLIB_BANKING_STACK_SIZE
-    61                                IFDEF TAR__clib_banking_stack_size
-    62                                   defc CLIB_BANKING_STACK_SIZE = TAR__clib_banking_stack_size
-    63                                ELSE
-    64                                   defc CLIB_BANKING_STACK_SIZE = 100
-    65                                ENDIF
-    66                             ENDIF
+     5                             defc DEF__register_sp               = 0       ;; initial value of sp (-1 = do not modify (some targets may redefine meaning), 0 = top of memory)
+     6                          
+     7                             defc DEF__crt_enable_restart        = 0       ;; if non-zero, restart the program on exit (correct initialization of static variables with rom models only)
+     8                             defc DEF__crt_on_exit               = 0x10001 ;; halt on exit (see documentation for other exit behaviours)
+     9                             defc DEF__crt_enable_eidi           = 0       ;; bit flags: 0x01 = di on start, 0x02 = ei on start, 0x10 = di on exit, 0x20 = ei on exit
+    10                          
+    11                             defc DEF__crt_enable_rst            = 0       ;; if non-zero and in some crts with code org = 0, set bits indicate which rst locations are implemented with user code
+    12                             defc DEF__crt_enable_nmi            = 0       ;; if non-zero and in some crts with code org = 0, a jump to user code to service the nmi is inserted
+    13                          
+    14                          
+    15                             ; clib defaults
+    16                             defc DEF__clib_exit_stack_size      = 32      ;; max number of functions that can be registered with atexit()
+    17                          
+    18                             defc DEF__clib_banking_stack_size   = 100	 ;; For each bank call we save 2 words on the temporary stack
+    19                          
+c:/z88dk/lib/config/../../lib/crt/classic/crt_rules.inc:
+     5                          
+     6                             IFNDEF CRT_INITIALIZE_BSS
+     7                                defc CRT_INITIALIZE_BSS = 1
+     8                             ENDIF
+     9                          
+    10                             IFDEF REGISTER_SP
+    11                                defc __register_sp = REGISTER_SP
+    12                             ELSE
+    13                                IFDEF STACKPTR
+    14                                   defc __register_sp = STACKPTR
+    15                                ELSE
+    16                                   IFDEF TAR__register_sp
+    17                                      defc __register_sp = TAR__register_sp
+    18                                   ELSE
+    19                                      defc __register_sp = DEF__register_sp
+    20                                   ENDIF
+    21                                ENDIF
+    22                             ENDIF
+    23                          
+    24                             IFNDEF TAR__crt_enable_rst
+    25                                 defc TAR__crt_enable_rst = DEF__crt_enable_rst
+    26                             ENDIF
+    27                          
+    28                             IFDEF CRT_ENABLE_RST
+    29                                defc __crt_enable_rst = CRT_ENABLE_RST | TAR__crt_enable_rst
+    30                             ELSE
+    31                                defc __crt_enable_rst = TAR__crt_enable_rst
+    32                             ENDIF
+    33                          
+    34                             IFDEF CRT_ENABLE_NMI
+    35                                defc __crt_enable_nmi = CRT_ENABLE_NMI
+    36                             ELSE
+    37                               IFNDEF TAR__crt_enable_nmi
+    38                                  defc TAR__crt_enable_nmi = 0
+    39                               ENDIF
+    40                               defc __crt_enable_nmi = TAR__crt_enable_nmi
+    41                             ENDIF
+    42                          
+    43                             IFDEF CRT_ENABLE_RESTART
+    44                                defc __crt_enable_restart = CRT_ENABLE_RESTART
+    45                             ELSE
+    46                                IFDEF TAR__crt_enable_restart
+    47                                   defc __crt_enable_restart = TAR__crt_enable_restart
+    48                                ELSE
+    49                                   defc __crt_enable_restart = DEF__crt_enable_restart
+    50                                ENDIF
+    51                             ENDIF
+    52                          
+    53                            IF __crt_enable_restart
+    54                                defc __crt_on_exit = 0x10008
+    55                             ELSE
+    56                                IFDEF CRT_ON_EXIT
+    57                                   defc __crt_on_exit = CRT_ON_EXIT
+    58                                ELSE
+    59                                   IFDEF TAR__crt_on_exit
+    60                                      defc __crt_on_exit = TAR__crt_on_exit
+    61                                   ELSE
+    62                                      defc __crt_on_exit = DEF__crt_on_exit
+    63                                   ENDIF
+    64                                ENDIF
+    65                            ENDIF
+    66                          
     67                          
-    68                          
-    69                             PUBLIC __CRT_KEY_DEL
-    70                             IFDEF CRT_KEY_DEL
-    71                               defc __CRT_KEY_DEL = CRT_KEY_DEL
-    72                             ELSE
-    73                               defc __CRT_KEY_DEL = 8
-    74                             ENDIF
-    75                          
-    76                             PUBLIC __CRT_KEY_CAPS_LOCK
-    77                             IFDEF CRT_KEY_CAPS_LOCK
-    78                               defc __CRT_KEY_CAPS_LOCK  = CRT_KEY_CAPS_LOCK
-    79                             ELSE
-    80                               defc __CRT_KEY_CAPS_LOCK = 6
-    81                             ENDIF
-    82                          
-    83                             PUBLIC __CPU_CLOCK
-    84                             IFNDEF __CPU_CLOCK
-    85                               defc __CPU_CLOCK = 3500000
-    86                             ENDIF
-    87                          
-    88                             PUBLIC __CLIB_CONIO_NATIVE_COLOUR
-    89                             IFDEF CLIB_CONIO_NATIVE_COLOUR
-    90                               defc __CLIB_CONIO_NATIVE_COLOUR = CLIB_CONIO_NATIVE_COLOUR
-    91                             ELSE
-    92                               defc __CLIB_CONIO_NATIVE_COLOUR = 0
-    93                             ENDIF
-    94                          
-    95                             ; When using the firmware printer we may need to disable the soft
-    96                             ; cursor created by fgets_cons()
-    97                             PUBLIC __CLIB_DISABLE_FGETS_CURSOR
-    98                             IFDEF CLIB_DISABLE_FGETS_CURSOR
-    99                               defc __CLIB_DISABLE_FGETS_CURSOR = CLIB_DISABLE_FGETS_CURSOR
-   100                             ELSE
-   101                               defc __CLIB_DISABLE_FGETS_CURSOR = 0
-   102                             ENDIF
-   103                          
-   104                             ; Delay when entering fgetc_cons()
-   105                             ; 50ms stops rogue repeats nicely, but may need tuning
-   106                             PUBLIC __CLIB_FGETC_CONS_DELAY
-   107                             IFDEF CLIB_FGETC_CONS_DELAY
-   108                               defc __CLIB_FGETC_CONS_DELAY = CLIB_FGETC_CONS_DELAY
+    68                             IFDEF CRT_ENABLE_EIDI
+    69                                defc __crt_enable_eidi = CRT_ENABLE_EIDI
+    70                             ELSE
+    71                                IFDEF TAR__crt_enable_eidi
+    72                                   defc __crt_enable_eidi = TAR__crt_enable_eidi
+    73                                ELSE
+    74                                   defc __crt_enable_eidi = DEF__crt_enable_eidi
+    75                                ENDIF
+    76                             ENDIF
+    77                          
+    78                          
+    79                             ; By default we want to have stdio working for us
+    80                             IFNDEF CRT_ENABLE_STDIO
+    81                                 defc CRT_ENABLE_STDIO = 1
+    82                             ENDIF
+    83                          
+    84                             IFDEF CLIB_EXIT_STACK_SIZE
+    85                                defc __clib_exit_stack_size = CLIB_EXIT_STACK_SIZE
+    86                             ELSE
+    87                                IFDEF TAR__clib_exit_stack_size
+    88                                   defc __clib_exit_stack_size = TAR__clib_exit_stack_size
+    89                                ELSE
+    90                                   defc __clib_exit_stack_size = DEF__clib_exit_stack_size
+    91                                ENDIF
+    92                             ENDIF
+    93                          
+    94                             ; For each bank call we save 2 words on the temporary stack
+    95                             ; this controls the depth of calls we can make safely
+    96                             IFNDEF CLIB_BANKING_STACK_SIZE
+    97                                PUBLIC CLIB_BANKING_STACK_SIZE
+    98                                IFDEF TAR__clib_banking_stack_size
+    99                                   defc CLIB_BANKING_STACK_SIZE = TAR__clib_banking_stack_size
+   100                                ELSE
+   101                                   defc CLIB_BANKING_STACK_SIZE = DEF__clib_banking_stack_size
+   102                                ENDIF
+   103                             ENDIF
+   104                          
+   105                          
+   106                             PUBLIC __CRT_KEY_DEL
+   107                             IFDEF CRT_KEY_DEL
+   108                               defc __CRT_KEY_DEL = CRT_KEY_DEL
    109                             ELSE
-   110                               defc __CLIB_FGETC_CONS_DELAY = 50
+   110                               defc __CRT_KEY_DEL = 8
    111                             ENDIF
    112                          
-   113                             ; Delay when kbhit/getch() returns a cached key press
-   114                             ; Delaying slightly means that typing is possible
-   115                             PUBLIC __CLIB_KBHIT_DELAY
-   116                             IFDEF CLIB_KBHIT_DELAY
-   117                               defc __CLIB_KBHIT_DELAY = CLIB_KBHIT_DELAY
-   118                             ELSE
-   119                               defc __CLIB_KBHIT_DELAY = 0
-   120                             ENDIF
-   121                          
-   122                             ; Some ports (looking at you tiki100) need to have graphics routines stored out
-   123                             ; of paging harm. Normally we'd just use code_driver and keep the routines close
-   124                             ; the start of the address space. However for tiki100, we need them at the end,
-   125                             ; (in this case > 32768)
-   126                             IF DEFINED_CRT_ORG_GRAPHICS
-   127                                 defc __crt_org_graphics = CRT_ORG_GRAPHICS
-   128                             ENDIF
-   129                          
-   130                             ; If 32 bit floats are defined, then we need to indicate to the library
-   131                             ; that they are in use (mainly for printf/scanf)
-   132                             PUBLIC CLIB_32BIT_FLOATS
-   133                             IF !DEFINED_CLIB_32BIT_FLOATS
-   134                                 defc CLIB_32BIT_FLOATS = 0
-   135                             ENDIF
-   136                             PUBLIC CLIB_64BIT_FLOATS
-   137                             IF !DEFINED_CLIB_64BIT_FLOATS
-   138                                 defc CLIB_64BIT_FLOATS = 0
+   113                             PUBLIC __CRT_KEY_CAPS_LOCK
+   114                             IFDEF CRT_KEY_CAPS_LOCK
+   115                               defc __CRT_KEY_CAPS_LOCK  = CRT_KEY_CAPS_LOCK
+   116                             ELSE
+   117                               defc __CRT_KEY_CAPS_LOCK = 6
+   118                             ENDIF
+   119                          
+   120                             PUBLIC __CPU_CLOCK
+   121                             IFNDEF __CPU_CLOCK
+   122                               defc __CPU_CLOCK = 3500000
+   123                             ENDIF
+   124                          
+   125                             PUBLIC __CLIB_CONIO_NATIVE_COLOUR
+   126                             IFDEF CLIB_CONIO_NATIVE_COLOUR
+   127                               defc __CLIB_CONIO_NATIVE_COLOUR = CLIB_CONIO_NATIVE_COLOUR
+   128                             ELSE
+   129                               defc __CLIB_CONIO_NATIVE_COLOUR = 0
+   130                             ENDIF
+   131                          
+   132                             ; When using the firmware printer we may need to disable the soft
+   133                             ; cursor created by fgets_cons()
+   134                             PUBLIC __CLIB_DISABLE_FGETS_CURSOR
+   135                             IFDEF CLIB_DISABLE_FGETS_CURSOR
+   136                               defc __CLIB_DISABLE_FGETS_CURSOR = CLIB_DISABLE_FGETS_CURSOR
+   137                             ELSE
+   138                               defc __CLIB_DISABLE_FGETS_CURSOR = 0
    139                             ENDIF
    140                          
-   141                             ; Some targets startup in different screen modes depending on the environment:
-   142                             ; eg native = 40columns, CP/M = 80 columns. These should be explicitly defined
-   143                             ; if needed. So default to an unused value if not
-   144                             PUBLIC CLIB_DEFAULT_SCREEN_MODE
-   145                             IFNDEF CLIB_DEFAULT_SCREEN_MODE
-   146                                 defc CLIB_DEFAULT_SCREEN_MODE = 0
-   147                             ENDIF
-   148                          
-   149                              ; Maximum number of FILEs available
-   150                              IF !DEFINED_CLIB_FOPEN_MAX
-   151                                  DEFC    CLIB_FOPEN_MAX = 10
-   152                              ENDIF
-   153                              PUBLIC  __FOPEN_MAX
-   154                              defc    __FOPEN_MAX = CLIB_FOPEN_MAX
-   155                          
-   156                              ; Maximum number of fds available
-   157                              IF !DEFINED_CLIB_OPEN_MAX
-   158                                  ; Map this old nofileio pragma into a modern form
-   159                                  IF DEFINED_nofileio
-   160                                      defc    CLIB_OPEN_MAX = 0
-   161                                  ELSE
-   162                                      defc    CLIB_OPEN_MAX = CLIB_FOPEN_MAX
-   163                                  ENDIF
-   164                              ENDIF
-   165                              PUBLIC  __CLIB_OPEN_MAX
-   166                              defc    __CLIB_OPEN_MAX = CLIB_OPEN_MAX
-   167                          
-   168                             ; By default allow the command line options if available on the target/subtype
-   169                             IF !DEFINED_CRT_ENABLE_COMMANDLINE
-   170                                IFDEF TAR__CRT_ENABLE_COMMANDLINE
-   171                                    defc CRT_ENABLE_COMMANDLINE = TAR__CRT_ENABLE_COMMANDLINE
-   172                                ELSE
-   173                                    defc CRT_ENABLE_COMMANDLINE = 1
-   174                                ENDIF
-   175                             ENDIF
-   176                          
+   141                             ; Delay when entering fgetc_cons()
+   142                             ; 50ms stops rogue repeats nicely, but may need tuning
+   143                             PUBLIC __CLIB_FGETC_CONS_DELAY
+   144                             IFDEF CLIB_FGETC_CONS_DELAY
+   145                               defc __CLIB_FGETC_CONS_DELAY = CLIB_FGETC_CONS_DELAY
+   146                             ELSE
+   147                               defc __CLIB_FGETC_CONS_DELAY = 50
+   148                             ENDIF
+   149                          
+   150                             ; Delay when kbhit/getch() returns a cached key press
+   151                             ; Delaying slightly means that typing is possible
+   152                             PUBLIC __CLIB_KBHIT_DELAY
+   153                             IFDEF CLIB_KBHIT_DELAY
+   154                               defc __CLIB_KBHIT_DELAY = CLIB_KBHIT_DELAY
+   155                             ELSE
+   156                               defc __CLIB_KBHIT_DELAY = 0
+   157                             ENDIF
+   158                          
+   159                             ; Some ports (looking at you tiki100) need to have graphics routines stored out
+   160                             ; of paging harm. Normally we'd just use code_driver and keep the routines close
+   161                             ; the start of the address space. However for tiki100, we need them at the end,
+   162                             ; (in this case > 32768)
+   163                             IF DEFINED_CRT_ORG_GRAPHICS
+   164                                 defc __crt_org_graphics = CRT_ORG_GRAPHICS
+   165                             ENDIF
+   166                          
+   167                             ; If 32 bit floats are defined, then we need to indicate to the library
+   168                             ; that they are in use (mainly for printf/scanf)
+   169                             PUBLIC CLIB_32BIT_FLOATS
+   170                             IF !DEFINED_CLIB_32BIT_FLOATS
+   171                                 defc CLIB_32BIT_FLOATS = 0
+   172                             ENDIF
+   173                             PUBLIC CLIB_64BIT_FLOATS
+   174                             IF !DEFINED_CLIB_64BIT_FLOATS
+   175                                 defc CLIB_64BIT_FLOATS = 0
+   176                             ENDIF
    177                          
-   178                             ; Map this old pragma into a "modern" name
-   179                             IF DEFINED_nostreams
-   180                                 defc CRT_COMMANDLINE_REDIRECTION = 0
-   181                             ELIF !DEFINED_CRT_COMMANDLINE_REDIRECTION
-   182                                 ; File redirection on command line arguments can only happen
-   183                                 ; if stdio is enabled
-   184                                 IF CRT_ENABLE_STDIO = 1
-   185                                     defc CRT_COMMANDLINE_REDIRECTION = 1
-   186                                 ELSE
-   187                                     defc CRT_COMMANDLINE_REDIRECTION = 0
-   188                                 ENDIF
-   189                             ENDIF
-   190                          
-   191                             ; Block size for the gendos library
-   192                             IF !DEFINED_CLIB_RND_BLOCKSIZE
-   193                                DEFC    CLIB_RND_BLOCKSIZE = 1000
-   194                             ENDIF
-   195                             PUBLIC  __RND_BLOCKSIZE
-   196                             defc    __RND_BLOCKSIZE = CLIB_RND_BLOCKSIZE
-   197                          
-   198                             ; Define the height of the font
-   199                             IF !DEFINED_CLIB_FONT_HEIGHT
-   200                                defc CLIB_FONT_HEIGHT = 8
-   201                             ENDIF
-   202                             PUBLIC __CLIB_FONT_HEIGHT
-   203                             defc __CLIB_FONT_HEIGHT = CLIB_FONT_HEIGHT
+   178                             ; Some targets startup in different screen modes depending on the environment:
+   179                             ; eg native = 40columns, CP/M = 80 columns. These should be explicitly defined
+   180                             ; if needed. So default to an unused value if not
+   181                             PUBLIC CLIB_DEFAULT_SCREEN_MODE
+   182                             IFNDEF CLIB_DEFAULT_SCREEN_MODE
+   183                                 defc CLIB_DEFAULT_SCREEN_MODE = 0
+   184                             ENDIF
+   185                          
+   186                              ; Maximum number of FILEs available
+   187                              IF !DEFINED_CLIB_FOPEN_MAX
+   188                                  DEFC    CLIB_FOPEN_MAX = 10
+   189                              ENDIF
+   190                              PUBLIC  __FOPEN_MAX
+   191                              defc    __FOPEN_MAX = CLIB_FOPEN_MAX
+   192                          
+   193                              ; Maximum number of fds available
+   194                              IF !DEFINED_CLIB_OPEN_MAX
+   195                                  ; Map this old nofileio pragma into a modern form
+   196                                  IF DEFINED_nofileio
+   197                                      defc    CLIB_OPEN_MAX = 0
+   198                                  ELSE
+   199                                      defc    CLIB_OPEN_MAX = CLIB_FOPEN_MAX
+   200                                  ENDIF
+   201                              ENDIF
+   202                              PUBLIC  __CLIB_OPEN_MAX
+   203                              defc    __CLIB_OPEN_MAX = CLIB_OPEN_MAX
    204                          
-   205                             ; Firmware click setting (MSX/SVI)
-   206                             IF !DEFINED_CLIB_FIRMWARE_KEYBOARD_CLICK
-   207                                defc CLIB_FIRMWARE_KEYBOARD_CLICK = -1
-   208                             ENDIF
-   209                             PUBLIC __CLIB_FIRMWARE_KEYBOARD_CLICK
-   210                             defc __CLIB_FIRMWARE_KEYBOARD_CLICK = CLIB_FIRMWARE_KEYBOARD_CLICK
-   211                          
-   212                             ; Custom memory map
-   213                             IF DEFINED_MMAP
-   214                                 defc __MMAP = MMAP
-   215                             ELSE
-   216                                 defc __MMAP = 0
-   217                             ENDIF
-   218                          
+   205                             ; By default allow the command line options if available on the target/subtype
+   206                             IF !DEFINED_CRT_ENABLE_COMMANDLINE
+   207                                IFDEF TAR__CRT_ENABLE_COMMANDLINE
+   208                                    defc CRT_ENABLE_COMMANDLINE = TAR__CRT_ENABLE_COMMANDLINE
+   209                                ELSE
+   210                                    defc CRT_ENABLE_COMMANDLINE = 1
+   211                                ENDIF
+   212                             ENDIF
+   213                          
+   214                          
+   215                             ; Map this old pragma into a "modern" name
+   216                             IF DEFINED_nostreams
+   217                                 defc CRT_COMMANDLINE_REDIRECTION = 0
+   218                             ELIF !DEFINED_CRT_COMMANDLINE_REDIRECTION
+   219                                 ; File redirection on command line arguments can only happen
+   220                                 ; if stdio is enabled
+   221                                 IF CRT_ENABLE_STDIO = 1
+   222                                     defc CRT_COMMANDLINE_REDIRECTION = 1
+   223                                 ELSE
+   224                                     defc CRT_COMMANDLINE_REDIRECTION = 0
+   225                                 ENDIF
+   226                             ENDIF
+   227                          
+   228                             ; Block size for the gendos library
+   229                             IF !DEFINED_CLIB_RND_BLOCKSIZE
+   230                                DEFC    CLIB_RND_BLOCKSIZE = 1000
+   231                             ENDIF
+   232                             PUBLIC  __RND_BLOCKSIZE
+   233                             defc    __RND_BLOCKSIZE = CLIB_RND_BLOCKSIZE
+   234                          
+   235                             ; Define the height of the font
+   236                             IF !DEFINED_CLIB_FONT_HEIGHT
+   237                                defc CLIB_FONT_HEIGHT = 8
+   238                             ENDIF
+   239                             PUBLIC __CLIB_FONT_HEIGHT
+   240                             defc __CLIB_FONT_HEIGHT = CLIB_FONT_HEIGHT
+   241                          
+   242                             ; Firmware click setting (MSX/SVI)
+   243                             IF !DEFINED_CLIB_FIRMWARE_KEYBOARD_CLICK
+   244                                defc CLIB_FIRMWARE_KEYBOARD_CLICK = -1
+   245                             ENDIF
+   246                             PUBLIC __CLIB_FIRMWARE_KEYBOARD_CLICK
+   247                             defc __CLIB_FIRMWARE_KEYBOARD_CLICK = CLIB_FIRMWARE_KEYBOARD_CLICK
+   248                          
+   249                             ; Custom memory map
+   250                             IF DEFINED_MMAP
+   251                                 defc __MMAP = MMAP
+   252                             ELSE
+   253                                 defc __MMAP = 0
+   254                             ENDIF
+   255                          
 c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
     67                          
     68                              org     CRT_ORG_CODE
@@ -1422,26 +1480,27 @@ c:/z88dk/lib/config/../../lib/crt/classic/crt_section_data.inc:
      5                              SECTION smc_clib
      6                            ENDIF
      7                              SECTION smc_fp
-     8                              SECTION smc_compress
-     9                              SECTION smc_user
-    10                              SECTION data_driver
-    11                              SECTION data_clib
-    12                              SECTION data_stdlib
-    13                              SECTION data_psg
-    14                              SECTION data_sound_ay
-    15                              SECTION	data_PSGlib
-    16                            IF !__crt_org_graphics
-    17                              SECTION data_graphics
-    18                            ENDIF
-    19                              SECTION data_crt
-    20                              SECTION data_fp_mbf32
-    21                              SECTION data_arch
-    22                              SECTION data_compiler
-    23                              SECTION data_splib2
-    24                              SECTION data_user
-    25                              SECTION data_alloc_balloc
-    26                              SECTION DATA_END
-    27                          
+     8                              SECTION smc_sound_ay
+     9                              SECTION smc_compress
+    10                              SECTION smc_user
+    11                              SECTION data_driver
+    12                              SECTION data_clib
+    13                              SECTION data_stdlib
+    14                              SECTION data_psg
+    15                              SECTION data_sound_ay
+    16                              SECTION	data_PSGlib
+    17                            IF !__crt_org_graphics
+    18                              SECTION data_graphics
+    19                            ENDIF
+    20                              SECTION data_crt
+    21                              SECTION data_fp_mbf32
+    22                              SECTION data_arch
+    23                              SECTION data_compiler
+    24                              SECTION data_splib2
+    25                              SECTION data_user
+    26                              SECTION data_alloc_balloc
+    27                              SECTION DATA_END
+    28                          
 c:/z88dk/lib/config/../../lib/crt/classic/crt_section_standard.asm:
     27                          ENDIF
     28                              INCLUDE "crt/classic/crt_section_bss.inc"
