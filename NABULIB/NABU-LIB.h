@@ -366,7 +366,7 @@ volatile uint8_t _randomSeed = 0;
   // the text mode.
   // **************************************************************************
   #define TEXT_BUFFER_SIZE 960
-  uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
+  volatile uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
 
 
   // **************************************************************************
@@ -1509,6 +1509,8 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   void vdp_writeUInt32ToBinary(uint32_t v);
 
+  void vdp_refreshViewPort();
+  extern void vdp_paint() __z88dk_callee;
 #endif
 
 

@@ -1545,14 +1545,15 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   
     vdp_setWriteAddress(_vdpPatternNameTableAddr);
 
-    __asm
-        ld hl, __vdp_textBuffer;
-        ld b, 0;
-        ld c, 0xA0;
-        otir;
-        otir;
-        otir;
-    __endasm;
+    vdp_paint();    // Calls the vdp paint routine in NABU-LIB.asm
+    // __asm
+    //     ld hl, __vdp_textBuffer;
+    //     ld b, 0;
+    //     ld c, 0xA0;
+    //     otir;
+    //     otir;
+    //     otir;
+    // __endasm;
 
     if (_vdpCursorMaxXFull == 40) {
 
