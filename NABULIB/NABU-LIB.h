@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on March 22, 2023 (v2023.03.22.00)
+// Last updated on March 27, 2023 (v2023.03.27.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -187,6 +187,10 @@
 // This will cause the ALERT LED to flash if the vdp int was triggered before calling
 // vdp_waitVDPReadyInt().
 //
+// If you run into problems where the code is taking longer than a screen refresh vdp
+// interrupt, you can skip the "missed" interrupt and wait for the next. This can be
+// done by adding a vdpIsReady = false; before you call vdp_waitVDPReadyInt();
+//
 // *Note: You do not need this enabled when your program is released because it does
 //        take a few instructions to run.
 //
@@ -364,9 +368,12 @@ volatile uint8_t _randomSeed = 0;
   // This is because reading and writing the VDP vram is very slow
   // and it is quicker to keep 960 bytes in RAM to double buffer
   // the text mode.
+  // 
+  // The amount of this buffer that is used based on the current mode is
+  // stored in _vdpTextBufferSize
   // **************************************************************************
   #define TEXT_BUFFER_SIZE 960
-  uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
+  volatile uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
 
 
   // **************************************************************************
@@ -394,19 +401,50 @@ volatile uint8_t _randomSeed = 0;
   // **************************************************************************
   volatile uint8_t _vdpReg1Val = 0;
 
-  uint16_t       _vdpSpriteAttributeTableAddr;
-  uint16_t       _vdpSpriteGeneratorTableAddr;
-  uint8_t        _vdpSpriteSizeSelected;
-  uint16_t       _vdpPatternNameTableAddr;
-  uint16_t       _vdpColorTableAddr;
-  uint16_t       _vdpPatternGeneratorTableAddr;
-  uint8_t        _vdpCursorMaxX;
-  uint8_t        _vdpCursorMaxXFull;
-  const uint8_t  _vdpCursorMaxY = 23;
-  uint8_t        _vdpMode;
-  bool           _autoScroll;
-  bool           _vdpInterruptEnabled = false;
-  bool           _vdpSplitThirds;
+  // The sprite attribute table starting addres
+  uint16_t _vdpSpriteAttributeTableAddr;
+
+  // The sprite generator table starting address
+  uint16_t _vdpSpriteGeneratorTableAddr;
+
+  // Is the sprite size normal sized (false = 8x8) or double sized (true = 16x16)
+  bool _vdpSpriteSizeSelected;
+
+  // The tile pattern name table starting address
+  uint16_t _vdpPatternNameTableAddr;
+
+  // The tile color table starting address
+  uint16_t _vdpColorTableAddr;
+
+  // The tiles generator table starting address
+  uint16_t _vdpPatternGeneratorTableAddr;
+
+  // The max horizontal cursor position (i.e. 39 for text mode or 31 for graphics modes)
+  uint8_t _vdpCursorMaxX;
+
+  // The max horizontal cursor count (i.e. 40 for text mode or 32 for graphics modes)
+  uint8_t _vdpCursorMaxXFull;
+
+  // The max vertical line position (always 23)
+  const uint8_t _vdpCursorMaxY = 23;
+
+  // The max vertical line count (always 24)
+  const uint8_t _vdpCursorMaxYFull = 24;
+
+  // The size of the double buffer (_vdp_textBuffer) size that's used (i.e. 768 for graphic modes, 960 for text mode)
+  uint16_t _vdpTextBufferSize;
+
+  // The current VDP mode (text or graphic)
+  uint8_t _vdpMode;
+
+  // Is auto scroll enabled? Will auto scroll when using vdp_write() or vdp_print() or vdp_newline()
+  bool _autoScroll;
+
+  // Are the vdp interrupts enabled?
+  bool _vdpInterruptEnabled = false;
+
+  // Is the color and tile generator tables split into 3rds?
+  bool _vdpSplitThirds;
 
   // used for the vdp_enableVDPReadyInt()
   volatile uint8_t vdpStatusRegVal = 0x00;
@@ -1021,9 +1059,19 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   // Enable the interrupt that will set the variables so you can time your game with
   // the screen refresh rate. This is the recommended method to ensure your game operates
-  // at a constant and acceptable speed.
+  // at a constant and acceptable speed. You can call the vdp_waitVDPReadyInt() to synchronize 
+  // the program with the VDP interrupt speed. This is also necessary when drawing to the vdp
+  // in any graphic modes. Text mode does not require the vdp interrupt, but graphic modes do.
+  // This is because the grahic modes use multiple memory addresses for colors, patterns,
+  // and sprites which must be synchronized. 
   //
-  // You can call the vdp_waitVDPReadyInt() to synchronize your program.
+  // *NOTE: to verify that your main code is not exceeding the available time between vdp interrupts,
+  //        you can temporarily enable the #define DEBUG_VDP_INT at the top of your main.c before #includes.
+  //        Scroll the top of this header file to read about DEBUG_VDP_INT and how to use it.
+  //
+  // If you run into problems where the code is taking longer than a screen refresh vdp
+  // interrupt, you can skip the "missed" interrupt and wait for the next. This can be
+  // done by adding a vdpIsReady = false; before you call vdp_waitVDPReadyInt();
   //
   // The following variables will be set from an interrupt.
   //

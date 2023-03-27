@@ -23,36 +23,38 @@ void initNABULib() {
   NABU_DisableInterrupts();
 
   __asm
+
     push af;
     ld a, r;
     ld (__randomSeed), a;
     pop af;
+
   __endasm;
 
   srand(_randomSeed);
 
   __asm
 
-  IM 2;
+    IM 2;
 
-  ld a, INTERUPT_VECTOR_MAP_MSB;
-  ld i, a;
+    ld a, INTERUPT_VECTOR_MAP_MSB;
+    ld i, a;
 
-  #ifndef DISABLE_HCCA_RX_INT
-    // HCCA Receive
-    ld hl, _isrHCCARX;
-    ld (INTERUPT_VECTOR_MAP_ADDRESS), hl;
-  #endif 
+    #ifndef DISABLE_HCCA_RX_INT
+      // HCCA Receive
+      ld hl, _isrHCCARX;
+      ld (INTERUPT_VECTOR_MAP_ADDRESS), hl;
+    #endif 
 
-    // // HCCA Send
-    // ld hl, _isrHCCATX;
-    // ld (INTERUPT_VECTOR_MAP_ADDRESS + 2), hl;
+      // // HCCA Send
+      // ld hl, _isrHCCATX;
+      // ld (INTERUPT_VECTOR_MAP_ADDRESS + 2), hl;
 
-  #ifndef DISABLE_KEYBOARD_INT
-    // HCCA Keyboard
-    ld hl, _isrKeyboard;
-    ld (INTERUPT_VECTOR_MAP_ADDRESS + 4), hl;
-  #endif
+    #ifndef DISABLE_KEYBOARD_INT
+      // HCCA Keyboard
+      ld hl, _isrKeyboard;
+      ld (INTERUPT_VECTOR_MAP_ADDRESS + 4), hl;
+    #endif
 
     // // Video Frame Sync
     // ld hl, _isrVideoSync;
@@ -762,7 +764,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     __asm
 
-      push  af;      
+      push af;      
 
     // _vdpStatus = IO_VDPLATCH;
       in	a, (_IO_VDPLATCH)
@@ -926,6 +928,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         fgColor = 0;
         _vdpCursorMaxX = 31;
         _vdpCursorMaxXFull = 32;
+        _vdpTextBufferSize = 768;
 
         break;
 
@@ -950,6 +953,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
         _vdpCursorMaxX = 39;
         _vdpCursorMaxXFull = 40;
+        _vdpTextBufferSize = 960;
 
         break;
 
@@ -966,6 +970,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         fgColor = 0;
         _vdpCursorMaxX = 31;
         _vdpCursorMaxXFull = 32;
+
+        _vdpTextBufferSize = 768;
 
         break;
     }
@@ -1542,27 +1548,32 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   }
 
   void vdp_refreshViewPort() {
-  
+
     vdp_setWriteAddress(_vdpPatternNameTableAddr);
 
     __asm
-        ld hl, __vdp_textBuffer;
-        ld b, 0;
-        ld c, 0xA0;
-        otir;
-        otir;
-        otir;
+
+      push hl;
+      push de;
+
+      ld hl, __vdp_textBuffer;
+      ld de, (__vdpTextBufferSize); 
+
+      vdp_refreshViewPortLoop3:
+
+        ld a, (hl);
+        out (0xa0), a;
+
+        inc hl;
+        dec de;
+
+        ld A, D;                 
+        or E;                   
+        jp nz, vdp_refreshViewPortLoop3;
+
+      pop de;
+      pop hl;
     __endasm;
-
-    if (_vdpCursorMaxXFull == 40) {
-
-      __asm
-        ld hl, __vdp_textBuffer + 768;
-        ld b, 192;
-        ld c, 0xA0;
-        otir;
-      __endasm;
-    }
   }
 
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow) {
