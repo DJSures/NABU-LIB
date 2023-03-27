@@ -41,6 +41,9 @@
 // Disable the VDP if you're making a CPM console app. Console apps can use vt_XXX commands for moving cursor in emulation mode
 // #define DISABLE_VDP
 
+// If your program is using graphic mode and using vdp_waitVDPReadyInt(), this can be used during debugging cycle time
+// Read the NABULIB.H file for more info on how to use this.
+// #define DEBUG_VDP_INT
 
 
 #include <stdlib.h>
