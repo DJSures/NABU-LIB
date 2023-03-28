@@ -440,6 +440,10 @@ volatile uint8_t _randomSeed = 0;
   // Is auto scroll enabled? Will auto scroll when using vdp_write() or vdp_print() or vdp_newline()
   bool _autoScroll;
 
+  // auto scroll Top and Bottom rows for the region
+  uint8_t _autoScrollTopRow    = 0;
+  uint8_t _autoScrollBottomRow = 23;
+
   // Are the vdp interrupts enabled?
   bool _vdpInterruptEnabled = false;
 

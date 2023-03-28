@@ -1442,10 +1442,10 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_newLine() {
 
-    if (vdp_cursor.y == 23) {
+    if (vdp_cursor.y == _autoScrollBottomRow) {
 
       if (_autoScroll)
-        vdp_scrollTextUp(0, 23);
+        vdp_scrollTextUp(_autoScrollTopRow, _autoScrollBottomRow);
 
       vdp_cursor.x = 0;
     } else {
@@ -1468,7 +1468,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
 
     if (row > _vdpCursorMaxY)
-      row = 0;
+      row = _vdpCursorMaxY;
 
     vdp_cursor.x = col;
     vdp_cursor.y = row;
@@ -1507,9 +1507,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     _vdp_textBuffer[name_offset] = chr;
 
-    if (_autoScroll && vdp_cursor.x == _vdpCursorMaxX && vdp_cursor.y == 23) {
+    if (_autoScroll && vdp_cursor.x == _vdpCursorMaxX && vdp_cursor.y == _autoScrollBottomRow) {
 
-      vdp_scrollTextUp(0, 23);
+      vdp_scrollTextUp(_autoScrollTopRow, _autoScrollBottomRow);
 
       vdp_cursor.x = 0;
     }
