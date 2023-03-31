@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023 
 // https://nabu.ca
 // 
-// Last updated on March 22, 2023 (v2023.03.22.00)
+// Last updated on March 30, 2023 (v2023.03.30.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -401,7 +401,7 @@ int32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption
 
 // **************************************************************************************************************
 //
-// TCP
+// TCP CLIENT
 //
 // **************************************************************************************************************
 
@@ -470,6 +470,59 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 // **************************************************************************
 int32_t rn_TCPHandleWrite(uint8_t tcpHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
 
+
+
+
+
+
+// **************************************************************************************************************
+//
+// TCP SERVER
+//
+// **************************************************************************************************************
+
+// **************************************************************************
+// Get the number of clients connected to the IA TCP Server
+// **************************************************************************
+uint8_t rn_TCPServerClientCnt();
+
+
+// **************************************************************************
+// Get the length of readable data on the TCP Server connection.
+// **************************************************************************
+uint8_t rn_TCPServerAvailable();
+
+// **************************************************************************
+// Read data from the specified tcp server connection
+// 
+// - buffer is a pointer to a buffer that the data will be written to.
+// - bufferOffset is the offset within the buffer where the data will be written. Use 0 if you're
+//   writing to the beginning of the buffer, for example.
+// - readLength is the amount of data that you will be reading.
+// 
+// Returns: the number of bytes read
+// **************************************************************************
+uint8_t rn_TCPServerRead(uint8_t* buffer, uint16_t bufferOffset, uint8_t readLength);
+
+// **************************************************************************
+// Write data to all clients that are connected to the TCP Server..
+// 
+// - dataOffset is the offset of the data that will be written
+// - dataLen is the length of data that will be written 
+// - data is a pointer to the data
+//
+// **************************************************************************
+void rn_TCPServerWrite(uint16_t dataOffset, uint8_t dataLen, uint8_t* data);
+
+
+
+
+
+// **************************************************************************************************************
+//
+// PRINTER
+//
+// **************************************************************************************************************
 
 // **************************************************************************
 // PRINTER

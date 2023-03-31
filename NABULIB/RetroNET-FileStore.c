@@ -682,6 +682,99 @@ int32_t rn_TCPHandleWrite(uint8_t tcpHandle, uint16_t dataOffset, uint16_t dataL
   return wrote;
 }
 
+
+
+
+
+
+// **************************************************************************
+// TCP/IP SERVER
+// -------------
+//
+// These functions are for communicating with clients connected to the IA TCP Server
+// The IA TCP Server can be configured in the Internet Adapter settings
+// **************************************************************************
+
+uint8_t rn_TCPServerClientCnt() {
+
+  // 0xd5
+
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xd5);
+
+  uint8_t t = hcca_DiReadByte();
+
+  hcca_DiRestoreInterrupts();
+
+  return t;
+}
+
+uint8_t rn_TCPServerAvailable() {
+
+  // 0xd6
+
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xd6);
+
+  uint8_t t = hcca_DiReadByte();
+
+  hcca_DiRestoreInterrupts();
+
+  return t;
+}
+
+uint8_t rn_TCPServerRead(uint8_t* buffer, uint16_t bufferOffset, uint8_t readLength) {
+
+  // 0xd7
+
+  hcca_DiFocusInterrupts();
+
+  uint8_t *start = buffer + bufferOffset;
+
+  hcca_DiWriteByte(0xd7);
+
+  hcca_DiWriteByte(readLength);
+
+  uint8_t toRead = hcca_DiReadByte();
+
+  if (toRead > 0) {
+
+    uint8_t *end = start + toRead;
+    
+    do {
+
+      while (IO_AYDATA & 0x02);
+      *start = IO_HCCA;
+
+      start++;
+
+      _rxBufferReadPos++;
+    } while (start != end);
+  }
+
+  hcca_DiRestoreInterrupts();
+
+  return toRead;
+}
+
+void rn_TCPServerWrite(uint16_t dataOffset, uint8_t dataLen, uint8_t* data) {
+
+  // 0xd8
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xd8);
+
+  hcca_DiWriteByte(dataLen);
+
+  hcca_DiWriteBytes(dataOffset, dataLen, data);
+
+  hcca_DiRestoreInterrupts();
+}
+
+
+
 // **************************************************************************
 // PRINTER
 // -------
