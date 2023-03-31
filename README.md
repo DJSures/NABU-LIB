@@ -70,6 +70,9 @@ pause
 
 # Version Notes
 
+## v2023.03.30.00
+Added new functions to retronet file system for the new IA TCP Server feature. For example, CPM can now have input and output redirected to a TCP socket on the IA
+
 ## v2023.03.22.00
 Removed the write16, write8 stuff because it was left over from the old debug days of original NABULIB and z88dk integration. You can simply use sprintf() or printf() now, and not worry about it
 
