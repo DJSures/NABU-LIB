@@ -172,7 +172,9 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
 
     // review LIS and only bc, hl, a registers are used for this function
     __asm
-      exx;
+      push bc;
+      push de;
+      push hl;
       push af;
     __endasm;
 
@@ -193,7 +195,9 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
 
     __asm
       pop af;
-      exx;
+      pop hl;
+      pop de;
+      pop bc;
       ei;
       reti;
     __endasm;
@@ -204,10 +208,12 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
   void isrKeyboard() __naked {
 
     __asm
+      push bc;
+      push de;
+      push hl;
       push af;
       push iy;
-      ld iy, 0;
-      exx;
+      ld iy, 0;      
     __endasm;
 
     uint8_t inKey = IO_KEYBOARD;
@@ -243,10 +249,12 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
       }
     }
 
-    __asm
-      exx;
+    __asm      
       pop iy;
       pop af;
+      pop hl;
+      pop de;
+      pop bc;
       ei;
       reti;
     __endasm;
