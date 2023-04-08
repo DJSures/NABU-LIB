@@ -11,6 +11,9 @@ zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o
 
 echo ****************************************************************************
 
+dd if=/dev/zero of="C:\My Documents\NABU Internet Adapter\Store\c.dsk" bs=512 count=16384 
+
+
 mkfs.cpm -f naburn8mb "C:\My Documents\NABU Internet Adapter\Store\c.dsk"
 
 cpmcp -f naburn8mb    "C:\My Documents\NABU Internet Adapter\Store\c.dsk" myapp.com 0:
