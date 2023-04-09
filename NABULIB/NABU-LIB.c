@@ -401,6 +401,11 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
     printf("%cp", 27);
   }
 
+  bool isCloudCPM() {
+
+    return _CLOUD_CPM_KEY == 0x55;
+  }
+
 #endif
 
 

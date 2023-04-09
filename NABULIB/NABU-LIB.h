@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on April 4, 2023 (v2023.04.04.00)
+// Last updated on April 8, 2023 (v2023.04.08.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -871,6 +871,8 @@ inline uint8_t ayRead(uint8_t reg);
   // Current screen color
   __at (0xff25) volatile uint8_t  _SCREEN_COLOR;
 
+  // Is this CLOUD CPM? (0x55)
+  __at (0xff29) volatile uint8_t  _CLOUD_CPM_KEY;        
 
   void vt_clearToEndOfScreen();
 
@@ -918,6 +920,7 @@ inline uint8_t ayRead(uint8_t reg);
 
   void vt_reverseVideo();
 
+  bool isCloudCPM();
 #endif 
 
 
