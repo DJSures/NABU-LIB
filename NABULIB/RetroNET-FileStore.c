@@ -571,6 +571,53 @@ int32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption
   return t;
 }
 
+uint16_t rn_fileHandleLineCount(uint8_t fileHandle) {
+
+  // 0xdc
+
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xdc);
+
+  hcca_DiWriteByte(fileHandle);
+
+  uint16_t t = hcca_DiReadUInt16();
+
+  hcca_DiRestoreInterrupts();
+
+  return t;
+
+}
+
+uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *buffer) {
+
+  // 0xdd
+
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xdd);
+
+  hcca_DiWriteByte(fileHandle);
+
+  hcca_DiWriteUInt16(lineNumber);
+
+  uint16_t toRead = hcca_DiReadUInt16();
+  uint8_t *end    = buffer + toRead;
+  
+  while (buffer != end) {
+
+    while (IO_AYDATA & 0x02);
+    *buffer = IO_HCCA;
+
+    buffer++;
+  }
+
+  hcca_DiRestoreInterrupts();
+
+  return toRead;
+}
+
+
 // **************************************************************************
 // TCP/IP CLIENT
 // -------------

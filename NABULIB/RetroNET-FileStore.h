@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023 
 // https://nabu.ca
 // 
-// Last updated on March 30, 2023 (v2023.03.30.00)
+// Last updated on April 10, 2023 (v2023.04.10.00)
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -397,6 +397,28 @@ uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t buff
 // **************************************************************************
 int32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption);
 
+// **************************************************************************
+// Gets the number of lines in the specified file handle. This is a helper
+// function that assists the rn_fileHandleGetLine()
+// 
+// - fileHandle is obtained by rn_fileOpen()
+// 
+// Returns the new position of the file. If the seek is set past the end of the file, the
+// end of the file position is returned. The seek function will not let you seek past
+// the end of a file, or before a file. That is why we give you this value so you can be sure
+// the pointer is always within the file.
+// **************************************************************************
+uint16_t rn_fileHandleLineCount(uint8_t fileHandle);
+
+// **************************************************************************
+// Gets the string at the specified line number. 
+// 
+// - fileHandle is obtained by rn_fileOpen()
+// 
+// Returns the length of the line read
+// **************************************************************************
+uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *buffer);
+
 
 
 // **************************************************************************************************************
@@ -404,8 +426,6 @@ int32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption
 // TCP CLIENT
 //
 // **************************************************************************************************************
-
-
 
 // **************************************************************************
 // Connects to the host and returns a file handle that will be used for all file functions.
