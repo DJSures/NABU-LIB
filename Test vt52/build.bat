@@ -11,8 +11,10 @@ zcc +cpm main.c -compiler=sdcc -create-app -O3 --opt-code-speed -o vtest52
 
 echo ****************************************************************************
 
-mkfs.cpm -f naburn8mb "C:\My Documents\NABU Internet Adapter\Store\a.dsk"
+mkfs.cpm -f naburn8mb "C:\My Documents\NABU Internet Adapter\Store\c.dsk"
 
-cpmcp -f naburn8mb    "C:\My Documents\NABU Internet Adapter\Store\a.dsk" vtest52.com 0:
+cpmcp -f naburn8mb    "C:\My Documents\NABU Internet Adapter\Store\c.dsk" vtest52.com 0:
+
+dir *.com
 
 pause

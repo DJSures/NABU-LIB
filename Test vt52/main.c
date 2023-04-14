@@ -9,6 +9,8 @@
 
 #define DISABLE_VDP 
 
+#define DISABLE_CURSOR
+
 #define DISABLE_KEYBOARD_INT
 
 #include <stdio.h>
@@ -31,23 +33,53 @@ void main() {
 
   initNABULib();
 
-  vt_clearScreen();
+  int8_t t = -1;
+  do {
 
-  puts("");
-  puts("VT52 Test by DJ Sures");
-  puts("---------------------------");
-  puts("This will display a number of ANSI and");
-  puts("VT52 tests that are built into the");
-  puts("Cloud CP/M BIOS. Normally, a CPM");
-  puts("computer would not need a terminal");
-  puts("emulator because CPM computers use");
-  puts("serial terminals. The NABU uses the");
-  puts("built-in VDP, so to run CPM programs");
-  puts("correctly, we need a terminal emulator");
-  puts("inside the BIOS.");
-  puts("");
+    vt_clearScreen();
 
-  prompt();
+    puts("");
+    puts("Terminal Test by DJ Sures");
+    puts("-------------------------");
+    puts("This will display a number of terminal");
+    puts("tests that are built into the Cloud");
+    puts("CP/M BIOS. Normally, a CPM computer");
+    puts("would not need a terminal emulator");
+    puts("because CPM computers use serial ");
+    puts("dumb terminals. The NABU uses the");
+    puts("built-in VDP, so to run CPM programs");
+    puts("correctly, we need a terminal emulator");
+    puts("inside the BIOS.");
+
+    puts("");
+    puts("");
+
+    printf("Current BIOS Mode: ");
+
+    if (_EMULATION_MODE == 0)
+      puts("ADM3a");
+    else
+      puts("VT52");
+
+    puts("");
+
+    puts("Select emulation mode to test:");
+    puts(" 1) ADM3a");
+    puts(" 2) VT52");
+    puts(" 3) Exit");
+
+    t = getchar() - '1';
+
+    if (t == 2) {
+
+      puts("Exiting...");
+
+      return;
+    }
+
+  } while (t < 0 || t > 1);
+
+  _EMULATION_MODE = t;
 
   // square border
   // -------------------------------------------------------
@@ -56,20 +88,27 @@ void main() {
   for (uint8_t i = 0; i < 80; i++) {
 
     vt_setCursor(i, 0);
-    printf("*");
+    putchar('*');
 
     vt_setCursor(i, 23);
-    printf("*");
+    putchar('*');
   }
 
   for (uint8_t i = 0; i < 24; i++) {
 
     vt_setCursor(0, i);
-    printf("*");
+    putchar('*');
 
     vt_setCursor(79, i);
-    printf("*");
+    putchar('*');
   }
+
+  vt_setCursor(2, 8);
+  printf("Emulation mode: ");
+  if (_EMULATION_MODE == 0)
+    puts("ADM3a");
+  else
+    puts("VT52");
 
   vt_setCursor(2, 10);
   puts("There is a border around the entire 80 column screen.");
@@ -97,22 +136,22 @@ void main() {
   // -------------------------------------------------------
   vt_setCursor(10, 5);
   vt_moveCursorUp(2);
-  printf("^");
+  putchar('^');
   prompt();
 
   vt_setCursor(10, 5);
   vt_moveCursorDown(2);
-  printf("v");
+  putchar('v');
   prompt();
 
   vt_setCursor(10, 5);
   vt_moveCursorRight(2);
-  printf(">");
+  putchar('>');
   prompt();
 
   vt_setCursor(10, 5);
   vt_moveCursorLeft(2);
-  printf("<");
+  putchar('<');
   prompt();
 
   vt_setCursor(5, 12);
@@ -125,17 +164,20 @@ void main() {
     
   // save & restore cursor position
   // -------------------------------------------------------
-  vt_setCursor(18, 2);
-  printf("1");
+  vt_setCursor(15, 2);
+  puts("Testing Save Restore cursor");
+
+  vt_setCursor(15, 3);
+  putchar('1');
   vt_saveCursorPosition();
   prompt();
 
-  vt_setCursor(20, 2);
-  printf("2");
+  vt_setCursor(17, 3);
+  putchar('2');
   prompt();
 
   vt_restoreCursorPosition();
-  printf("3");
+  putchar('3');
   prompt();
 
   // clear end of screen
@@ -184,9 +226,16 @@ void main() {
   // -------------------------------------------------------
 
   vt_setCursor(10, 23);
-  printf("Press SPACE to exit"); 
+  printf("Press SPACE to exit");
   while (getch() != ' ');
 
+  puts("\n\n");
+
   puts("Bye bye!");
-  vt_clearScreen();
+
+  if (_EMULATION_MODE != 0) {
+
+    puts("Returning BIOS emulation mode to ADM3a");
+    _EMULATION_MODE = 0;
+  }
 }
