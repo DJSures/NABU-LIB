@@ -111,13 +111,16 @@ void initNABULIBAudio() {
   // Noise envelope
   ayWrite(6, 0b00000000);
 
-  // Set the amplitude (volume) to enveoloe
-  ayWrite(8, 0b00010000);
-  ayWrite(9, 0b00010000);
-  ayWrite(10, 0b00010000);
+  // Turn off all channels
+  ayWrite(8, 0b00000000);
+  ayWrite(9, 0b00000000);
+  ayWrite(10, 0b00000000);
 
   // Enable only the Tone generators on A B C
   ayWrite(7, 0b01111000);
+
+  ayWrite(11, 0);
+  ayWrite(12, 0);
 }
 
 void nop() {
@@ -304,7 +307,10 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
   void vt_moveCursorDown(uint8_t count) {
 
     for (uint8_t i = 0; i < count; i++)
-      printf("%cB", 27);
+      if (_EMULATION_MODE == 0)
+        putchar(0x0a);
+      else
+        printf("%cB", 27);
   }
 
   void vt_cursorHome() {
@@ -315,24 +321,36 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
   void vt_moveCursorLeft(uint8_t count) {
 
     for (uint8_t i = 0; i < count; i++)
-      printf("%cD", 27);
+      if (_EMULATION_MODE == 0)
+        putchar(8);
+      else;
+        printf("%cD", 27);
   }
 
   void vt_moveCursorRight(uint8_t count) {
 
     for (uint8_t i = 0; i < count; i++)
-      printf("%cC", 27);
+      if (_EMULATION_MODE == 0)
+        putchar(12);
+      else
+        printf("%cC", 27);
   }
 
   void vt_moveCursorUp(uint8_t count) {
 
     for (uint8_t i = 0; i < count; i++)
-      printf("%cA", 27);
+      if (_EMULATION_MODE == 0)
+        putchar(11);
+      else
+        printf("%cA", 27);
   }
 
   void vt_deleteLine() {
 
-    printf("%cM", 27);
+    if (_EMULATION_MODE)
+      printf("%cR", 27);
+    else
+      printf("%cM", 27);
   }
 
   void vt_setCursor(uint8_t x, uint8_t y) {
@@ -347,21 +365,20 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
     putchar(32 + x);
   }
 
-  void vt_foregroundColor(uint8_t color) {
-
-    putchar(27);
-    putchar('b');
-    putchar(color);
-  }
-
   void vt_insertLine() {
 
-    printf("%cL", 27);
+    if (_EMULATION_MODE == 0)
+      printf("%cE", 27);
+    else
+      printf("%cL", 27);
   }
 
   void vt_restoreCursorPosition() {
 
-    printf("%ck", 27);
+    if (_EMULATION_MODE == 0)
+      printf("%ck", 27);
+    else
+      printf("%ck", 27);
   }
 
   void vt_backgroundColor(uint8_t color) {
