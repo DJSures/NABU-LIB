@@ -2,6 +2,8 @@ Here's some homebrew games that I've made to show how to make games so you can p
 
 Brick Battle - 2 player brickout style game with multiple balls
 
+Game Dev 1-3 - Various states of Game Man Yeah as I was expirementing. You can see my progress throughout each of these revisions
+
 Game Dev 4 - 4 player Game Man Yeah in text mode. Collect the points. Avoid the bombs. Get the home base
 
 Game Dev 5 - 4 player Game Man Yeah in graphic mode. 
