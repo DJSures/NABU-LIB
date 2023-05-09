@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "../NABULIB/NABU-LIB.h"
+#include "../../NABULIB/NABU-LIB.h"
 
 __at (0x0003) uint8_t IO_BYTE;
 

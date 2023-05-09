@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <conio.h>
-#include "../NABULIB/NABU-LIB.h"
+#include "../../NABULIB/NABU-LIB.h"
 
 void main() {
 

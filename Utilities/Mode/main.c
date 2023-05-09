@@ -5,7 +5,7 @@
 #define DISABLE_KEYBOARD_INT
 
 #include <stdio.h>
-#include "../NABULIB/NABU-LIB.h"
+#include "../../NABULIB/NABU-LIB.h"
 
 void displayMode() {
 

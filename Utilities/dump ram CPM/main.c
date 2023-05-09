@@ -5,8 +5,8 @@ void main();
 #define DISABLE_VDP
 
 #include <stdio.h>
-#include "../NABULIB/RetroNET-FileStore.h"
-#include "../NABULIB/NABU-LIB.h"
+#include "../../NABULIB/RetroNET-FileStore.h"
+#include "../../NABULIB/NABU-LIB.h"
 
 #define REMOTE_FILENAME_LEN 11
 #define REMOTE_FILENAME "DUMPRAM.BIN"

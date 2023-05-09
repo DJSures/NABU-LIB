@@ -25,8 +25,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <conio.h>
-#include "../NABULIB/NABU-LIB.h"
-#include "../NABULIB/RetroNET-FileStore.h"
+#include "../../NABULIB/NABU-LIB.h"
+#include "../../NABULIB/RetroNET-FileStore.h"
 
 #define _FILENAME_SETTINGS_LEN 4
 uint8_t * _FILENAME_SETTINGS = "CCPM";
