@@ -1,0 +1,547 @@
+C:/Users/dj/AppData/Local/Temp/zcc000007840D732.asm:
+     1                          MODULE main_c
+     2                          LINE 0, "main.c"
+main.c:
+                                
+     1                          ;--------------------------------------------------------
+     2                          ; File Created by SDCC : free open source ANSI-C Compiler
+     3                          ; Version 4.2.0 #13081 (MINGW64)
+     4                          ;--------------------------------------------------------
+     5                          ; Processed by Z88DK
+     6                          ;--------------------------------------------------------
+     7                          
+     8                          	EXTERN __divschar
+     9                          	EXTERN __divschar_callee
+    10                          	EXTERN __divsint
+    11                          	EXTERN __divsint_callee
+    12                          	EXTERN __divslong
+    13                          	EXTERN __divslong_callee
+    14                          	EXTERN __divslonglong
+    15                          	EXTERN __divslonglong_callee
+    16                          	EXTERN __divsuchar
+    17                          	EXTERN __divsuchar_callee
+    18                          	EXTERN __divuchar
+    19                          	EXTERN __divuchar_callee
+    20                          	EXTERN __divuint
+    21                          	EXTERN __divuint_callee
+    22                          	EXTERN __divulong
+    23                          	EXTERN __divulong_callee
+    24                          	EXTERN __divulonglong
+    25                          	EXTERN __divulonglong_callee
+    26                          	EXTERN __divuschar
+    27                          	EXTERN __divuschar_callee
+    28                          	EXTERN __modschar
+    29                          	EXTERN __modschar_callee
+    30                          	EXTERN __modsint
+    31                          	EXTERN __modsint_callee
+    32                          	EXTERN __modslong
+    33                          	EXTERN __modslong_callee
+    34                          	EXTERN __modslonglong
+    35                          	EXTERN __modslonglong_callee
+    36                          	EXTERN __modsuchar
+    37                          	EXTERN __modsuchar_callee
+    38                          	EXTERN __moduchar
+    39                          	EXTERN __moduchar_callee
+    40                          	EXTERN __moduint
+    41                          	EXTERN __moduint_callee
+    42                          	EXTERN __modulong
+    43                          	EXTERN __modulong_callee
+    44                          	EXTERN __modulonglong
+    45                          	EXTERN __modulonglong_callee
+    46                          	EXTERN __moduschar
+    47                          	EXTERN __moduschar_callee
+    48                          	EXTERN __mulint
+    49                          	EXTERN __mulint_callee
+    50                          	EXTERN __mullong
+    51                          	EXTERN __mullong_callee
+    52                          	EXTERN __mullonglong
+    53                          	EXTERN __mullonglong_callee
+    54                          	EXTERN __mulschar
+    55                          	EXTERN __mulschar_callee
+    56                          	EXTERN __mulsuchar
+    57                          	EXTERN __mulsuchar_callee
+    58                          	EXTERN __muluchar
+    59                          	EXTERN __muluchar_callee
+    60                          	EXTERN __muluschar
+    61                          	EXTERN __muluschar_callee
+    62                          	EXTERN __rlslonglong
+    63                          	EXTERN __rlslonglong_callee
+    64                          	EXTERN __rlulonglong
+    65                          	EXTERN __rlulonglong_callee
+    66                          	EXTERN __rrslonglong
+    67                          	EXTERN __rrslonglong_callee
+    68                          	EXTERN __rrulonglong
+    69                          	EXTERN __rrulonglong_callee
+    70                          	EXTERN ___mulsint2slong
+    71                          	EXTERN ___mulsint2slong_callee
+    72                          	EXTERN ___muluint2ulong
+    73                          	EXTERN ___muluint2ulong_callee
+    74                          	EXTERN ___sdcc_call_hl
+    75                          	EXTERN ___sdcc_call_iy
+    76                          	EXTERN ___sdcc_enter_ix
+    77                          	EXTERN banked_call
+    78                          	EXTERN _banked_ret
+    79                          	EXTERN ___fs2schar
+    80                          	EXTERN ___fs2schar_callee
+    81                          	EXTERN ___fs2sint
+    82                          	EXTERN ___fs2sint_callee
+    83                          	EXTERN ___fs2slong
+    84                          	EXTERN ___fs2slong_callee
+    85                          	EXTERN ___fs2slonglong
+    86                          	EXTERN ___fs2slonglong_callee
+    87                          	EXTERN ___fs2uchar
+    88                          	EXTERN ___fs2uchar_callee
+    89                          	EXTERN ___fs2uint
+    90                          	EXTERN ___fs2uint_callee
+    91                          	EXTERN ___fs2ulong
+    92                          	EXTERN ___fs2ulong_callee
+    93                          	EXTERN ___fs2ulonglong
+    94                          	EXTERN ___fs2ulonglong_callee
+    95                          	EXTERN ___fsadd
+    96                          	EXTERN ___fsadd_callee
+    97                          	EXTERN ___fsdiv
+    98                          	EXTERN ___fsdiv_callee
+    99                          	EXTERN ___fseq
+   100                          	EXTERN ___fseq_callee
+   101                          	EXTERN ___fsgt
+   102                          	EXTERN ___fsgt_callee
+   103                          	EXTERN ___fslt
+   104                          	EXTERN ___fslt_callee
+   105                          	EXTERN ___fsmul
+   106                          	EXTERN ___fsmul_callee
+   107                          	EXTERN ___fsneq
+   108                          	EXTERN ___fsneq_callee
+   109                          	EXTERN ___fssub
+   110                          	EXTERN ___fssub_callee
+   111                          	EXTERN ___schar2fs
+   112                          	EXTERN ___schar2fs_callee
+   113                          	EXTERN ___sint2fs
+   114                          	EXTERN ___sint2fs_callee
+   115                          	EXTERN ___slong2fs
+   116                          	EXTERN ___slong2fs_callee
+   117                          	EXTERN ___slonglong2fs
+   118                          	EXTERN ___slonglong2fs_callee
+   119                          	EXTERN ___uchar2fs
+   120                          	EXTERN ___uchar2fs_callee
+   121                          	EXTERN ___uint2fs
+   122                          	EXTERN ___uint2fs_callee
+   123                          	EXTERN ___ulong2fs
+   124                          	EXTERN ___ulong2fs_callee
+   125                          	EXTERN ___ulonglong2fs
+   126                          	EXTERN ___ulonglong2fs_callee
+   127                          	EXTERN ____sdcc_2_copy_src_mhl_dst_deix
+   128                          	EXTERN ____sdcc_2_copy_src_mhl_dst_bcix
+   129                          	EXTERN ____sdcc_4_copy_src_mhl_dst_deix
+   130                          	EXTERN ____sdcc_4_copy_src_mhl_dst_bcix
+   131                          	EXTERN ____sdcc_4_copy_src_mhl_dst_mbc
+   132                          	EXTERN ____sdcc_4_ldi_nosave_bc
+   133                          	EXTERN ____sdcc_4_ldi_save_bc
+   134                          	EXTERN ____sdcc_4_push_hlix
+   135                          	EXTERN ____sdcc_4_push_mhl
+   136                          	EXTERN ____sdcc_lib_setmem_hl
+   137                          	EXTERN ____sdcc_ll_add_de_bc_hl
+   138                          	EXTERN ____sdcc_ll_add_de_bc_hlix
+   139                          	EXTERN ____sdcc_ll_add_de_hlix_bc
+   140                          	EXTERN ____sdcc_ll_add_de_hlix_bcix
+   141                          	EXTERN ____sdcc_ll_add_deix_bc_hl
+   142                          	EXTERN ____sdcc_ll_add_deix_hlix
+   143                          	EXTERN ____sdcc_ll_add_hlix_bc_deix
+   144                          	EXTERN ____sdcc_ll_add_hlix_deix_bc
+   145                          	EXTERN ____sdcc_ll_add_hlix_deix_bcix
+   146                          	EXTERN ____sdcc_ll_asr_hlix_a
+   147                          	EXTERN ____sdcc_ll_asr_mbc_a
+   148                          	EXTERN ____sdcc_ll_copy_src_de_dst_hlix
+   149                          	EXTERN ____sdcc_ll_copy_src_de_dst_hlsp
+   150                          	EXTERN ____sdcc_ll_copy_src_deix_dst_hl
+   151                          	EXTERN ____sdcc_ll_copy_src_deix_dst_hlix
+   152                          	EXTERN ____sdcc_ll_copy_src_deixm_dst_hlsp
+   153                          	EXTERN ____sdcc_ll_copy_src_desp_dst_hlsp
+   154                          	EXTERN ____sdcc_ll_copy_src_hl_dst_de
+   155                          	EXTERN ____sdcc_ll_copy_src_hlsp_dst_de
+   156                          	EXTERN ____sdcc_ll_copy_src_hlsp_dst_deixm
+   157                          	EXTERN ____sdcc_ll_lsl_hlix_a
+   158                          	EXTERN ____sdcc_ll_lsl_mbc_a
+   159                          	EXTERN ____sdcc_ll_lsr_hlix_a
+   160                          	EXTERN ____sdcc_ll_lsr_mbc_a
+   161                          	EXTERN ____sdcc_ll_push_hlix
+   162                          	EXTERN ____sdcc_ll_push_mhl
+   163                          	EXTERN ____sdcc_ll_sub_de_bc_hl
+   164                          	EXTERN ____sdcc_ll_sub_de_bc_hlix
+   165                          	EXTERN ____sdcc_ll_sub_de_hlix_bc
+   166                          	EXTERN ____sdcc_ll_sub_de_hlix_bcix
+   167                          	EXTERN ____sdcc_ll_sub_deix_bc_hl
+   168                          	EXTERN ____sdcc_ll_sub_deix_hlix
+   169                          	EXTERN ____sdcc_ll_sub_hlix_bc_deix
+   170                          	EXTERN ____sdcc_ll_sub_hlix_deix_bc
+   171                          	EXTERN ____sdcc_ll_sub_hlix_deix_bcix
+   172                          	EXTERN ____sdcc_load_debc_deix
+   173                          	EXTERN ____sdcc_load_dehl_deix
+   174                          	EXTERN ____sdcc_load_debc_mhl
+   175                          	EXTERN ____sdcc_load_hlde_mhl
+   176                          	EXTERN ____sdcc_store_dehl_bcix
+   177                          	EXTERN ____sdcc_store_debc_hlix
+   178                          	EXTERN ____sdcc_store_debc_mhl
+   179                          	EXTERN ____sdcc_cpu_pop_ei
+   180                          	EXTERN ____sdcc_cpu_pop_ei_jp
+   181                          	EXTERN ____sdcc_cpu_push_di
+   182                          	EXTERN ____sdcc_outi
+   183                          	EXTERN ____sdcc_outi_128
+   184                          	EXTERN ____sdcc_outi_256
+   185                          	EXTERN ____sdcc_ldi
+   186                          	EXTERN ____sdcc_ldi_128
+   187                          	EXTERN ____sdcc_ldi_256
+   188                          	EXTERN ____sdcc_4_copy_srcd_hlix_dst_deix
+   189                          	EXTERN ____sdcc_4_and_src_mbc_mhl_dst_deix
+   190                          	EXTERN ____sdcc_4_or_src_mbc_mhl_dst_deix
+   191                          	EXTERN ____sdcc_4_xor_src_mbc_mhl_dst_deix
+   192                          	EXTERN ____sdcc_4_or_src_dehl_dst_bcix
+   193                          	EXTERN ____sdcc_4_xor_src_dehl_dst_bcix
+   194                          	EXTERN ____sdcc_4_and_src_dehl_dst_bcix
+   195                          	EXTERN ____sdcc_4_xor_src_mbc_mhl_dst_debc
+   196                          	EXTERN ____sdcc_4_or_src_mbc_mhl_dst_debc
+   197                          	EXTERN ____sdcc_4_and_src_mbc_mhl_dst_debc
+   198                          	EXTERN ____sdcc_4_cpl_src_mhl_dst_debc
+   199                          	EXTERN ____sdcc_4_xor_src_debc_mhl_dst_debc
+   200                          	EXTERN ____sdcc_4_or_src_debc_mhl_dst_debc
+   201                          	EXTERN ____sdcc_4_and_src_debc_mhl_dst_debc
+   202                          	EXTERN ____sdcc_4_and_src_debc_hlix_dst_debc
+   203                          	EXTERN ____sdcc_4_or_src_debc_hlix_dst_debc
+   204                          	EXTERN ____sdcc_4_xor_src_debc_hlix_dst_debc
+   205                          
+   206                          ;--------------------------------------------------------
+   207                          ; Public variables in this module
+   208                          ;--------------------------------------------------------
+   209                          	GLOBAL _main
+   210                          	GLOBAL _isrKeyboard
+   211                          	GLOBAL _key
+   212                          	GLOBAL __kbdBufferWritePos
+   213                          	GLOBAL __kbdBufferReadPos
+   214                          	GLOBAL __kbdBuffer
+   215                          ;--------------------------------------------------------
+   216                          ; Externals used
+   217                          ;--------------------------------------------------------
+   218                          	GLOBAL _fputc_cons_ansi
+   219                          	GLOBAL _fputc_cons_generic
+   220                          	GLOBAL _fputc_cons_native
+   221                          	GLOBAL _set_fputc_cons
+   222                          	GLOBAL _perror
+   223                          	GLOBAL _printk
+   224                          	GLOBAL _getk_inkey
+   225                          	GLOBAL _getk
+   226                          	GLOBAL _remove
+   227                          	GLOBAL _rename
+   228                          	GLOBAL _fdgetpos
+   229                          	GLOBAL _fdtell
+   230                          	GLOBAL _fabandon
+   231                          	GLOBAL _puts_cons
+   232                          	GLOBAL _fgets_cons
+   233                          	GLOBAL _fputc_cons
+   234                          	GLOBAL _fgetc_cons_inkey
+   235                          	GLOBAL _fgetc_cons
+   236                          	GLOBAL _fchkstd
+   237                          	GLOBAL _getarg
+   238                          	GLOBAL _vsscanf
+   239                          	GLOBAL _vfscanf
+   240                          	GLOBAL _sscanf
+   241                          	GLOBAL _fscanf
+   242                          	GLOBAL _scanf
+   243                          	GLOBAL _printn
+   244                          	GLOBAL _vsnprintf
+   245                          	GLOBAL _vfprintf
+   246                          	GLOBAL _snprintf
+   247                          	GLOBAL _sprintf
+   248                          	GLOBAL _fprintf
+   249                          	GLOBAL _printf
+   250                          	GLOBAL _gets
+   251                          	GLOBAL _fwrite
+   252                          	GLOBAL _fread
+   253                          	GLOBAL _fseek
+   254                          	GLOBAL _fgetpos
+   255                          	GLOBAL _ftell
+   256                          	GLOBAL _puts
+   257                          	GLOBAL _ferror
+   258                          	GLOBAL _feof
+   259                          	GLOBAL _ungetc
+   260                          	GLOBAL _fgetc
+   261                          	GLOBAL _fputc_callee
+   262                          	GLOBAL _fputs_callee
+   263                          	GLOBAL _fputc
+   264                          	GLOBAL _fputs
+   265                          	GLOBAL _fgets
+   266                          	GLOBAL _closeall
+   267                          	GLOBAL _fflush
+   268                          	GLOBAL _fclose
+   269                          	GLOBAL _funopen
+   270                          	GLOBAL _fmemopen
+   271                          	GLOBAL __freopen1
+   272                          	GLOBAL _fdopen
+   273                          	GLOBAL _freopen
+   274                          	GLOBAL _fopen
+   275                          	GLOBAL _fileno
+   276                          	GLOBAL _fopen_zsock
+   277                          	GLOBAL _rnd_erase
+   278                          	GLOBAL _rnd_saveblock
+   279                          	GLOBAL _rnd_loadblock
+   280                          	GLOBAL _rmdir
+   281                          	GLOBAL _getwd
+   282                          	GLOBAL _chdir
+   283                          	GLOBAL _getcwd
+   284                          	GLOBAL _writebyte
+   285                          	GLOBAL _readbyte
+   286                          	GLOBAL _lseek
+   287                          	GLOBAL _write
+   288                          	GLOBAL _read
+   289                          	GLOBAL _close
+   290                          	GLOBAL _creat
+   291                          	GLOBAL _open
+   292                          	GLOBAL _gios_esc
+   293                          	GLOBAL _gios_text
+   294                          	GLOBAL _gios_1px_callee
+   295                          	GLOBAL _gios_1px
+   296                          	GLOBAL _gios_2px_callee
+   297                          	GLOBAL _gios_2px
+   298                          	GLOBAL _gios_1pm_callee
+   299                          	GLOBAL _gios_1pm
+   300                          	GLOBAL _gios
+   301                          	GLOBAL _a_serialport
+   302                          	GLOBAL _a_driveb
+   303                          	GLOBAL _a_memsize
+   304                          	GLOBAL _a_biosver
+   305                          	GLOBAL _a_machinever
+   306                          	GLOBAL _a_machine
+   307                          	GLOBAL _a_cury
+   308                          	GLOBAL _a_curx
+   309                          	GLOBAL _a_ink
+   310                          	GLOBAL _a_paper
+   311                          	GLOBAL _a_border
+   312                          	GLOBAL _a_keyspeed
+   313                          	GLOBAL _a_statusline
+   314                          	GLOBAL _get_dir_name
+   315                          	GLOBAL _dir_get_entry_size
+   316                          	GLOBAL _dir_get_entry_name
+   317                          	GLOBAL _dir_get_entry_type
+   318                          	GLOBAL _dir_move_next
+   319                          	GLOBAL _dir_move_first
+   320                          	GLOBAL _get_current_volume
+   321                          	GLOBAL _change_volume
+   322                          	GLOBAL __putoffset
+   323                          	GLOBAL _swapuid
+   324                          	GLOBAL _putoffset
+   325                          	GLOBAL _parsefcb
+   326                          	GLOBAL _setfcb
+   327                          	GLOBAL _cpm_cache_flush
+   328                          	GLOBAL _cpm_cache_get
+   329                          	GLOBAL _getfcb
+   330                          	GLOBAL _biosh
+   331                          	GLOBAL _bios
+   332                          	GLOBAL _bdosh_callee
+   333                          	GLOBAL _bdosh
+   334                          	GLOBAL _bdos_callee
+   335                          	GLOBAL _bdos
+   336                          	GLOBAL _get_dpb
+   337                          	GLOBAL __sgoioblk_end
+   338                          	GLOBAL __sgoioblk
+   339                          	GLOBAL __FOPEN_MAX
+   340                          	GLOBAL __RND_BLOCKSIZE
+   341                          	GLOBAL _gios_ptsout
+   342                          	GLOBAL _gios_intout
+   343                          	GLOBAL _gios_ptsin
+   344                          	GLOBAL _gios_intin
+   345                          	GLOBAL _gios_ctl
+   346                          	GLOBAL _gios_pb
+   347                          	GLOBAL _fc_dirbuf
+   348                          	GLOBAL _fc_dirpos
+   349                          	GLOBAL _fc_dir
+   350                          	GLOBAL __fcb
+   351                          	GLOBAL __CLIB_OPEN_MAX
+   352                          ;--------------------------------------------------------
+   353                          ; special function registers
+   354                          ;--------------------------------------------------------
+   355                          defc _IO_AYDATA	=	0x0040
+   356                          defc _IO_AYLATCH	=	0x0041
+   357                          defc _IO_KEYBOARD	=	0x0090
+   358                          defc _IO_KEYBOARD_STATUS	=	0x0091
+   359                          ;--------------------------------------------------------
+   360                          ; ram data
+   361                          ;--------------------------------------------------------
+   362                          	SECTION bss_compiler
+   363                          __kbdBuffer:
+   364  0000  0000000000000000  	DEFS 256
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+   365                          ;--------------------------------------------------------
+   366                          ; ram data
+   367                          ;--------------------------------------------------------
+   368                          
+   369                          IF 0
+   370                          
+   371                          ; .area _INITIALIZED removed by z88dk
+   372                          
+   373                          __kbdBufferReadPos:
+   374                          	DEFS 1
+   375                          __kbdBufferWritePos:
+   376                          	DEFS 1
+   377                          _key:
+   378                          	DEFS 1
+   379                          
+   380                          ENDIF
+   381                          
+   382                          ;--------------------------------------------------------
+   383                          ; absolute external ram data
+   384                          ;--------------------------------------------------------
+   385                          	SECTION IGNORE
+   386                          ;--------------------------------------------------------
+   387                          ; global & static initialisations
+   388                          ;--------------------------------------------------------
+   389                          	SECTION code_crt_init
+   390                          ;--------------------------------------------------------
+   391                          ; Home
+   392                          ;--------------------------------------------------------
+   393                          	SECTION IGNORE
+   394                          ;--------------------------------------------------------
+   395                          ; code
+   396                          ;--------------------------------------------------------
+   397                          	SECTION code_compiler
+   398                          ;	---------------------------------
+   399                          ; Function isrKeyboard
+   400                          ; ---------------------------------
+   401                          _isrKeyboard:
+   402  0000  c5                	push	bc
+   403  0001  d5                	push	de
+   404  0002  e5                	push	hl
+   405  0003  f5                	push	af
+   406  0004  010000            	ld	bc,__kbdBuffer+0
+   407  0007  2a0000            	ld	hl, (__kbdBufferWritePos)
+   408  000a  2600              	ld	h,0x00
+   409  000c  09                	add	hl, bc
+   410  000d  db00              	in	a, (_IO_KEYBOARD)
+   411  000f  77                	ld	(hl), a
+   412  0010  3a0000            	ld	a, (__kbdBufferWritePos+0)
+   413  0013  3c                	inc	a
+   414  0014  320000            	ld	(__kbdBufferWritePos+0), a
+   415  0017  f1                	pop	af
+   416  0018  e1                	pop	hl
+   417  0019  d1                	pop	de
+   418  001a  c1                	pop	bc
+   419  001b  fb                	ei
+   420  001c  ed4d              	reti
+   421                          ;	---------------------------------
+   422                          ; Function main
+   423                          ; ---------------------------------
+   424                          _main:
+   425  001e  210000            	ld	hl,___str_4
+   426  0021  e5                	push	hl
+   427  0022  cd0000            	call	_puts
+   428  0025  f1                	pop	af
+   429  0026  db00              	in	a, (_IO_KEYBOARD_STATUS)
+   430  0028  f3                	di
+   431  0029  ed5e              	IM	2
+   432  002b  3e00              	ld	a, 0xff
+   433  002d  ed47              	ld	i, a
+   434  002f  210000            	ld	hl, _isrKeyboard
+   435  0032  220000            	ld	(0xff00 + 4), hl
+   436  0035  3e00              	ld	a,0x0e
+   437  0037  d300              	out	(_IO_AYLATCH), a
+   438  0039  3e00              	ld	a,0x20
+   439  003b  d300              	out	(_IO_AYDATA), a
+   440  003d  fb                	ei
+   441                          l_main_00101:
+   442  003e  3a0000            	ld	a, (__kbdBufferWritePos+0)
+   443  0041  fd210000          	ld	iy,__kbdBufferReadPos
+   444  0045  fd9600            	sub	a,(iy+0)
+   445  0048  2800              	jr	Z,l_main_00101
+   446  004a  010000            	ld	bc,__kbdBuffer+0
+   447  004d  2a0000            	ld	hl, (__kbdBufferReadPos)
+   448  0050  2600              	ld	h,0x00
+   449  0052  09                	add	hl, bc
+   450  0053  7e                	ld	a, (hl)
+   451  0054  320000            	ld	(_key+0), a
+   452  0057  3a0000            	ld	a, (_key+0)
+   453  005a  4f                	ld	c, a
+   454  005b  0600              	ld	b,0x00
+   455  005d  c5                	push	bc
+   456  005e  c5                	push	bc
+   457  005f  c5                	push	bc
+   458  0060  210000            	ld	hl,___str_2
+   459  0063  e5                	push	hl
+   460  0064  cd0000            	call	_printk
+   461  0067  210800            	ld	hl,8
+   462  006a  39                	add	hl, sp
+   463  006b  f9                	ld	sp, hl
+   464  006c  3a0200            	ld	a, (_key+0)
+   465  006f  d603              	sub	a,0x03
+   466  0071  2809              	jr	Z,l_main_00108
+   467  0073  3a0000            	ld	a, (__kbdBufferReadPos+0)
+   468  0076  3c                	inc	a
+   469  0077  320000            	ld	(__kbdBufferReadPos+0), a
+   470  007a  18c2              	jr	l_main_00101
+   471                          l_main_00108:
+   472  007c  211c00            	ld	hl,___str_3
+   473  007f  e5                	push	hl
+   474  0080  cd0000            	call	_puts
+   475  0083  f1                	pop	af
+   476  0084  c9                	ret
+   477                          	SECTION rodata_compiler
+   478                          ___str_2:
+   479  0000  436f64653a000075  	DEFM "Code: %u / 0x%x  Ascii: %c"
+              0100200078259020  
+              2001006369010020  
+              2563              
+   480  001a  0a                	DEFB 0x0a
+   481  001b  00                	DEFB 0x00
+   482                          	SECTION rodata_compiler
+   483                          ___str_3:
+   484  001c  45786927006e6700  	DEFM "Exiting..."
+              002e              
+   485  0026  00                	DEFB 0x00
+   486                          	SECTION rodata_compiler
+   487                          ___str_4:
+   488  0027  0a                	DEFB 0x0a
+   489  0028  53757065ff204661  	DEFM "Super Fancy Scancode            DJ Sures"
+              00007904ff630e6e  
+              416f206540202001  
+              0020200000202000  
+              44f4200000720000  
+   490  0050  0a                	DEFB 0x0a
+   491  0051  0054524c02002002  	DEFM "CTRL-C exits"
+              00697400          
+   492  005d  0a                	DEFB 0x0a
+   493  005e  00                	DEFB 0x00
+   494                          	SECTION data_compiler
+   495                          __kbdBufferReadPos:
+   496  0000  00                	DEFB +0x00
+   497                          __kbdBufferWritePos:
+   498  0001  00                	DEFB +0x00
+   499                          _key:
+   500  0002  00                	DEFB +0x00
+   501                          	SECTION IGNORE
+   502                          
