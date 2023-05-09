@@ -9,8 +9,8 @@
 // Not using any file system or hcca calls
 #define DISABLE_HCCA_RX_INT
 
-#include "../NABULIB/NABU-LIB.h"
-#include "../NABULIB/patterns.h"
+#include "../../NABULIB/NABU-LIB.h"
+#include "../../NABULIB/patterns.h"
 #include <arch/z80.h>
 
 void main() {

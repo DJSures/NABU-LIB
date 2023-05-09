@@ -6,7 +6,7 @@
 #define FONT_LM80C
 
 #include <stdio.h>
-#include "../NABULIB/NABU-LIB.h"
+#include "../../NABULIB/NABU-LIB.h"
 
 #define MAX_ITERATION 50
 #define X_RES 64.0
