@@ -1,0 +1,1 @@
+This is a blank skeleton project that you can use to start your program. It has the options you need in the main.c file that you can edit to configure the project. The build and buildcpm files are included as well. 
