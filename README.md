@@ -6,7 +6,8 @@ For HomeBrew and Cloud CP/M (HTTPS://NABU.CA) RetroNet of the NABU Persoal Compu
 
 This library is optimized to be as efficient as possible, including text mode double buffer for scrolling, special function registers, and inlining where appropriate. This project aims to build a library for Cloud CP/M and homebrew development of the NABU PC with the easiest and fastest toolset. 
 
-To use this library, you can follow the tutorial here: https://nabu.ca/homebrew-c-tutorial
+# Z88DK
+When installing Z88DK, make sure you use the NIGHTLY BUILD for your OS. Also, for Windows users, simply put it in C:\Z88DK and my BUILD.BAT files in the examples will work easily. Linux users will have to fend for themselves :D
 
 # The NABU-LIB Library
 The main library in the directories above is NABULIB. Within that folder you will find the main NABULIB libraries, which is the only stuff that need to be included in your NABU program. I have included fonts and utilities for graphics, sound, joystick, CPM, and more. If an example is missing or not working, ask me and I'll create it for you.
@@ -18,7 +19,7 @@ I recommend starting with the SKELETON project. The skeleton project contains th
 I'm not using homebrew much, because I prefer Cloud CP/M builds. So you'll see my examples are leaning toward Cloud CP/M. It'll make your program friendly to distribute and will easily work on other CP/M systems if it isn't using hardware specific stuff. So if you disable keyboard, disable hcca, disable vdp, and use fprint/stdout and vt52 commands, it'll work on any z80 cpm computer. Now, if you use VDP and maintain interrupts for keyboard, then you're program is stuck with NABU but I still prefer CPM builds. Either way, the instructions for both are provided below.
 
 # Cloud CP/M Apps
-When building for Cloud CP/M, I recommend using the +cpm target with z88dk. While they've been really great adding support for NABU, they have aligned their development efforts at NABU CP/M for MAME and not Cloud CP/M. The +cpm with -subtype=nabu or -subtype=nabudos will take the vdp interrupt, create a unwanted hcca buffer and a few other things. Since no one has storage on their NABU, it isn't possible for 99.9% of the metal out there to use NABU CP/M. That is why I created Cloud CP/M, so we don't need floppy's (Don't copy that floppy! xD). 
+When building for Cloud CP/M, I recommend using the +cpm target with z88dk. The +cpm with -subtype=nabu or -subtype=nabudos will take the vdp interrupt, create a unwanted hcca buffer and a few other things. 
 
 For building apps for Cloud CP/M, this is the suggested command-line (replace the MYAPP with your app title)..
 
