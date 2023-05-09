@@ -1,0 +1,1820 @@
+C:/Users/dj/AppData/Local/Temp/zcc00002A2C40854.asm:
+     1                          MODULE cpm_crt0_asm
+     2                          LINE 0, "c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm"
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+                                
+     1                          ;
+     2                          ;       Startup for CP/M
+     3                          ;
+     4                          ;       Stefano Bodrato - Apr. 2000
+     5                          ;                         Apr. 2001: Added MS-DOS protection
+     6                          ;
+     7                          ;	Dominic Morris  - Jan. 2001: Added argc/argv support
+     8                          ;			- Jan. 2001: Added in malloc routines
+     9                          ;			- Jan. 2001: File support added
+    10                          ;
+    11                          ;       $Id: cpm_crt0.asm,v 1.43 2016-10-31 16:16:33 stefano Exp $
+    12                          ;
+    13                          ; 	There are a couple of #pragma commands which affect
+    14                          ;	this file:
+    15                          ;
+    16                          ;	#pragma output noprotectmsdos - strip the MS-DOS protection header
+    17                          ;	#pragma output protect8080 - add a check to block the program when on an 8080 CPU (not compatible)
+    18                          ;
+    19                          
+    20                              MODULE  cpm_crt0
+    21                          
+    22                              defc    crt0 = 1
+    23                              INCLUDE "zcc_opt.def"
+C:/Users/dj/AppData/Local/Temp/zcc00002A2C40853/zcc_opt.def:
+     1                          
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+    24                          
+    25                          
+    26                          
+    27                              EXTERN	cpm_platform_init
+    28                              EXTERN    _main		;main() is always external to crt0
+    29                          
+    30                              PUBLIC    cleanup		;jp'd to by exit()
+    31                              PUBLIC    l_dcal		;jp(hl)
+    32                          
+    33                              defc    TAR__clib_exit_stack_size = 32
+    34                              defc    TAR__register_sp = -1
+    35                              defc	__CPU_CLOCK = 4000000
+    36                          
+    37                              IF !DEFINED_CRT_ORG_CODE
+    38                                  defc    CRT_ORG_CODE  = $100
+    39                              ENDIF
+    40                          
+    41                              IF !DEFINED_CLIB_OPEN_MAX
+    42                                  defc    DEFINED_CLIB_OPEN_MAX = 1
+    43                                  defc    CLIB_OPEN_MAX = 3
+    44                              ENDIF
+    45                          
+    46                              ; Default to some "sensible" values
+    47                              IF !DEFINED_CONSOLE_ROWS
+    48                                  defc    CONSOLE_ROWS = 24
+    49                              ENDIF
+    50                              IF !DEFINED_CONSOLE_COLUMNS
+    51                                  defc    CONSOLE_COLUMNS = 80
+    52                              ENDIF
+    53                          
+    54                              ; Default CLS to the ADM-3a code
+    55                              PUBLIC  CLIB_FPUTC_CLS_CODE
+    56                              IF !DEFINED_CLIB_FPUTC_CLS_CODE
+    57                                  defc    CLIB_FPUTC_CLS_CODE = 0x1a
+    58                              ENDIF
+    59                          
+    60                              ; fputc_cons can use vt100 codes as well
+    61                              PUBLIC  CLIB_CPM_NATIVE_VT100
+    62                              IF !DEFINED_CLIB_CPM_NATIVE_VT100
+    63                                  defc    CLIB_CPM_NATIVE_VT100 = 0
+    64                              ENDIF
+    65                          
+    66                              INCLUDE "crt/classic/crt_rules.inc"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_rules.inc:
+     1                          
+     2                          ; Rules for setting up defaults for configuring the build
+     3                          
+     4                             INCLUDE "crt/classic/crt_defaults.inc"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_defaults.inc:
+     1                          ;
+     2                          ; Default value
+     3                          
+     4                          
+     5                             defc DEF__register_sp               = 0       ;; initial value of sp (-1 = do not modify (some targets may redefine meaning), 0 = top of memory)
+     6                          
+     7                             defc DEF__crt_enable_restart        = 0       ;; if non-zero, restart the program on exit (correct initialization of static variables with rom models only)
+     8                             defc DEF__crt_on_exit               = 0x10001 ;; halt on exit (see documentation for other exit behaviours)
+     9                             defc DEF__crt_enable_eidi           = 0       ;; bit flags: 0x01 = di on start, 0x02 = ei on start, 0x10 = di on exit, 0x20 = ei on exit
+    10                          
+    11                             defc DEF__crt_enable_rst            = 0       ;; if non-zero and in some crts with code org = 0, set bits indicate which rst locations are implemented with user code
+    12                             defc DEF__crt_enable_nmi            = 0       ;; if non-zero and in some crts with code org = 0, a jump to user code to service the nmi is inserted
+    13                          
+    14                          
+    15                             ; clib defaults
+    16                             defc DEF__clib_exit_stack_size      = 32      ;; max number of functions that can be registered with atexit()
+    17                          
+    18                             defc DEF__clib_banking_stack_size   = 100	 ;; For each bank call we save 2 words on the temporary stack
+    19                          
+c:/z88dk/lib/config/../../lib/crt/classic/crt_rules.inc:
+     5                          
+     6                             IFNDEF CRT_INITIALIZE_BSS
+     7                                defc CRT_INITIALIZE_BSS = 1
+     8                             ENDIF
+     9                          
+    10                             IFDEF REGISTER_SP
+    11                                defc __register_sp = REGISTER_SP
+    12                             ELSE
+    13                                IFDEF STACKPTR
+    14                                   defc __register_sp = STACKPTR
+    15                                ELSE
+    16                                   IFDEF TAR__register_sp
+    17                                      defc __register_sp = TAR__register_sp
+    18                                   ELSE
+    19                                      defc __register_sp = DEF__register_sp
+    20                                   ENDIF
+    21                                ENDIF
+    22                             ENDIF
+    23                          
+    24                             IFNDEF TAR__crt_enable_rst
+    25                                 defc TAR__crt_enable_rst = DEF__crt_enable_rst
+    26                             ENDIF
+    27                          
+    28                             IFDEF CRT_ENABLE_RST
+    29                                defc __crt_enable_rst = CRT_ENABLE_RST | TAR__crt_enable_rst
+    30                             ELSE
+    31                                defc __crt_enable_rst = TAR__crt_enable_rst
+    32                             ENDIF
+    33                          
+    34                             IFDEF CRT_ENABLE_NMI
+    35                                defc __crt_enable_nmi = CRT_ENABLE_NMI
+    36                             ELSE
+    37                               IFNDEF TAR__crt_enable_nmi
+    38                                  defc TAR__crt_enable_nmi = 0
+    39                               ENDIF
+    40                               defc __crt_enable_nmi = TAR__crt_enable_nmi
+    41                             ENDIF
+    42                          
+    43                             IFDEF CRT_ENABLE_RESTART
+    44                                defc __crt_enable_restart = CRT_ENABLE_RESTART
+    45                             ELSE
+    46                                IFDEF TAR__crt_enable_restart
+    47                                   defc __crt_enable_restart = TAR__crt_enable_restart
+    48                                ELSE
+    49                                   defc __crt_enable_restart = DEF__crt_enable_restart
+    50                                ENDIF
+    51                             ENDIF
+    52                          
+    53                            IF __crt_enable_restart
+    54                                defc __crt_on_exit = 0x10008
+    55                             ELSE
+    56                                IFDEF CRT_ON_EXIT
+    57                                   defc __crt_on_exit = CRT_ON_EXIT
+    58                                ELSE
+    59                                   IFDEF TAR__crt_on_exit
+    60                                      defc __crt_on_exit = TAR__crt_on_exit
+    61                                   ELSE
+    62                                      defc __crt_on_exit = DEF__crt_on_exit
+    63                                   ENDIF
+    64                                ENDIF
+    65                            ENDIF
+    66                          
+    67                          
+    68                             IFDEF CRT_ENABLE_EIDI
+    69                                defc __crt_enable_eidi = CRT_ENABLE_EIDI
+    70                             ELSE
+    71                                IFDEF TAR__crt_enable_eidi
+    72                                   defc __crt_enable_eidi = TAR__crt_enable_eidi
+    73                                ELSE
+    74                                   defc __crt_enable_eidi = DEF__crt_enable_eidi
+    75                                ENDIF
+    76                             ENDIF
+    77                          
+    78                          
+    79                             ; By default we want to have stdio working for us
+    80                             IFNDEF CRT_ENABLE_STDIO
+    81                                 defc CRT_ENABLE_STDIO = 1
+    82                             ENDIF
+    83                          
+    84                             IFDEF CLIB_EXIT_STACK_SIZE
+    85                                defc __clib_exit_stack_size = CLIB_EXIT_STACK_SIZE
+    86                             ELSE
+    87                                IFDEF TAR__clib_exit_stack_size
+    88                                   defc __clib_exit_stack_size = TAR__clib_exit_stack_size
+    89                                ELSE
+    90                                   defc __clib_exit_stack_size = DEF__clib_exit_stack_size
+    91                                ENDIF
+    92                             ENDIF
+    93                          
+    94                             ; For each bank call we save 2 words on the temporary stack
+    95                             ; this controls the depth of calls we can make safely
+    96                             IFNDEF CLIB_BANKING_STACK_SIZE
+    97                                PUBLIC CLIB_BANKING_STACK_SIZE
+    98                                IFDEF TAR__clib_banking_stack_size
+    99                                   defc CLIB_BANKING_STACK_SIZE = TAR__clib_banking_stack_size
+   100                                ELSE
+   101                                   defc CLIB_BANKING_STACK_SIZE = DEF__clib_banking_stack_size
+   102                                ENDIF
+   103                             ENDIF
+   104                          
+   105                          
+   106                             PUBLIC __CRT_KEY_DEL
+   107                             IFDEF CRT_KEY_DEL
+   108                               defc __CRT_KEY_DEL = CRT_KEY_DEL
+   109                             ELSE
+   110                               defc __CRT_KEY_DEL = 8
+   111                             ENDIF
+   112                          
+   113                             PUBLIC __CRT_KEY_CAPS_LOCK
+   114                             IFDEF CRT_KEY_CAPS_LOCK
+   115                               defc __CRT_KEY_CAPS_LOCK  = CRT_KEY_CAPS_LOCK
+   116                             ELSE
+   117                               defc __CRT_KEY_CAPS_LOCK = 6
+   118                             ENDIF
+   119                          
+   120                             PUBLIC __CPU_CLOCK
+   121                             IFNDEF __CPU_CLOCK
+   122                               defc __CPU_CLOCK = 3500000
+   123                             ENDIF
+   124                          
+   125                             PUBLIC __CLIB_CONIO_NATIVE_COLOUR
+   126                             IFDEF CLIB_CONIO_NATIVE_COLOUR
+   127                               defc __CLIB_CONIO_NATIVE_COLOUR = CLIB_CONIO_NATIVE_COLOUR
+   128                             ELSE
+   129                               defc __CLIB_CONIO_NATIVE_COLOUR = 0
+   130                             ENDIF
+   131                          
+   132                             ; When using the firmware printer we may need to disable the soft
+   133                             ; cursor created by fgets_cons()
+   134                             PUBLIC __CLIB_DISABLE_FGETS_CURSOR
+   135                             IFDEF CLIB_DISABLE_FGETS_CURSOR
+   136                               defc __CLIB_DISABLE_FGETS_CURSOR = CLIB_DISABLE_FGETS_CURSOR
+   137                             ELSE
+   138                               defc __CLIB_DISABLE_FGETS_CURSOR = 0
+   139                             ENDIF
+   140                          
+   141                             ; Delay when entering fgetc_cons()
+   142                             ; 50ms stops rogue repeats nicely, but may need tuning
+   143                             PUBLIC __CLIB_FGETC_CONS_DELAY
+   144                             IFDEF CLIB_FGETC_CONS_DELAY
+   145                               defc __CLIB_FGETC_CONS_DELAY = CLIB_FGETC_CONS_DELAY
+   146                             ELSE
+   147                               defc __CLIB_FGETC_CONS_DELAY = 50
+   148                             ENDIF
+   149                          
+   150                             ; Delay when kbhit/getch() returns a cached key press
+   151                             ; Delaying slightly means that typing is possible
+   152                             PUBLIC __CLIB_KBHIT_DELAY
+   153                             IFDEF CLIB_KBHIT_DELAY
+   154                               defc __CLIB_KBHIT_DELAY = CLIB_KBHIT_DELAY
+   155                             ELSE
+   156                               defc __CLIB_KBHIT_DELAY = 0
+   157                             ENDIF
+   158                          
+   159                             ; Some ports (looking at you tiki100) need to have graphics routines stored out
+   160                             ; of paging harm. Normally we'd just use code_driver and keep the routines close
+   161                             ; the start of the address space. However for tiki100, we need them at the end,
+   162                             ; (in this case > 32768)
+   163                             IF DEFINED_CRT_ORG_GRAPHICS
+   164                                 defc __crt_org_graphics = CRT_ORG_GRAPHICS
+   165                             ENDIF
+   166                          
+   167                             ; If 32 bit floats are defined, then we need to indicate to the library
+   168                             ; that they are in use (mainly for printf/scanf)
+   169                             PUBLIC CLIB_32BIT_FLOATS
+   170                             IF !DEFINED_CLIB_32BIT_FLOATS
+   171                                 defc CLIB_32BIT_FLOATS = 0
+   172                             ENDIF
+   173                             PUBLIC CLIB_64BIT_FLOATS
+   174                             IF !DEFINED_CLIB_64BIT_FLOATS
+   175                                 defc CLIB_64BIT_FLOATS = 0
+   176                             ENDIF
+   177                          
+   178                             ; Some targets startup in different screen modes depending on the environment:
+   179                             ; eg native = 40columns, CP/M = 80 columns. These should be explicitly defined
+   180                             ; if needed. So default to an unused value if not
+   181                             PUBLIC CLIB_DEFAULT_SCREEN_MODE
+   182                             IFNDEF CLIB_DEFAULT_SCREEN_MODE
+   183                                 defc CLIB_DEFAULT_SCREEN_MODE = 0
+   184                             ENDIF
+   185                          
+   186                              ; Maximum number of FILEs available
+   187                              IF !DEFINED_CLIB_FOPEN_MAX
+   188                                  DEFC    CLIB_FOPEN_MAX = 10
+   189                              ENDIF
+   190                              PUBLIC  __FOPEN_MAX
+   191                              defc    __FOPEN_MAX = CLIB_FOPEN_MAX
+   192                          
+   193                              ; Maximum number of fds available
+   194                              IF !DEFINED_CLIB_OPEN_MAX
+   195                                  ; Map this old nofileio pragma into a modern form
+   196                                  IF DEFINED_nofileio
+   197                                      defc    CLIB_OPEN_MAX = 0
+   198                                  ELSE
+   199                                      defc    CLIB_OPEN_MAX = CLIB_FOPEN_MAX
+   200                                  ENDIF
+   201                              ENDIF
+   202                              PUBLIC  __CLIB_OPEN_MAX
+   203                              defc    __CLIB_OPEN_MAX = CLIB_OPEN_MAX
+   204                          
+   205                             ; By default allow the command line options if available on the target/subtype
+   206                             IF !DEFINED_CRT_ENABLE_COMMANDLINE
+   207                                IFDEF TAR__CRT_ENABLE_COMMANDLINE
+   208                                    defc CRT_ENABLE_COMMANDLINE = TAR__CRT_ENABLE_COMMANDLINE
+   209                                ELSE
+   210                                    defc CRT_ENABLE_COMMANDLINE = 1
+   211                                ENDIF
+   212                             ENDIF
+   213                          
+   214                          
+   215                             ; Map this old pragma into a "modern" name
+   216                             IF DEFINED_nostreams
+   217                                 defc CRT_COMMANDLINE_REDIRECTION = 0
+   218                             ELIF !DEFINED_CRT_COMMANDLINE_REDIRECTION
+   219                                 ; File redirection on command line arguments can only happen
+   220                                 ; if stdio is enabled
+   221                                 IF CRT_ENABLE_STDIO = 1
+   222                                     defc CRT_COMMANDLINE_REDIRECTION = 1
+   223                                 ELSE
+   224                                     defc CRT_COMMANDLINE_REDIRECTION = 0
+   225                                 ENDIF
+   226                             ENDIF
+   227                          
+   228                             ; Block size for the gendos library
+   229                             IF !DEFINED_CLIB_RND_BLOCKSIZE
+   230                                DEFC    CLIB_RND_BLOCKSIZE = 1000
+   231                             ENDIF
+   232                             PUBLIC  __RND_BLOCKSIZE
+   233                             defc    __RND_BLOCKSIZE = CLIB_RND_BLOCKSIZE
+   234                          
+   235                             ; Define the height of the font
+   236                             IF !DEFINED_CLIB_FONT_HEIGHT
+   237                                defc CLIB_FONT_HEIGHT = 8
+   238                             ENDIF
+   239                             PUBLIC __CLIB_FONT_HEIGHT
+   240                             defc __CLIB_FONT_HEIGHT = CLIB_FONT_HEIGHT
+   241                          
+   242                             ; Firmware click setting (MSX/SVI)
+   243                             IF !DEFINED_CLIB_FIRMWARE_KEYBOARD_CLICK
+   244                                defc CLIB_FIRMWARE_KEYBOARD_CLICK = -1
+   245                             ENDIF
+   246                             PUBLIC __CLIB_FIRMWARE_KEYBOARD_CLICK
+   247                             defc __CLIB_FIRMWARE_KEYBOARD_CLICK = CLIB_FIRMWARE_KEYBOARD_CLICK
+   248                          
+   249                             ; Custom memory map
+   250                             IF DEFINED_MMAP
+   251                                 defc __MMAP = MMAP
+   252                             ELSE
+   253                                 defc __MMAP = 0
+   254                             ENDIF
+   255                          
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+    67                          
+    68                              org     CRT_ORG_CODE
+    69                          
+    70                          
+    71                          ;----------------------
+    72                          ; Execution starts here
+    73                          ;----------------------
+    74                          start:
+    75                          IF !DEFINED_noprotectmsdos
+    76  0000  0000              	defb	$eb,$04		;DOS protection... JMPS LABE
+    77  0002  eb                	ex	de,hl
+    78  0003  c30000            	jp	begin-start+$100
+    79  0006  0000              	defb	$b4,$09		;DOS protection... MOV AH,9
+    80  0008  00                	defb	$ba
+    81  0009  0000              	defw	dosmessage	;DOS protection... MOV DX,OFFSET dosmessage
+    82  000b  0000              	defb	$cd,$21		;DOS protection... INT 21h.
+    83  000d  0000              	defb	$cd,$20		;DOS protection... INT 20h.
+    84                          
+    85                          dosmessage:
+    86  000f  546869732070726f  	defm	"This program is for a CP/M system."
+              6772616d20697320  
+              666f722061204350  
+              2f4d207379737465  
+              6d2e              
+    87  0031  000000            	defb	13,10,'$'
+    88                          
+    89                          begin:
+    90                          ENDIF
+    91                          
+    92                          IF DEFINED_protect8080
+    93                          
+    94                          	ld	a,$7F			; 01111111 into accumulator
+    95                          	inc	a			; make it overflow ie. 10000000
+    96                          	jp	pe,isz80	; only 8080 resets for odd parity here
+    97                          
+    98                          	ld	c,9		; print string
+    99                          	ld	de,err8080
+   100                          	call	5	; BDOS
+   101                          	jp	0
+   102                          
+   103                          err8080:
+   104                          	defm	"This program requires a Z80 CPU."
+   105                          	defb	13,10,'$'
+   106                          isz80:
+   107                          ENDIF
+   108                          
+   109  0034  00                	nop	 ;   Those extra bytes fix the Amstrad NC's ZCN support !!?!
+   110  0035  00                	nop
+   111                          
+   112  0036  210000                ld      hl,0
+   113  0039  39                    add     hl,sp
+   114  003a  220000                ld      (__restore_sp_onexit+1),hl	;Save entry stack
+   115                          IF (startup=3)
+   116                              ; Increase to cover +3 MEM banking
+   117                              defc    __clib_exit_stack_size_t  = __clib_exit_stack_size + 18 + 18
+   118                              UNDEFINE __clib_exit_stack_size
+   119                              defc    __clib_exit_stack_size = __clib_exit_stack_size_t
+   120                          ENDIF
+   121                              INCLUDE "crt/classic/crt_init_sp.asm"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_init_sp.asm:
+     1                          IF __register_sp < -1
+     2                          
+     3                             IF __CPU_INTEL__
+     4                               ld hl,(-__register_sp)      ; stack location is stored at memory address
+     5                               ld sp,hl
+     6                             ELSE
+     7                               ld sp,(-__register_sp)      ; stack location is stored at memory address
+     8                             ENDIF
+     9                          
+    10                          ELSE
+    11                          
+    12                             IF __register_sp != -1
+    13                          
+    14                                ld sp,__register_sp      ; stack is at fixed address
+    15                          
+    16                             ENDIF
+    17                          
+    18                          ENDIF
+    19                          
+    20                          
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+   122                              INCLUDE "crt/classic/crt_init_atexit.asm"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_init_atexit.asm:
+     1                          
+     2                              PUBLIC  __clib_exit_stack_size
+     3                          
+     4                          IF __clib_exit_stack_size > 0
+     5  003d  210000                ld      hl, -(__clib_exit_stack_size * 2)
+     6  0040  39                    add     hl,sp
+     7  0041  f9                    ld      sp,hl
+     8                          ENDIF
+     9                          
+    10                          
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+   123  0042  cd0000                call    crt0_init_bss
+   124  0045  cd0000                call    cpm_platform_init	;Any platform specific init
+   125  0048  210000                ld      hl,0
+   126  004b  39                    add     hl,sp
+   127  004c  220000                ld      (exitsp),hl
+   128                          
+   129                          ; Memory banking for Spectrum +3
+   130                          IF (startup=3)
+   131                          	PUBLIC    p3_poke
+   132                          	PUBLIC    p3_peek
+   133                          
+   134                          	push hl
+   135                          	ld de,64
+   136                          	add hl,de
+   137                          	ld (p3_poke+1),hl
+   138                          	push hl
+   139                          	ld de,18
+   140                          	add hl,de
+   141                          	ld (p3_peek+1),hl
+   142                          	pop hl
+   143                          	ld d,h
+   144                          	ld e,l
+   145                          	ld hl,pokebyte_code
+   146                          	ld bc,18+18
+   147                          	ldir
+   148                          	pop hl
+   149                          ENDIF
+   150                          
+   151                          ; Optional definition for auto MALLOC init
+   152                          ; it assumes we have free space between the end of
+   153                          ; the compiled program and the stack pointer
+   154                          IF DEFINED_USING_amalloc
+   155                              INCLUDE "crt/classic/crt_init_amalloc.asm"
+   156                          ENDIF
+   157                          
+   158                          IF CRT_ENABLE_COMMANDLINE = 1
+   159  004f  210000                ld      hl,$80
+   160  0052  7e                    ld      a,(hl)
+   161                              ;ld      b,0
+   162  0053  44                    ld      b,h
+   163  0054  a7                    and     a
+   164  0055  ca0000                jp      z,argv_done
+   165                              ;inc	hl
+   166  0058  4f                    ld      c,a
+   167  0059  09                    add     hl,bc   ;now points to the end of the command line
+   168  005a  0d                    dec     c
+   169                              INCLUDE	"crt/classic/crt_command_line.asm"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_command_line.asm:
+     1                          ; Command line parsing
+     2                          
+     3                          ; Push pointers to argv[n] onto the stack now
+     4                          ; We must start from the end
+     5                          ; Entry:  hl = end of arguments
+     6                          ;	   c = length of arguments
+     7                          ;	   b = 0
+     8                          ; Exit:	  bc = argc
+     9                          ;         hl = argv
+    10                          
+    11                          IF CRT_ENABLE_COMMANDLINE = 1
+    12  005b  1800                  jr      argv_begin
+    13                          
+    14  005d  0000              redir_fopen_flag:		defb	'w',0
+    15  005f  00                redir_fopen_flagr:		defb	'r'
+    16  0060  00                commandline_argv0:		defb	0
+    17                          
+    18                          argv_begin:
+    19  0061  110000                ld      de,0	;NULL pointer at end of array, just in case
+    20  0064  d5                    push    de
+    21                          ; Try to find the end of the arguments
+    22                          argv_loop_1:
+    23  0065  7e                    ld      a,(hl)          ;Strip off trailing spaces
+    24  0066  fe00                  cp      ' '
+    25  0068  2000                  jr      nz,argv_loop_2
+    26  006a  3600                  ld      (hl),0
+    27  006c  2b                    dec     hl
+    28  006d  0d                    dec     c
+    29  006e  2000                  jr      nz,argv_loop_1
+    30                          ; We've located the end of the last argument, try to find the start
+    31                          argv_loop_2:
+    32  0070  7e                    ld      a,(hl)
+    33  0071  fe00                  cp      ' '
+    34  0073  2000                  jr      nz,argv_loop_3
+    35  0075  23                    inc     hl              ; We're now on the first character of the argument
+    36  0076  0c                    inc     c
+    37                          IF CRT_COMMANDLINE_REDIRECTION = 1
+    38                                  EXTERN freopen
+    39  0077  af                        xor     a
+    40  0078  80                        add     b
+    41  0079  2000                      jr      nz,no_redir_stdout
+    42  007b  7e                        ld      a,(hl)
+    43  007c  fe00                      cp      '>'
+    44  007e  2000                      jr      nz,no_redir_stdout
+    45  0080  e5                        push    hl
+    46  0081  23                        inc     hl
+    47  0082  be                        cp      (hl)
+    48  0083  2b                        dec     hl
+    49  0084  110000                    ld      de,redir_fopen_flag	; "a" or "w"
+    50  0087  2000                      jr      nz,noappendb
+    51  0089  3e00                      ld      a,'a'
+    52  008b  12                        ld      (de),a
+    53  008c  23                        inc     hl
+    54                          noappendb:
+    55  008d  23                        inc     hl
+    56                          
+    57  008e  c5                        push    bc
+    58  008f  e5                        push    hl					; file name ptr
+    59  0090  d5                        push    de
+    60  0091  110000                    ld      de,__sgoioblk+10		; file struct for stdout
+    61  0094  d5                        push    de
+    62  0095  cd0000                    call    freopen
+    63  0098  d1                        pop     de
+    64  0099  d1                        pop     de
+    65  009a  e1                        pop     hl
+    66  009b  c1                        pop     bc
+    67  009c  e1                        pop     hl
+    68  009d  2b                        dec     hl
+    69  009e  1800                      jr      argv_zloop
+    70                          no_redir_stdout:
+    71  00a0  7e                        ld      a,(hl)
+    72  00a1  fe00                      cp      '<'
+    73  00a3  2000                      jr      nz,no_redir_stdin
+    74  00a5  e5                        push    hl
+    75  00a6  23                        inc     hl
+    76  00a7  110000                    ld      de,redir_fopen_flagr
+    77  00aa  c5                        push    bc
+    78  00ab  e5                        push    hl					; file name ptr
+    79  00ac  d5                        push    de
+    80  00ad  110000                    ld      de,__sgoioblk		; file struct for stdin
+    81  00b0  d5                        push    de
+    82  00b1  cd0000                    call    freopen
+    83  00b4  d1                        pop     de
+    84  00b5  d1                        pop     de
+    85  00b6  e1                        pop     hl
+    86  00b7  c1                        pop     bc
+    87  00b8  e1                        pop     hl
+    88  00b9  2b                        dec	    hl
+    89  00ba  1800                      jr      argv_zloop
+    90                          no_redir_stdin:
+    91                          ENDIF
+    92  00bc  e5                    push    hl
+    93  00bd  04                    inc     b
+    94                          empty_arg:
+    95  00be  2b                    dec     hl
+    96  00bf  0d                    dec     c
+    97                          ; skip extra blanks
+    98                          argv_zloop:
+    99  00c0  3600                  ld      (hl),0      ;Terminate the previous argument
+   100  00c2  2b                    dec     hl          ;Last character of previous argument
+   101  00c3  0d                    dec     c
+   102  00c4  2800                  jr      z,argv_done
+   103  00c6  7e                    ld      a,(hl)
+   104  00c7  fe00                  cp      ' '
+   105  00c9  2800                  jr      z,argv_zloop ;Skip over multiple spaces
+   106  00cb  1800                  jr      argv_loop_2  ;And do the next argument
+   107                          
+   108                          argv_loop_3:
+   109  00cd  2b                    dec     hl
+   110  00ce  0d                    dec     c
+   111  00cf  2000                  jr      nz,argv_loop_2
+   112                          
+   113                          argv_done:
+   114                              ; We may still have an argument left (if it was at the start of the buffer)
+   115                          
+   116                          argv_push_final_arg:
+   117  00d1  7e                    ld      a,(hl)              ;Strip leading spaces
+   118  00d2  fe00                  cp      ' '
+   119  00d4  2000                  jr      nz,argv_push_final_arg2
+   120  00d6  23                    inc     hl
+   121  00d7  1800                  jr      argv_push_final_arg
+   122                          argv_push_final_arg2:
+   123  00d9  d1                    pop     de                  ;Is it the same as the last argument we pushed?
+   124  00da  d5                    push    de
+   125  00db  7c                    ld      a,h
+   126  00dc  92                    sub     d
+   127  00dd  2000                  jr      nz,argv_push_final_arg3
+   128  00df  7d                    ld      a,l
+   129  00e0  93                    sub     e
+   130  00e1  2800                  jr      z,argv_done_2
+   131                          argv_push_final_arg3:
+   132  00e3  7e                    ld      a,(hl)
+   133  00e4  a7                    and     a
+   134  00e5  2800                  jr      z,argv_done_2
+   135  00e7  e5                    push    hl
+   136  00e8  04                    inc     b
+   137                          
+   138                          argv_done_2:
+   139  00e9  210000                ld      hl,commandline_argv0	;name of program (NULL)
+   140  00ec  e5                    push    hl
+   141  00ed  04                    inc     b
+   142  00ee  210000                ld      hl,0
+   143  00f1  39                    add     hl,sp	;address of argv
+   144  00f2  48                    ld      c,b
+   145  00f3  0600                  ld      b,0
+   146                          ELSE
+   147                              ld      hl,0    ;argv
+   148                              ld      b,h     ;argc
+   149                              ld      c,l
+   150                          ENDIF
+   151                          
+   152                          
+   153                          
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+   170  00f5  e5                    push    hl	;argv
+   171  00f6  c5                    push    bc	;argc
+   172                          ELSE
+   173                              ld      hl,0
+   174                              push    hl  ;argv
+   175                              push    hl  ;argc
+   176                          ENDIF
+   177  00f7  cd0000                call    _main		;Call user code
+   178  00fa  c1                    pop     bc	;kill argv
+   179  00fb  c1                    pop     bc	;kill argc
+   180                          
+   181  00fc  3a0000                ld      a,(defltdsk)	;Restore default disc
+   182  00ff  5f                    ld      e,a
+   183  0100  0e00                  ld      c,14
+   184  0102  cd0000                call    5
+   185                          
+   186                          cleanup:
+   187  0105  e5                    push    hl		;Save return value
+   188  0106  cd0000                call    crt0_exit
+   189  0109  c1                    pop     bc		;Get exit() value into bc
+   190                          __restore_sp_onexit:
+   191  010a  310000                ld      sp,0		;Pick up entry sp
+   192  010d  c30000                jp      0
+   193                          
+   194  0110  e9                l_dcal:	jp	(hl)		;Used for call by function ptr
+   195                          
+   196                          ; Memory banking for Spectrum +3
+   197                          IF (startup=3)
+   198                              PUBLIC	pixelbyte
+   199                          pixelbyte:	defb	0		; temp byte storage for VDP driver
+   200                          
+   201                          p3_poke:
+   202                          		jp 0
+   203                          
+   204                          p3_peek:
+   205                          		jp 0
+   206                          
+   207                          pokebyte_code:
+   208                          		di
+   209                          		; ..$15 00010101 -> banks 4,5,6,3
+   210                          		; ..$11 00010001 -> banks 0,1,2,3 (TPA)
+   211                          		ex  af,af
+   212                          		ld	a,$15
+   213                          		;ld	a,$0D
+   214                          		;ld	a,$05
+   215                          		ld bc,$1ffd
+   216                          		out(c),a
+   217                          		ex af,af
+   218                          		ld (hl),a
+   219                          		ld	a,$11		; avoid using ($FF01) to be compatible with CP/M 2.2
+   220                          		;ld	a,$09
+   221                          		;ld	a,$01
+   222                          		;ld	a,($FF01)	; saved value
+   223                          		out(c),a
+   224                          		ei
+   225                          		ret
+   226                          		; adjust code size
+   227                          		nop
+   228                          peekbyte_code:
+   229                          		di
+   230                          		; ..$15 00010101 -> banks 4,5,6,3
+   231                          		; ..$11 00010001 -> banks 0,1,2,3 (TPA)
+   232                          		ld	a,$15
+   233                          		;ld	a,$0D
+   234                          		;ld	a,$05
+   235                          		ld bc,$1ffd
+   236                          		out(c),a
+   237                          		ld a,(hl)
+   238                          		ex  af,af
+   239                          		ld	a,$11		; avoid using ($FF01) to be compatible with CP/M 2.2
+   240                          		;ld	a,$09
+   241                          		;ld	a,$01
+   242                          		;ld	a,($FF01)	; saved value
+   243                          		out(c),a
+   244                          		ex  af,af
+   245                          		ei
+   246                          		ret
+   247                          		; adjust code size
+   248                          		nop
+   249                          ENDIF
+   250                          
+   251                          
+   252                              INCLUDE "crt/classic/crt_runtime_selection.asm"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_runtime_selection.asm:
+     1                          ;
+     2                          ; Allow selection of the library functions at linktime
+     3                          ;
+     4                          ; Included by crt0 files
+     5                          ;
+     6                          
+     7                          
+     8                          ; scanf format picker
+     9                          
+    10                          ; Compatibility with the new library format picker. The classic library
+    11                          ; implements several of these together so there's an element of grouping.
+    12                          ;
+    13                          ; Default is to enable all converters except for float.
+    14                          ;
+    15                          ; Use -pragma-define:CLIB_OPT_SCANF=0x..... to control formatters
+    16                          ;
+    17                          ; bit 0 =  $    01 = enable %d
+    18                          ; bit 1 =  $    02 = enable %u
+    19                          ; bit 2 =  $    04 = enable %x
+    20                          ; bit 3 =  $    08 = enable %X (duplicate)
+    21                          ; bit 4 =  $    10 = enable %o
+    22                          ; bit 5 =  $    20 = enable %n
+    23                          ; bit 6 =  $    40 = enable %i
+    24                          ; bit 7 =  $    80 = enable %p
+    25                          ; bit 8 =  $   100 = enable %B
+    26                          ; bit 9 =  $   200 = enable %s
+    27                          ; bit 10 = $   400 = enable %c
+    28                          ; * bit 11 = $   800 = enable %I
+    29                          ; bit 12 = $  1000 = enable %ld
+    30                          ; bit 13 = $  2000 = enable %lu
+    31                          ; bit 14 = $  4000 = enable %lx
+    32                          ; bit 15 = $  8000 = enable %lX (duplicate)
+    33                          ; bit 16 = $ 10000 = enable %lo
+    34                          ; bit 17 = $ 20000 = enable %ln
+    35                          ; bit 18 = $ 40000 = enable %li
+    36                          ; bit 19 = $ 80000 = enable %lp
+    37                          ; bit 20 = $100000 = enable %lB
+    38                          ; * bit 21 = $200000 = enable %[
+    39                          ; * bit 22 = $  400000 = enable %a
+    40                          ; * bit 23 = $  800000 = enable %A
+    41                          ; bit 24 = $ 1000000 = enable %e
+    42                          ; bit 25 = $ 2000000 = enable %E
+    43                          ; bit 26 = $ 4000000 = enable %f
+    44                          ; bit 27 = $ 8000000 = enable %F
+    45                          ; bit 28 = $10000000 = enable %g
+    46                          ; bit 29 = $20000000 = enable %G
+    47                          ; bit 30 = $40000000 = enable flags handling
+    48                          
+    49                          IF DEFINED_CLIB_OPT_SCANF
+    50                          	; User has specified the configuration level - force scanf to be included
+    51                          	UNDEFINE NEED_scanf
+    52                          	DEFINE NEED_scanf
+    53                          ELSE
+    54                          	IF DEFINED_CRT_scanf_format
+    55                          	    ;Only defined as part of sccz80
+    56                          	    defc CLIB_OPT_SCANF = CRT_scanf_format
+    57                                  ELSE
+    58                          	    ; TODO: Some default configurations
+    59                                  ENDIF
+    60                          ENDIF
+    61                          
+    62                          
+    63                          IF NEED_scanf
+    64                          	PUBLIC	__scanf_format_table
+    65                          	EXTERN	__scanf_handle_d
+    66                          	EXTERN	__scanf_handle_u
+    67                          	EXTERN	__scanf_handle_o
+    68                          	EXTERN	__scanf_handle_x
+    69                          	EXTERN	__scanf_handle_p
+    70                          	EXTERN	__scanf_handle_B
+    71                          	EXTERN	__scanf_handle_f
+    72                          	EXTERN	__scanf_handle_s
+    73                          	EXTERN	__scanf_handle_c
+    74                          	EXTERN	__scanf_handle_n
+    75                          	EXTERN	__scanf_handle_i
+    76                          	EXTERN	__scanf_noop
+    77                          
+    78                          __scanf_format_table:
+    79                          IF CLIB_OPT_SCANF & $40040
+    80                          	defb	'i'
+    81                          	defw	__scanf_handle_i
+    82                          	defc	temp_CLIB_OPT_SCANF = CLIB_OPT_SCANF
+    83                          	UNDEFINE CLIB_OPT_SCANF
+    84                          	defc	CLIB_OPT_SCANF = temp_CLIB_OPT_SCANF | 0x3003 | 0x8c08c | 0x10010 | 0x100100
+    85                          ENDIF
+    86                          
+    87                          
+    88                          
+    89                          IF CLIB_OPT_SCANF & $2002
+    90                          	defb	'u'
+    91                          	defw	__scanf_handle_u
+    92                          ENDIF
+    93                          
+    94                          IF CLIB_OPT_SCANF & $1001
+    95                          	defb	'd'
+    96                          	defw	__scanf_handle_d
+    97                          ENDIF
+    98                          
+    99                          IF CLIB_OPT_SCANF & $c00c
+   100                          	defb	'x'
+   101                          	defw	__scanf_handle_x
+   102                          ENDIF
+   103                          
+   104                          IF CLIB_OPT_SCANF & $80080
+   105                          	defb	'p'
+   106                          	defw	__scanf_handle_x
+   107                          ENDIF
+   108                          
+   109                          IF CLIB_OPT_SCANF & $10010
+   110                          	defb	'o'
+   111                          	defw	__scanf_handle_o
+   112                          ENDIF
+   113                          
+   114                          IF CLIB_OPT_SCANF & $100100
+   115                          	defb	'B'
+   116                          	defw	__scanf_handle_B
+   117                          ENDIF
+   118                          
+   119                          IF CLIB_OPT_SCANF & $20020
+   120                          	defb	'n'
+   121                          	defw	__scanf_handle_n
+   122                          ENDIF
+   123                          
+   124                          IF CLIB_OPT_SCANF & $200
+   125                          	defb	's'
+   126                          	defw	__scanf_handle_s
+   127                          ENDIF
+   128                          
+   129                          IF CLIB_OPT_SCANF & $400
+   130                          	defb	'c'
+   131                          	defw	__scanf_handle_c
+   132                          ENDIF
+   133                          
+   134                          IF CLIB_OPT_SCANF & $4000000
+   135                          	defb	'f'
+   136                          	defw	__scanf_handle_f
+   137                          ENDIF
+   138                          
+   139                          IF CLIB_OPT_SCANF & $1000000
+   140                          	defb	'e'
+   141                          	defw	__scanf_handle_f
+   142                          ENDIF
+   143                          IF CLIB_OPT_SCANF & $10000000
+   144                          	defb	'g'
+   145                          	defw	__scanf_handle_f
+   146                          ENDIF
+   147                          
+   148                          	defb	0	;end marker
+   149                          ENDIF
+   150                          
+   151                          ;
+   152                          ; printf format picker
+   153                          ;
+   154                          
+   155                          
+   156                          IF DEFINED_CLIB_OPT_PRINTF
+   157                          	; User has specified the configuration level - force printf to be included
+   158                          	UNDEFINE NEED_printf
+   159                          	DEFINE NEED_printf
+   160                          ELSE
+   161                          	IF DEFINED_CRT_printf_format
+   162                          	    ;Only defined as part of sccz80
+   163                          	    defc CLIB_OPT_PRINTF = CRT_printf_format
+   164                                  ELSE
+   165                          	    ; Default configurations to match old behaviour
+   166                          	    ; The built in one is roughly the old ministdio
+   167                          	    IF DEFINED_complexstdio
+   168                                          defc CLIB_OPT_PRINTF = 0x851BF7BF
+   169                                      ELSE
+   170                          	        defc CLIB_OPT_PRINTF = 0x801BF7BF
+   171                                      ENDIF
+   172                                  ENDIF
+   173                          ENDIF
+   174                          
+   175                          IF DEFINED_CLIB_OPT_PRINTF_2
+   176                          	; User has specified the configuration level - force printf to be included
+   177                          	UNDEFINE NEED_printf
+   178                          	DEFINE NEED_printf
+   179                          ENDIF
+   180                          
+   181                          IF NEED_printf
+   182                          	PUBLIC	__printf_format_table
+   183                          	PUBLIC  __printf_format_table64
+   184                          	EXTERN	__printf_handle_d
+   185                          	EXTERN	__printf_handle_u
+   186                          	EXTERN	__printf_handle_o
+   187                          	EXTERN	__printf_handle_x
+   188                          	EXTERN	__printf_handle_X
+   189                          	EXTERN	__printf_handle_p
+   190                          	EXTERN	__printf_handle_e
+   191                          	EXTERN	__printf_handle_f
+   192                          	EXTERN	__printf_handle_s
+   193                          	EXTERN	__printf_handle_c
+   194                          	EXTERN	__printf_handle_n
+   195                          	EXTERN	__printf_handle_B
+   196                          	EXTERN	__printf_handle_ll
+   197                          	EXTERN	__printf_handle_lld
+   198                          	EXTERN	__printf_handle_llu
+   199                          	EXTERN	__printf_handle_llo
+   200                          	EXTERN	__printf_handle_llx
+   201                          	EXTERN	__printf_handle_llX
+   202                          	EXTERN	__printf_handle_llB
+   203                          
+   204                          __printf_format_table:
+   205                          
+   206                          IF CLIB_OPT_PRINTF & $2002
+   207                          	defb	'u'
+   208                          	defw	__printf_handle_u
+   209                          ENDIF
+   210                          
+   211                          IF CLIB_OPT_PRINTF & $1001
+   212                          	defb	'd'
+   213                          	defw	__printf_handle_d
+   214                          ENDIF
+   215                          
+   216                          IF CLIB_OPT_PRINTF & $4004
+   217                          	defb	'x'
+   218                          	defw	__printf_handle_x
+   219                          ENDIF
+   220                          
+   221                          IF CLIB_OPT_PRINTF & $8008
+   222                          	defb	'X'
+   223                          	defw	__printf_handle_X
+   224                          ENDIF
+   225                          
+   226                          IF CLIB_OPT_PRINTF & $80080
+   227                          	defb	'p'
+   228                          	defw	__printf_handle_x
+   229                          ENDIF
+   230                          
+   231                          IF CLIB_OPT_PRINTF & $100100
+   232                          	defb	'B'
+   233                          	defw	__printf_handle_B
+   234                          ENDIF
+   235                          
+   236                          IF CLIB_OPT_PRINTF  & $10010
+   237                          	defb	'o'
+   238                          	defw	__printf_handle_o
+   239                          ENDIF
+   240                          
+   241                          IF CLIB_OPT_PRINTF & $20020
+   242                          	defb	'n'
+   243                          	defw	__printf_handle_n
+   244                          ENDIF
+   245                          
+   246                          IF CLIB_OPT_PRINTF & $200
+   247                          	defb	's'
+   248                          	defw	__printf_handle_s
+   249                          ENDIF
+   250                          
+   251                          IF CLIB_OPT_PRINTF & $400
+   252                          	defb	'c'
+   253                          	defw	__printf_handle_c
+   254                          ENDIF
+   255                          
+   256                          IF CLIB_OPT_PRINTF & $4000000
+   257                          	defb	'f'
+   258                          	defw	__printf_handle_f
+   259                          ENDIF
+   260                          
+   261                          IF CLIB_OPT_PRINTF  & $1000000
+   262                          	defb	'e'
+   263                          	defw	__printf_handle_e
+   264                          ENDIF
+   265                          IF CLIB_OPT_PRINTF & $10000000
+   266                          	defb	'g'
+   267                          	defw	__printf_handle_f
+   268                          ENDIF
+   269                          IF CLIB_OPT_PRINTF_2
+   270                          	defb	'l'
+   271                          	defw	__printf_handle_ll
+   272                          ENDIF
+   273                          	defb	0	;end marker
+   274                          
+   275                          __printf_format_table64:
+   276                          
+   277                          IF CLIB_OPT_PRINTF_2 & $02
+   278                          	defb	'u'
+   279                          	defw	__printf_handle_llu
+   280                          ENDIF
+   281                          
+   282                          IF CLIB_OPT_PRINTF_2 & $01
+   283                          	defb	'd'
+   284                          	defw	__printf_handle_lld
+   285                          ENDIF
+   286                          
+   287                          IF CLIB_OPT_PRINTF_2 & $04
+   288                          	defb	'x'
+   289                          	defw	__printf_handle_llx
+   290                          ENDIF
+   291                          
+   292                          IF CLIB_OPT_PRINTF_2 & $08
+   293                          	defb	'X'
+   294                          	defw	__printf_handle_llX
+   295                          ENDIF
+   296                          IF CLIB_OPT_PRINTF_2  & $10
+   297                          	defb	'o'
+   298                          	defw	__printf_handle_llo
+   299                          ENDIF
+   300                          IF CLIB_OPT_PRINTF_2 & $100
+   301                          	defb	'B'
+   302                          	defw	__printf_handle_llB
+   303                          ENDIF
+   304                          	defb	0	;endmarker
+   305                          
+   306                          
+   307                          
+   308                          IF CLIB_OPT_PRINTF & $40000000
+   309                          	EXTERN	__printf_get_flags_impl
+   310                          	PUBLIC	__printf_get_flags
+   311                          	defc	__printf_get_flags = __printf_get_flags_impl
+   312                          ELSE
+   313                          	EXTERN	__printf_get_flags_noop
+   314                          	PUBLIC	__printf_get_flags
+   315                          	defc	__printf_get_flags = __printf_get_flags_noop
+   316                          ENDIF
+   317                          
+   318                          ENDIF
+   319                          
+   320                          
+   321                          ;--------
+   322                          ; Allow a compile time switch between native output and ANSI terminal
+   323                          ;
+   324                          ; -pragma-need=ansiterminal
+   325                          ;--------
+   326                          
+   327                          IF NEED_ansiterminal
+   328                          	PUBLIC		fputc_cons
+   329                          	EXTERN		fputc_cons_ansi
+   330                          	EXTERN		puts_cons_ansi
+   331                          	defc DEFINED_fputc_cons = 1
+   332                          	defc DEFINED_puts_cons = 1
+   333                          	defc fputc_cons = fputc_cons_ansi
+   334                          
+   335                          	; Bridge VT100 to gencon
+   336                                  IF DEFINED_CLIB_ANSITERMINAL_BRIDGE & CLIB_ANSITERMINAL_BRIDGE != 0
+   337                                      PUBLIC ansi_attr
+   338                                      PUBLIC ansi_BEL
+   339                                      PUBLIC ansi_cls
+   340                                      PUBLIC ansi_CHAR
+   341                                      PUBLIC ansi_del_line
+   342                                      PUBLIC ansi_SCROLLUP
+   343                                      EXTERN __gencon_ansi_attr
+   344                                      EXTERN __gencon_ansi_BEL
+   345                                      EXTERN __gencon_ansi_cls
+   346                                      EXTERN __gencon_ansi_CHAR
+   347                                      EXTERN __gencon_ansi_del_line
+   348                                      EXTERN __gencon_ansi_SCROLLUP
+   349                                      defc ansi_attr = __gencon_ansi_attr
+   350                                      defc ansi_BEL = __gencon_ansi_BEL
+   351                                      defc ansi_cls = __gencon_ansi_cls
+   352                                      defc ansi_CHAR = __gencon_ansi_CHAR
+   353                                      defc ansi_del_line = __gencon_ansi_del_line
+   354                                      defc ansi_SCROLLUP = __gencon_ansi_SCROLLUP
+   355                          
+   356                                      ; We're using gencon, don't include an ANSIfont
+   357                                      UNDEFINE TAR__no_ansifont
+   358                                      defc TAR__no_ansifont = 1
+   359                          	    IF !DEFINED_ansicolumns
+   360                                          defc ansicolumns = CONSOLE_COLUMNS
+   361                                          defc DEFINED_ansicolumns = 1
+   362                                      ENDIF
+   363                                  ENDIF
+   364                          
+   365                                 	PUBLIC ansicolumns
+   366                          
+   367                          	IF !TAR__no_ansifont
+   368                                  	PUBLIC ansicharacter_pixelwidth
+   369                          		PUBLIC ansifont
+   370                                  	PUBLIC ansifont_is_packed
+   371                                  ELSE
+   372                                          defc DEFINED_ansifont = 1
+   373                          	ENDIF
+   374                          
+   375                          	IF !ansipixels
+   376                          		defc ansipixels = 256
+   377                          	ENDIF
+   378                          
+   379                          	IF !DEFINED_ansicolumns
+   380                          		 defc ansicolumns = 64
+   381                          	ENDIF
+   382                          
+   383                          	UNDEFINE CONSOLE_COLUMNS
+   384                          	defc CONSOLE_COLUMNS = ansicolumns
+   385                          
+   386                          	IF DEFINED_ansirows
+   387                          		UNDEFINE CONSOLE_ROWS
+   388                          		defc CONSOLE_ROWS = ansirows
+   389                          	ENDIF
+   390                          
+   391                          
+   392                          	IF (ansicolumns = (ansipixels/2))
+   393                          	    defc ansicharacter_pixelwidth = 2
+   394                                      IF !DEFINED_ansifont
+   395                                      	EXTERN ansifont_f4pack
+   396                          	    	defc ansifont = ansifont_f4pack
+   397                                      	defc ansifont_is_packed = 1
+   398                                      ENDIF
+   399                          	ENDIF
+   400                          	IF (ansicolumns = (ansipixels/3))
+   401                          	    defc ansicharacter_pixelwidth = 3
+   402                                      IF !DEFINED_ansifont
+   403                                          EXTERN ansifont_f4pack
+   404                          	        defc ansifont = ansifont_f4pack
+   405                                          defc ansifont_is_packed = 1
+   406                          	    ENDIF
+   407                          	ENDIF
+   408                          	IF (ansicolumns = (ansipixels/4))
+   409                          	    defc ansicharacter_pixelwidth = 4
+   410                                      IF !DEFINED_ansifont
+   411                                          EXTERN ansifont_f4pack
+   412                          	        defc ansifont = ansifont_f4pack
+   413                                          defc ansifont_is_packed = 1
+   414                          	    ENDIF
+   415                          	ENDIF
+   416                          	IF (ansicolumns = (ansipixels/5))
+   417                          	    defc ansicharacter_pixelwidth = 5
+   418                                      IF !DEFINED_ansifont
+   419                                          EXTERN ansifont_f5
+   420                          	        defc ansifont = ansifont_f5
+   421                                          defc ansifont_is_packed = 0
+   422                          	    ENDIF
+   423                          	ENDIF
+   424                          	IF (ansicolumns = (ansipixels/6))
+   425                          	    defc ansicharacter_pixelwidth = 6
+   426                                      IF !DEFINED_ansifont
+   427                                          EXTERN ansifont_f6
+   428                          	        defc ansifont = ansifont_f6
+   429                                          defc ansifont_is_packed = 0
+   430                          	    ENDIF
+   431                          	ENDIF
+   432                          	IF (ansicolumns = (ansipixels/7))
+   433                          	    defc ansicharacter_pixelwidth = 7
+   434                                      IF !DEFINED_ansifont
+   435                                          EXTERN ansifont_f8
+   436                          	        defc ansifont = ansifont_f8
+   437                                          defc ansifont_is_packed = 0
+   438                          	    ENDIF
+   439                          	ENDIF
+   440                          	IF (ansicolumns = (ansipixels/8))
+   441                          	    defc ansicharacter_pixelwidth = 8
+   442                                      IF !DEFINED_ansifont
+   443                                          EXTERN ansifont_f8
+   444                          	        defc ansifont = ansifont_f8
+   445                                          defc ansifont_is_packed = 0
+   446                          	    ENDIF
+   447                          	ENDIF
+   448                          	IF (ansicolumns = (ansipixels/9))
+   449                          	    defc ansicharacter_pixelwidth = 9
+   450                                      IF !DEFINED_ansifont
+   451                                          EXTERN ansifont_f8
+   452                          	        defc ansifont = ansifont_f8
+   453                                          defc ansifont_is_packed = 0
+   454                          	    ENDIF
+   455                          	ENDIF
+   456                          
+   457                          	IF (ansipixels = 512)
+   458                          		IF (ansicolumns = 48)
+   459                          			defc ansicharacter_pixelwidth = 9
+   460                          			IF !DEFINED_ansifont
+   461                          				EXTERN ansifont_f8
+   462                          				defc ansifont = ansifont_f8
+   463                          				defc ansifont_is_packed = 0
+   464                          			ENDIF
+   465                          		ENDIF
+   466                          		IF (ansicolumns = 80)
+   467                          			defc ansicharacter_pixelwidth = 6
+   468                          			IF !DEFINED_ansifont
+   469                          				EXTERN ansifont_f6
+   470                          				defc ansifont = ansifont_f6
+   471                          				defc ansifont_is_packed = 0
+   472                          			ENDIF
+   473                          		ENDIF
+   474                          		IF (ansicolumns = 160)
+   475                          			defc ansicharacter_pixelwidth = 3
+   476                          			IF !DEFINED_ansifont
+   477                          				EXTERN ansifont_f4pack
+   478                          				defc ansifont = ansifont_f4pack
+   479                          				defc ansifont_is_packed = 1
+   480                          			ENDIF
+   481                          		ENDIF
+   482                          	ENDIF
+   483                          
+   484                          	IF (ansipixels = 256)
+   485                          		IF (ansicolumns = 24)
+   486                          			defc ansicharacter_pixelwidth = 9
+   487                          			IF !DEFINED_ansifont
+   488                          				EXTERN ansifont_f8
+   489                          				defc ansifont = ansifont_f8
+   490                          				defc ansifont_is_packed = 0
+   491                          			ENDIF
+   492                          		ENDIF
+   493                          		IF (ansicolumns = 40)
+   494                          			defc ansicharacter_pixelwidth = 6
+   495                          			IF !DEFINED_ansifont
+   496                          				EXTERN ansifont_f6
+   497                          				defc ansifont = ansifont_f6
+   498                          				defc ansifont_is_packed = 0
+   499                          			ENDIF
+   500                          		ENDIF
+   501                          		IF (ansicolumns = 80)
+   502                          			defc ansicharacter_pixelwidth = 3
+   503                          			IF !DEFINED_ansifont
+   504                          				EXTERN ansifont_f4pack
+   505                          				defc ansifont = ansifont_f4pack
+   506                          				defc ansifont_is_packed = 1
+   507                          			ENDIF
+   508                          		ENDIF
+   509                          	ENDIF
+   510                          
+   511                          ENDIF
+   512                          
+   513                          ; If it's not been overridden by anybody, lets use the native output
+   514                          IF !DEFINED_fputc_cons
+   515                          	PUBLIC		fputc_cons
+   516                          	defc DEFINED_fputc_cons = 1
+   517                                  IF !TAR__fputc_cons_generic
+   518                          	     EXTERN	fputc_cons_native
+   519                            	     defc fputc_cons = fputc_cons_native
+   520                                  ELSE
+   521                          	     EXTERN	fputc_cons_generic
+   522                            	     defc fputc_cons = fputc_cons_generic
+   523                                  ENDIF
+   524                          ENDIF
+   525                          
+   526                          IF DEFINED_fputc_cons
+   527                          	PUBLIC		_fputc_cons
+   528                          	defc		_fputc_cons = fputc_cons
+   529                          
+   530                          ENDIF
+   531                          
+   532                          IF !DEFINED_getk
+   533                             IF !DEFINED_fgetc_cons
+   534                                IF TAR__fgetc_cons_inkey
+   535                                    EXTERN fgetc_cons_inkey
+   536                                    EXTERN getk_inkey
+   537                                    PUBLIC fgetc_cons
+   538                                    PUBLIC _fgetc_cons
+   539                                    PUBLIC getk
+   540                                    PUBLIC _getk
+   541                                    defc fgetc_cons = fgetc_cons_inkey
+   542                                    defc _fgetc_cons = fgetc_cons_inkey
+   543                                    defc getk = getk_inkey
+   544                                    defc _getk = getk_inkey
+   545                                ENDIF
+   546                             ENDIF
+   547                          ENDIF
+   548                          
+   549                          IF DEFINED_fgetc_cons
+   550                            IF !DEFINED__fgetc_cons
+   551                                PUBLIC _fgetc_cons
+   552                                defc _fgetc_cons = fgetc_cons
+   553                            ENDIF
+   554                          ENDIF
+   555                          
+   556                          IF DEFINED_getk
+   557                            IF !DEFINED__getk
+   558                                PUBLIC _getk
+   559                                defc _getk = getk
+   560                            ENDIF
+   561                          ENDIF
+   562                          
+   563                          
+   564                          ;TODO: These need to go into rules
+   565                          IF CONSOLE_COLUMNS
+   566                          	PUBLIC CONSOLE_COLUMNS
+   567                          ENDIF
+   568                          IF CONSOLE_ROWS
+   569                          	PUBLIC CONSOLE_ROWS
+   570                          ENDIF
+   571                          
+   572                          IF !CONSOLE_XOFFSET
+   573                              defc CONSOLE_XOFFSET = 0
+   574                          ENDIF
+   575                          PUBLIC CONSOLE_XOFFSET
+   576                          IF !CONSOLE_YOFFSET
+   577                              defc CONSOLE_YOFFSET = 0
+   578                          ENDIF
+   579                          PUBLIC CONSOLE_YOFFSET
+   580                          
+   581                          IF !CLIB_KBHIT_NOSTORE
+   582                              defc CLIB_KBHIT_NOSTORE = 0
+   583                          ENDIF
+   584                          PUBLIC CLIB_KBHIT_NOSTORE
+   585                          
+   586                          
+   587                          
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+   253                              INCLUDE	"crt/classic/crt_section.asm"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section.asm:
+     1                          ; Memory map and section setup
+     2                          ;
+     3                          ; Contains the generic variables + features
+     4                          
+     5                          ;
+     6                          ; crt_model = 0    ; everything in RAM
+     7                          ; crt_model = 1    ; ROM model, data section copied
+     8                          ; crt_model = 2    ; ROM model, data section compressed with zx7
+     9                          ; crt_model = 3    ; ROM model, data section compressed with zx0
+    10                          
+    11                          ; Include the default memory map. You can override this
+    12                          
+    13                          IF __MMAP == -1
+    14                              ; The user has supplied a memory map.
+    15                              INCLUDE  "./mmap.inc"
+    16                          ELSE
+    17                              ; Include the standard memory map
+    18                              INCLUDE  "crt/classic/crt_section_standard.asm"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_standard.asm:
+     1                          ; Classic Memory map and section setup
+     2                          ;
+     3                          ; This layout suits all the classic machines. Memory placement is
+     4                          ; affected by:
+     5                          ;
+     6                          ; CRT_MODEL: RAM/ROM configuration
+     7                          ; CRT_ORG_CODE: Where code starts executing from
+     8                          ; CRT_ORG_BSS:  Where uninitialised global variables are placed
+     9                          ; CRT_ORG_GRAPHICS: Where graphics routines + variables are stored (certain ports only)
+    10                          
+    11                          ;
+    12                          ; Contains the generic variables + features
+    13                          
+    14                          ;
+    15                          ; crt_model = 0		; everything in RAM
+    16                          ; crt_model = 1		; ROM model, data section copied
+    17                          ; crt_model = 2		; ROM model, data section compressed (zx7)
+    18                          ; crt_model = 3		; ROM model, data section compressed (zx0)
+    19                          
+    20                          
+    21                          
+    22                              INCLUDE "crt/classic/crt_section_code.inc"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_code.inc:
+     1                          ; CODE sections defined by the classic library
+     2                          
+     3                              SECTION CODE
+     4                              SECTION code_crt_init
+     5                              SECTION code_crt_init_exit
+     6                              SECTION code_crt_exit
+     7                              SECTION code_crt_exit_exit
+     8                              SECTION code_driver
+     9                              SECTION code_l		;Keep these in "low" memory
+    10                              SECTION code_l_sdcc
+    11                              SECTION code_l_sccz80
+    12                              SECTION code_z80
+    13                              SECTION rodata_driver       ;Keep it in low memoey
+    14                              SECTION code_compiler
+    15                              SECTION code_clib
+    16                              SECTION code_compress_zx7
+    17                              SECTION code_compress_zx0
+    18                              SECTION code_compress_zx1
+    19                              SECTION code_compress_zx2
+    20                              SECTION code_compress_aplib
+    21                              SECTION code_ctype
+    22                              SECTION code_esxdos
+    23                              SECTION code_fp
+    24                              SECTION code_fp_math48
+    25                              SECTION code_fp_math32
+    26                              SECTION code_fp_math16
+    27                              SECTION code_fp_mbf32
+    28                              SECTION code_fp_mbf64
+    29                              SECTION code_fp_am9511
+    30                              SECTION code_fp_dai32
+    31                              SECTION code_math
+    32                              SECTION code_error
+    33                              SECTION code_stdlib
+    34                              SECTION code_string
+    35                              SECTION code_adt_b_array
+    36                              SECTION code_adt_b_vector
+    37                              SECTION code_adt_ba_priority_queue
+    38                              SECTION code_adt_ba_stack
+    39                              SECTION code_adt_bv_priority_queue
+    40                              SECTION code_adt_bv_stack
+    41                              SECTION code_adt_p_forward_list
+    42                              SECTION code_adt_p_forward_list_alt
+    43                              SECTION code_adt_p_list
+    44                              SECTION code_adt_p_queue
+    45                              SECTION code_adt_p_stack
+    46                              SECTION code_adt_w_array
+    47                              SECTION code_adt_w_vector
+    48                              SECTION code_adt_wa_priority_queue
+    49                              SECTION code_adt_wa_stack
+    50                              SECTION code_adt_wv_priority_queue
+    51                              SECTION code_adt_wv_stack
+    52                              SECTION code_alloc_balloc
+    53                              SECTION code_alloc_obstack
+    54                              SECTION code_arch
+    55                              SECTION code_font
+    56                              SECTION code_font_fzx
+    57                              SECTION code_psg
+    58                              SECTION code_sound_ay
+    59                              SECTION code_PSGlib
+    60                              SECTION code_time
+    61                              SECTION code_sprite_sp1
+    62                              SECTION code_temp_sp1
+    63                              SECTION code_splib2
+    64                              SECTION code_sound_bit
+    65                          IF !__crt_org_graphics
+    66                              SECTION code_graphics
+    67                          ENDIF
+    68                              SECTION code_video_vdp
+    69                              SECTION code_user
+    70                              SECTION CODE_END
+    71                          
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_standard.asm:
+    23                              INCLUDE "crt/classic/crt_section_rodata.inc"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_rodata.inc:
+     1                          ; RODATA sections defined by the classic library
+     2                          
+     3                              SECTION RODATA
+     4                              SECTION rodata_fp
+     5                              SECTION rodata_fp_math48
+     6                              SECTION rodata_fp_math32
+     7                              SECTION rodata_fp_math16
+     8                              SECTION rodata_fp_mbf32
+     9                              SECTION rodata_fp_mbf64
+    10                              SECTION rodata_fp_am9511
+    11                              SECTION rodata_fp_dai32
+    12                              SECTION rodata_arch
+    13                              SECTION rodata_compiler
+    14                              SECTION rodata_clib
+    15                              SECTION rodata_psg
+    16                              SECTION rodata_sound_ay
+    17                          IF !__crt_org_graphics
+    18                              SECTION rodata_graphics
+    19                          ENDIF
+    20                              SECTION rodata_user
+    21                              SECTION rodata_font
+    22                              SECTION rodata_font_fzx
+    23                              SECTION rodata_font_4x8
+    24                              SECTION rodata_font_6x8
+    25                              SECTION rodata_font_8x8
+    26                              SECTION rodata_font_8x10
+    27                              SECTION rodata_font_ansi
+    28                              SECTION rodata_splib2
+    29                              SECTION rodata_sound_bit
+    30                              SECTION rodata_video_vdp
+    31                              ; Keep the following section last of all
+    32                              SECTION rodata_appdor
+    33                              SECTION RODATA_END
+    34                          
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_standard.asm:
+    24                              SECTION ROMABLE_END
+    25                          IF !__crt_model
+    26                              INCLUDE "crt/classic/crt_section_data.inc"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_data.inc:
+     1                          
+     2                          
+     3                              SECTION DATA
+     4                            IF !__crt_org_graphics
+     5                              SECTION smc_clib
+     6                            ENDIF
+     7                              SECTION smc_fp
+     8                              SECTION smc_sound_ay
+     9                              SECTION smc_compress
+    10                              SECTION smc_video_vdp
+    11                              SECTION smc_user
+    12                              SECTION data_driver
+    13                              SECTION data_clib
+    14                              SECTION data_stdlib
+    15                              SECTION data_psg
+    16                              SECTION data_sound_ay
+    17                              SECTION	data_PSGlib
+    18                            IF !__crt_org_graphics
+    19                              SECTION data_graphics
+    20                            ENDIF
+    21                              SECTION data_crt
+    22                              SECTION data_fp_mbf32
+    23                              SECTION data_arch
+    24                              SECTION data_compiler
+    25                              SECTION data_splib2
+    26                              SECTION data_video_vdp
+    27                              SECTION data_user
+    28                              SECTION data_alloc_balloc
+    29                              SECTION DATA_END
+    30                          
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_standard.asm:
+    27                          ENDIF
+    28                              INCLUDE "crt/classic/crt_section_bss.inc"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_bss.inc:
+     1                              SECTION BSS
+     2                          IF __crt_org_bss
+     3                              org     __crt_org_bss
+     4                              defb    0   ; control name of bss binary
+     5                          ENDIF
+     6                              SECTION bss_fp
+     7                              SECTION bss_fp_math32
+     8                              SECTION bss_fp_math16
+     9                              SECTION bss_fp_mbf32
+    10                              SECTION bss_fp_mbf64
+    11                              SECTION bss_fp_am9511
+    12                              SECTION bss_fp_dai32
+    13                              SECTION bss_compress_aplib
+    14                              SECTION bss_error
+    15                              SECTION bss_crt
+    16                              SECTION bss_fardata
+    17                          IF __crt_org_bss_fardata_start
+    18                              org	__crt_org_bss_fardata_start
+    19                          ENDIF
+    20                              SECTION bss_compiler
+    21                          IF __crt_org_bss_compiler_start
+    22                              org	__crt_org_bss_compiler_start
+    23                          ENDIF
+    24                              SECTION bss_driver
+    25                              SECTION bss_arch
+    26                              SECTION bss_clib
+    27                              SECTION bss_string
+    28                              SECTION bss_alloc_balloc
+    29                          IF !__crt_org_graphics
+    30                              SECTION bss_graphics
+    31                          ENDIF
+    32                              SECTION bss_psg
+    33                              SECTION bss_sound_ay
+    34                              SECTION	bss_PSGlib
+    35                              SECTION bss_video_vdp
+    36                              SECTION bss_splib2
+    37                              SECTION bss_user
+    38                          
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section_standard.asm:
+    29                          
+    30                          IF __crt_model > 0
+    31                              SECTION DATA
+    32                              org     -1
+    33                              defb    0		; control name of data binary
+    34                              INCLUDE "crt/classic/crt_section_data.inc"
+    35                          ENDIF
+    36                              SECTION BSS_END
+    37                          
+    38                          IF __crt_org_graphics
+    39                              SECTION	HIMEM
+    40                              org	__crt_org_graphics
+    41                              SECTION smc_clib
+    42                              SECTION code_graphics
+    43                              SECTION code_himem
+    44                              SECTION rodata_graphics
+    45                              SECTION rodata_himem
+    46                              SECTION data_himem
+    47                              SECTION data_graphics
+    48                              SECTION bss_graphics
+    49                              SECTION bss_himem
+    50                              SECTION HIMEM_END
+    51                          ENDIF
+    52                          
+c:/z88dk/lib/config/../../lib/crt/classic/crt_section.asm:
+    19                          ENDIF
+    20                          
+    21                          
+    22                          ; The classic CRTs need some things setup, so do it
+    23                          
+    24                              SECTION code_crt_init
+    25                          crt0_init_bss:
+    26                              EXTERN  __BSS_head
+    27                              EXTERN  __BSS_END_tail
+    28                          IF CRT_INITIALIZE_BSS = 1
+    29  0000  af                    xor     a
+    30  0001  210000                ld      hl,__BSS_head
+    31  0004  010000                ld      bc,__BSS_END_tail - __BSS_head - 1
+    32                            IF !__CPU_INTEL__ && !__CPU_GBZ80__
+    33  0007  110000                ld      de,__BSS_head + 1
+    34  000a  77                    ld      (hl),a
+    35  000b  edb0                  ldir
+    36                            ELSE
+    37                              inc     b
+    38                              inc     c
+    39                          init_8080:
+    40                              ld      (hl+),a
+    41                              dec     c
+    42                              jr      NZ,init_8080
+    43                              dec     b
+    44                              jr      NZ,init_8080
+    45                            ENDIF
+    46                          ELSE
+    47                              xor     a
+    48                          ENDIF
+    49                          
+    50                              ; a = 0 - reset exitcount
+    51  000d  320000                ld      (exitcount),a
+    52                          IF CRT_ENABLE_STDIO = 1 && CLIB_FOPEN_MAX > 0
+    53                              ; Setup std* streams
+    54  0010  210000                ld      hl,__sgoioblk+2
+    55  0013  3600                  ld      (hl),19 ;stdin
+    56  0015  210000                ld      hl,__sgoioblk+12
+    57  0018  3600                  ld      (hl),21 ;stdout
+    58  001a  210000                ld      hl,__sgoioblk+22
+    59  001d  3600                  ld      (hl),21 ;stderr
+    60                          ENDIF
+    61                          IF DEFINED_USING_amalloc
+    62                            IF __CPU_GBZ80__
+    63                              ld      hl,__BSS_END_tail
+    64                              ld      a,l
+    65                              ld      (_heap),a
+    66                              ld      a,h
+    67                              ld      (_heap+1),a
+    68                            ELSE
+    69                              ld      hl,__BSS_END_tail
+    70                              ld      (_heap),hl
+    71                            ENDIF
+    72                          ENDIF
+    73                          IF ( __crt_model = 1 )
+    74                              ; Just copy the DATA section
+    75                              EXTERN  __ROMABLE_END_tail
+    76                              EXTERN  __DATA_head
+    77                              EXTERN  __DATA_END_tail
+    78                              ld      hl,__ROMABLE_END_tail
+    79                              ld      de,__DATA_head
+    80                              ld      bc,__DATA_END_tail - __DATA_head
+    81                              EXTERN  asm_memcpy
+    82                              call    asm_memcpy
+    83                          ELIF ( __crt_model >= 2 )
+    84                              EXTERN  __ROMABLE_END_tail
+    85                              EXTERN  __DATA_head
+    86                              ld      hl,__ROMABLE_END_tail
+    87                              ld      de,__DATA_head
+    88                            IF ( __crt_model = 2)
+    89                              EXTERN  asm_dzx7_standard
+    90                              call    asm_dzx7_standard
+    91                            ELIF ( __crt_model = 3)
+    92                              EXTERN  asm_dzx0_standard
+    93                              call    asm_dzx0_standard
+    94                            ENDIF
+    95                          ENDIF
+    96                          
+    97                              SECTION code_crt_init_exit
+    98  0000  c9                    ret
+    99                              SECTION code_crt_exit
+   100                          crt0_exit:
+   101                              ; Teardown code can go here
+   102                              SECTION code_crt_exit_exit
+   103  0000  c9                    ret
+   104                          
+   105                          
+   106                              SECTION bss_crt
+   107                          IF CRT_ENABLE_STDIO = 1 && CLIB_FOPEN_MAX > 0
+   108                              PUBLIC  __sgoioblk
+   109                              PUBLIC  __sgoioblk_end
+   110                          __sgoioblk:                     ;stdio control block
+   111  0000  eb04000034ffff09      defs    CLIB_FOPEN_MAX * 10
+              010000cd21cd6800  
+              0002000013000c00  
+              0015001600001500  
+              0000000000000000  
+              0000000000000000  
+              000d0a2400000000  
+              0000000b0100c0ff  
+              0000000000000000  
+              0000000000660000  
+              800000000000d100  
+              0000000004770072  
+              00000000          
+   112                          __sgoioblk_end:                 ;end of stdio control block
+   113                          ENDIF
+   114                          
+   115                          IF !DEFINED_basegraphics
+   116                              PUBLIC  base_graphics
+   117                          base_graphics:
+   118  0064  0000                  defw    0                   ;Address of graphics map
+   119                          ENDIF
+   120                              PUBLIC  exitsp
+   121                              PUBLIC  exitcount
+   122                          exitsp:
+   123  0066  0000                  defw    0                   ;atexit() stack
+   124                          exitcount:
+   125  0068  00                    defb    0                   ;Number of atexit() routines
+   126                          IF DEFINED_USING_amalloc
+   127                              PUBLIC  _heap
+   128                              ; The heap pointer will be wiped at bss initialisation.
+   129                              ; Its value (based on __tail) will be set later if set
+   130                              ; by sbrk() during AMALLOC initialisation.
+   131                          _heap:
+   132                              defw __BSS_END_tail         ; Initialised by code_crt_init - location of the last program byte
+   133                              defw 0
+   134                          ENDIF
+   135                          
+   136                          IF CLIB_BALLOC_TABLE_SIZE > 0
+   137                          
+   138                              ; create balloc table
+   139                              SECTION data_alloc_balloc
+   140                              PUBLIC  __balloc_array
+   141                          __balloc_array:
+   142                              defw __balloc_table
+   143                          
+   144                              SECTION bss_alloc_balloc
+   145                              PUBLIC  __balloc_table
+   146                          __balloc_table:
+   147                              defs CLIB_BALLOC_TABLE_SIZE * 2
+   148                          
+   149                          ENDIF
+   150                          
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+   254                              INCLUDE "crt/classic/crt_cpm_fcntl.asm"
+c:/z88dk/lib/config/../../lib/crt/classic/crt_cpm_fcntl.asm:
+     1                          ; CP/M style FCB support (CP/M + MSXDOS1)
+     2                          
+     3                          
+     4                          
+     5                          
+     6                          
+     7                              SECTION bss_crt
+     8                          
+     9                          IF CLIB_OPEN_MAX > 0
+    10                              SECTION bss_crt
+    11                              PUBLIC  __fcb
+    12                          __fcb:
+    13  0069  060000000000f500      defs    CLIB_OPEN_MAX * 166	; Each FCB is 43 bytes long
+              0020005800000000  
+              002500003e002000  
+              000000005d000004  
+              0061000000000000  
+              000a000000000000  
+              0000000000002000  
+              003c00170000005f  
+              0000000000000000  
+              0000000000000000  
+              0000040000000000  
+              000000000b000020  
+              00f500a30000009f  
+              00002000030000f8  
+              0000000000040000  
+              0006000000020000  
+              0060000000000000  
+              0000000000000000  
+              000000005b020000  
+              0e00050000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000000000000000  
+              0000              
+    14                          ENDIF
+    15                          
+    16                              PUBLIC  defltdsk
+    17  025b  00                defltdsk:       defb    0	;Default disc
+    18                          
+c:\z88dk\lib\config\\..\..\\lib\target\cpm\classic\cpm_crt0.asm:
+   255                          
+   256                          IF __HAVE_TMS99X8
+   257                              ; And include handling disabling screenmodes
+   258                              INCLUDE "crt/classic/tms9918/mode_disable.asm"
+   259                          ENDIF
+   260                          
+   261                          IF __NABUPC__
+   262                              INCLUDE "target/nabu/classic/nabu_hccabuf.asm"
+   263                          ENDIF
+   264                          
+   265                              SECTION code_crt_init
+   266  001f  0e19                  ld      c,25
+   267  0021  cd0500                call    5
+   268  0024  325b02                ld      (defltdsk),a
+   269                          
+   270                          
+   271                          
