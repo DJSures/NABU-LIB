@@ -1,1 +1,7 @@
 This is a blank skeleton project that you can use to start your program. It has the options you need in the main.c file that you can edit to configure the project. The build and buildcpm files are included as well. 
+
+## BUILD.BAT
+This will create a 000001.NABU file, which is used for sideloading into the NABU via the internet adapter locally. This is a native app, meaning it doesn't run in Cloud CPM. The only thing you need to edit in this file is the output folder for ther 000001.nabu file. I have mine set for c:\NABU SEGMENTS, but yours could be what ever you want based on the setting in the Internet Adapter. You will find the setting for the NABU Segment folder in the Internet Adapter settings.
+
+## BUILD-CPM.BAT
+This creates a .COM Cloud CP/M file for your program. It also creats a C: with your program on it. The only thing that needs to be edited in this file is the output of the C.DSK file. You want that in the Internet Adapter's RetroNET Store folder. That's the local folder where you can keep personal files that override the downloaded Temp files. This means if you have a C.DSK in the store folder, it'll use that rather than the downloaded C: from the cloud. So this batch file creates a COM file, and also creates a convenient C: so you can easily test it without having to reboot cloud cpm for each build. So edit the BUILD-CPM.BAT and change the Store folder to where ever yours is. You configure the store folder in the Internet Adapter settings under the RetroNET tab.
