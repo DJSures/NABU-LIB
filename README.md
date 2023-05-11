@@ -74,6 +74,9 @@ This is a library for a 40 year old computer - so there's no license other than 
 
 # Version Notes
 
+## v2023.05.10.00
+Added a new constant so your CPM program can determine what the visible character width is (40 or 80)
+
 ## v2023.03.30.00
 Added new functions to retronet file system for the new IA TCP Server feature. For example, CPM can now have input and output redirected to a TCP socket on the IA
 
