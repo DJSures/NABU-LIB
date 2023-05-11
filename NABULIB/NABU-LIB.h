@@ -3,7 +3,7 @@
 // DJ Sures (c) 2023
 // https://nabu.ca
 // 
-// Last updated on April 13, 2023 (v2023.04.13.00)
+// Last updated on May 10, 2023 (v2023.05.10.00)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -873,6 +873,11 @@ inline uint8_t ayRead(uint8_t reg);
 
   // Is this CLOUD CPM? (0x55)
   __at (0xff29) volatile uint8_t  _CLOUD_CPM_KEY;        
+
+  // The text character display width of the current CPM BIOS. Either 40 or 80
+  // Cloud CPM BIOS will always have 80 columns, but on a 40 column system only 40 columns are displayed
+  // So this is the number of characters that are displayed.
+  __at (0xff2e) volatile uint8_t  _CPM_COLUMN_WIDTH;   
 
   void vt_clearToEndOfScreen();
 
