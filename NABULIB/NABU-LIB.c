@@ -949,6 +949,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify; 
         vdp_setRegister(1, _vdpReg1Val); 
 
+        vdp_setRegister(2, 0x06);
+        _vdpPatternNameTableAddr = 0x1800;     
+
         if (_vdpSplitThirds)
           vdp_setRegister(4, 0x03);
         else
@@ -963,37 +966,50 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
         break;
 
-      case VDP_MODE_TEXT:
+      case VDP_MODE_TEXT40:
 
         vdp_setRegister(0, 0b00000000); 
 
         _vdpReg1Val = 0b11010010;
         vdp_setRegister(1, _vdpReg1Val);
 
+        vdp_setRegister(2, 0x06);
+        _vdpPatternNameTableAddr = 0x1800;     
+
         vdp_setRegister(4, 0x00);
         _vdpPatternGeneratorTableAddr = 0x00;
-
-
-        // https://konamiman.github.io/MSX2-Technical-Handbook/md/Appendix5.html#screen-1--graphic-1
-        // vdp_setRegister(2, 0x06);
-        // vdp_setRegister(3, 0xff);
-        // vdp_setRegister(4, 0x03);
-        // vdp_setRegister(5, 0x36); 
-        // vdp_setRegister(6, 0x07);
-
 
         _vdpCursorMaxX = 39;
         _vdpCursorMaxXFull = 40;
         _vdpTextBufferSize = 960;
 
         break;
+      case VDP_MODE_TEXT80:
 
+        vdp_setRegister(0, 0x04);
+
+        _vdpReg1Val = 0xD2;
+        vdp_setRegister(1, _vdpReg1Val); 
+
+        vdp_setRegister(2, 0b00000111); // pattern name table address (0x1000)
+        _vdpPatternNameTableAddr = 0x1000;     
+
+        vdp_setRegister(4, 0x00);       // pattern geneerator address (0x0000)
+
+        _vdpCursorMaxX = 79;
+        _vdpCursorMaxXFull = 80;
+        _vdpTextBufferSize = 1920;
+
+        break;
       case VDP_MODE_MULTICOLOR:
 
         vdp_setRegister(0, 0b00000000); 
 
         _vdpReg1Val = 0b11001000 | (big_sprites << 1) | magnify;
         vdp_setRegister(1, _vdpReg1Val); 
+
+        vdp_setRegister(2, 0x06);
+        _vdpPatternNameTableAddr = 0x1800;     
 
         vdp_setRegister(4, 0x00);
         _vdpPatternGeneratorTableAddr = 0x00;
@@ -1006,9 +1022,6 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
         break;
     }
-
-    vdp_setRegister(2, 0x06);
-    _vdpPatternNameTableAddr = 0x1800;     
 
     if (_vdpSplitThirds)
       vdp_setRegister(3, 0xff);
@@ -1050,9 +1063,14 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     vdp_setRegister(7, bgColor & 0x0f);
   }
 
+  void vdp_initTextMode80(uint8_t fgColor, uint8_t bgColor, bool autoScroll) {
+
+    vdp_init(VDP_MODE_TEXT80, fgColor, bgColor , false, false, autoScroll, false);
+  }
+
   void vdp_initTextMode(uint8_t fgColor, uint8_t bgColor, bool autoScroll) {
 
-    vdp_init(VDP_MODE_TEXT, fgColor, bgColor , false, false, autoScroll, false);
+    vdp_init(VDP_MODE_TEXT40, fgColor, bgColor , false, false, autoScroll, false);
   }
 
   void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds) {
@@ -1074,7 +1092,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     uint8_t cr = 0x00;
 
-    if (_vdpMode == VDP_MODE_TEXT)
+    if (_vdpMode == VDP_MODE_TEXT40 || _vdpMode == VDP_MODE_TEXT80)
       cr = 0x20;
 
     do {

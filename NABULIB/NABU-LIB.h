@@ -372,7 +372,7 @@ volatile uint8_t _randomSeed = 0;
   // The amount of this buffer that is used based on the current mode is
   // stored in _vdpTextBufferSize
   // **************************************************************************
-  #define TEXT_BUFFER_SIZE 960
+  #define TEXT_BUFFER_SIZE 1920
   volatile uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
 
 
@@ -484,7 +484,8 @@ volatile uint8_t _randomSeed = 0;
   enum VDP_MODES {
     VDP_MODE_G2 = 1,
     VDP_MODE_MULTICOLOR = 2,
-    VDP_MODE_TEXT = 3,
+    VDP_MODE_TEXT40 = 3,
+    VDP_MODE_TEXT80 = 4,
   };
 
 
@@ -879,52 +880,76 @@ inline uint8_t ayRead(uint8_t reg);
   // So this is the number of characters that are displayed.
   __at (0xff2e) volatile uint8_t  _CPM_COLUMN_WIDTH;   
 
+  // Clear from current row to the end of screen
   void vt_clearToEndOfScreen();
 
+  // Clear from cursor to end of line
   void vt_clearToEndOfLine();
 
+  // Clear the whole screen
   void vt_clearScreen();
 
+  // Clear the current row 
   void vt_clearLine();
 
+  // Clear from start of line to the current cursor position
   void vt_clearToStartOfLine();
-
+  
+  // Clear from start of screen to the current row
   void vt_clearToStartOfScreen();
 
+  // Move the cursor down number of lines
   void vt_moveCursorDown(uint8_t count);
 
+  // Move cursor to top left
   void vt_cursorHome();
 
+  // Move cursor left number of characters
   void vt_moveCursorLeft(uint8_t count);
 
+  // Move cursor to the right number of characters
   void vt_moveCursorRight(uint8_t count);
 
+  // Move cursor up number of lines
   void vt_moveCursorUp(uint8_t count);
 
+  // Delete the whole line
   void vt_deleteLine();
 
+  // Move the cursor to the specified X Y coorindate
   void vt_setCursor(uint8_t x, uint8_t y);
 
+  // Set the foreground color (not supported)
   void vt_foregroundColor(uint8_t color);
 
+  // Insert a row at the current row
   void vt_insertLine();
 
+  // Restore the cursor position from the saved position (calling vt_saveCursorPosition)
   void vt_restoreCursorPosition();
 
+  // Set the background color (not supported)
   void vt_backgroundColor(uint8_t color);
 
+  // Save the cursor position (can be restored by calling vt_restoreCursorPosition)
   void vt_saveCursorPosition();
 
+  // Move cursor up and insert a row
   void vt_cursorUpAndInsert();
 
+  // Disable wrap when reach end of the line
   void vt_wrapOff();
 
+  // Enables wrap when reaching end of line
   void vt_wrapOn();
 
+  // Regular font (not inverted)
   void vt_normalVideo();
 
+  // Inverted font (not regular)
   void vt_reverseVideo();
 
+  // Is this running Cloud CPM?
   bool isCloudCPM();
 #endif 
 
@@ -1197,6 +1222,16 @@ inline uint8_t ayRead(uint8_t reg);
   // 
   // **************************************************************************
   void vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll);
+
+  // **************************************************************************
+  // Initializes the VDP in text mode with 80 column using the f18a
+  // 
+  // - fgcolor:   Text color 
+  // - bgcolor:   Background 
+  // - autoscoll: Will the text scroll when it reaches bottom of the screen
+  // 
+  // **************************************************************************
+  void vdp_initTextMode80(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll);
 
   // **************************************************************************
   // Initializes the VDP in Graphic Mode 2
