@@ -222,33 +222,53 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
 
     uint8_t inKey = IO_KEYBOARD;
 
-    if (inKey >= 0x80 && inKey <= 0x83) {
-
-      _lastKeyboardIntVal = inKey;
-    } else if (inKey < 0x90 || inKey > 0x95) {
-
-      switch (_lastKeyboardIntVal) {
+    if (inKey >= 0x80 && inKey <= 0x8a) {
+      _paddleByteCount = 0;
+      switch (inKey) {
         case 0x80:
-          _lastKeyboardIntVal = 0;
-          _joyStatus[0] = inKey;
+          _inputIndex = 0;
           break;
         case 0x81:
-          _lastKeyboardIntVal = 0;
-          _joyStatus[1] = inKey;
+          _inputIndex = 1;
           break;
         case 0x82:
-          _lastKeyboardIntVal = 0;
-          _joyStatus[2] = inKey;
+          _inputIndex = 2;
           break;
         case 0x83:
-          _lastKeyboardIntVal = 0;
-          _joyStatus[3] = inKey;
+          _inputIndex = 3;
           break;
-        default: {
-
-          _kbdBuffer[_kbdBufferWritePos] = inKey;
-
-          _kbdBufferWritePos++;
+        case 0x84:
+          _inputIndex = 0;
+          break;
+        case 0x86:
+          _inputIndex = 2;
+          break;
+        case 0x88:
+          _inputIndex = 4;
+          break;
+        case 0x8a:
+          _inputIndex = 6;
+          break;
+        default:
+          _inputIndex = 0xff;
+      }
+    } else if (inKey < 0x80 || inKey >= 0xe0) {
+      _kbdBuffer[_kbdBufferWritePos] = inKey;
+      _kbdBufferWritePos++;
+      _paddleByteCount = 0;
+      _inputIndex = 0xff;
+    } else if (_inputIndex != 0xff) {
+      if (inKey >= 0xa0 && inKey < 0xc0) {
+      _joyStatus[_inputIndex] = inKey;
+      _paddleByteCount = 0;
+      _inputIndex = 0xff;
+      } else {
+        _paddleTemp[_paddleByteCount++] = inKey;
+        if (_paddleByteCount == 4) {
+          _paddleValue[_inputIndex] = (_paddleTemp[0] & 0x0F) | (_paddleTemp[1] << 4);
+          _paddleValue[_inputIndex+1] = (_paddleTemp[2] & 0x0F) | (_paddleTemp[3] << 4);
+          _paddleByteCount = 0;
+          _inputIndex = 0xff;
         }
       }
     }
@@ -545,6 +565,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   uint8_t getJoyStatus(uint8_t joyNum) {
 
       return _joyStatus[joyNum];
+  }
+
+  uint8_t getPaddleValue(uint8_t paddleNum) {
+
+      return _paddleValue[paddleNum];
   }
 
   #ifndef DISABLE_VDP
