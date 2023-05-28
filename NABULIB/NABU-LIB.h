@@ -320,7 +320,7 @@ volatile uint8_t _randomSeed = 0;
   volatile uint8_t _kbdBuffer[256];
   volatile uint8_t _kbdBufferReadPos = 0;
   volatile uint8_t _kbdBufferWritePos = 0;
-  volatile uint8_t _lastKeyboardIntVal = 0;
+  volatile uint8_t _inputIndex = 0xff;
   volatile uint8_t _joyStatus[4] = {0};
 
   typedef enum JOYSTICKENUM {
@@ -330,6 +330,10 @@ volatile uint8_t _randomSeed = 0;
     Joy_Up = 0b00001000,
     Joy_Button = 0b00010000,
   };
+
+  volatile uint8_t _paddleValue[8] = {0};
+  volatile uint8_t _paddleTemp[4] = {0};
+  volatile uint8_t _paddleByteCount = 0;
 
   #warning
   #warning Keyboard Interupt Enabled. Use NABU-LIB keyboard functions only (no CPM STDIN)
@@ -837,6 +841,11 @@ inline uint8_t ayRead(uint8_t reg);
   //  
   // **************************************************************************
   inline uint8_t getJoyStatus(uint8_t joyNum);
+
+  // **************************************************************************
+  // Returns the current position of the paddle at the specified index (0 - 7)
+  // **************************************************************************
+  inline uint8_t getPaddleValue(uint8_t paddleNum);
 #endif
 
 #if BIN_TYPE == BIN_CPM
