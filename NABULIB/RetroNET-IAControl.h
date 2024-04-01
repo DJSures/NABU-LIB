@@ -4,7 +4,7 @@
 // DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on v2024.03.31.00
+// Last updated on v2024.04.01.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -76,6 +76,32 @@ void ia_getParentName(uint8_t parentId, uint8_t *titleBuf) {
   hcca_writeByte(0xba); // ia_control
 
   hcca_writeByte(0x01);
+
+  hcca_writeByte(parentId);
+
+  uint8_t readCnt = hcca_readByte();
+
+  hcca_readBytes(0, readCnt, titleBuf);
+
+  ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Get the name of the parent by it's ID
+//
+// *Note: the titleBuf must be 64 bytes long
+// -----------------------------------------------------------
+void ia_getParentDescription(uint8_t parentId, uint8_t *titleBuf) {
+
+  // 0xbb
+  ia_focusInterrupts();
+
+  for (uint16_t i = 0; i < 255; i++)
+    titleBuf[i] = 0x00;
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x0d);
 
   hcca_writeByte(parentId);
 

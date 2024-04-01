@@ -1535,6 +1535,45 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     }
   }
 
+  void vdp_printJustified(uint8_t *text, uint8_t leftMargin, uint8_t rightMargin) {
+
+    while (*text != 0x00) { 
+
+      if (*text == ' ') {  
+
+        text++;  
+
+        uint8_t *startOfNextWord = text;
+
+        // Find the length of the next word
+        while (*startOfNextWord != ' '  && 
+              *startOfNextWord != '.'  && 
+              *startOfNextWord != ','  &&
+              *startOfNextWord != '!'  &&
+              *startOfNextWord != 0x00) 
+          startOfNextWord++;
+        
+        // Calculate the length of the next word
+        uint8_t nextWordLength = startOfNextWord - text;
+
+        // Check if the next word exceeds the screen width
+        if (vdp_cursor.x + nextWordLength >= rightMargin) {
+
+          vdp_newLine();
+          vdp_cursor.x = leftMargin;
+
+        } else if (vdp_cursor.x != leftMargin) {
+
+          vdp_write(' ');
+        }
+      }
+
+      vdp_write(*text);
+
+      text++; 
+    }
+  }
+
   void vdp_printColorized(uint8_t *text, uint8_t fgColor, uint8_t bgColor) {
 
     uint8_t *start = text;

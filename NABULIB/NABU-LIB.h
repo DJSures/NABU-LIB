@@ -3,7 +3,7 @@
 // DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on 2024.03.31.00
+// Last updated on 2024.04.01.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -1409,6 +1409,14 @@ inline uint8_t ayRead(uint8_t reg);
   // - text Text to print
   // **************************************************************************
   void vdp_print(uint8_t* text);
+
+  // **************************************************************************
+  // Print null terminated string at the current cursor position and justify
+  // each word so it does not wrap at the end of the line.
+  //
+  // - text Text to print
+  // **************************************************************************
+  void vdp_printJustified(uint8_t *text, uint8_t leftMargin, uint8_t rightMargin);
 
   // **************************************************************************
   // Print null terminated string at the current cursor position and change the
