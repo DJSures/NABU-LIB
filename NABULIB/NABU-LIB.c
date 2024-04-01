@@ -1,6 +1,6 @@
 // ****************************************************************************************
 // NABU-LIB C Library
-// DJ Sures (c) 2023
+// DJ Sures (c) 2024
 // https://nabu.ca
 // https://github.com/DJSures/NABU-LIB
 // 
@@ -1190,12 +1190,49 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     IO_VDPDATA = patternId;
   }
 
+  void vdp_loadPatternToId(uint8_t patternId, uint8_t *pattern) {
+
+    // datasheet 2-20 : screen is split into 3 and the pattern table therefore is repeated 3 times
+
+    uint8_t *start = pattern;
+    uint8_t *end = start + 8;
+
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + ((uint16_t)patternId * 8));
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    if (_vdpSplitThirds) { 
+
+      vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 2048 + ((uint16_t)patternId * 8));
+      start = pattern;
+      do {
+
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+
+      vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 4096 + ((uint16_t)patternId * 8));
+      start = pattern;
+      do {
+
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+    }
+  }
+
   void vdp_loadPatternTable(uint8_t *patternTable, uint16_t len) {
 
     // datasheet 2-20 : screen is split into 3 and the pattern table therefore is repeated 3 times
 
     uint8_t *start = patternTable;
-    uint8_t *end = patternTable + len;
+    uint8_t *end = start + len;
 
     vdp_setWriteAddress(_vdpPatternGeneratorTableAddr);
     do {
@@ -1218,6 +1255,42 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 4096);
       start = patternTable;
+      do {
+
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+    }
+  }
+
+  void vdp_loadColorToId(uint8_t patternId,  uint8_t *color) {
+
+    // datasheet 2-20 : screen is split into 3 and the color table therefore is repeated 3 times
+    uint8_t *start = color;
+    uint8_t *end = start + 8;
+      
+    vdp_setWriteAddress(_vdpColorTableAddr + ((uint16_t)patternId * 8));
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    if (_vdpSplitThirds) {
+
+      vdp_setWriteAddress(_vdpColorTableAddr + 2048 + ((uint16_t)patternId * 8));
+      start = color;
+      do {
+
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+
+      vdp_setWriteAddress(_vdpColorTableAddr + 4096 + ((uint16_t)patternId * 8));
+      start = color;
       do {
 
         IO_VDPDATA = *start;

@@ -1,9 +1,9 @@
 // ****************************************************************************************
 // NABU-LIB C Library - MAKE SOMETHING
-// DJ Sures (c) 2023 
+// DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on April 10, 2023 (v2023.04.10.00)
+// Last updated on 2024.03.31
 // 
 // Get latest copy from: https://github.com/DJSures/NABU-LIB
 // 
@@ -411,14 +411,17 @@ int32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption
 uint16_t rn_fileHandleLineCount(uint8_t fileHandle);
 
 // **************************************************************************
-// Gets the string at the specified line number. 
-// 
+// Gets the string at the specified line number of the text file. 
+// This assumes you have loaded a text file with the fileHandle. It uses the
+// newline character of the of the operating system to split the file into
+// lines. If you have a file with 100 text lines, you can
+// use this to grab the text on line #10
+//
 // - fileHandle is obtained by rn_fileOpen()
 // 
 // Returns the length of the line read
 // **************************************************************************
 uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *buffer);
-
 
 
 // **************************************************************************************************************
