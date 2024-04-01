@@ -41,6 +41,40 @@ void tolower(uint8_t *text) {
   }
 }
 
+void vdp_printJustified(uint8_t *text) {
+
+  while (*text != 0x00) { 
+
+    if (*text == ' ') {  
+
+      text++;  
+
+      uint8_t *startOfNextWord = text;
+
+      // Find the length of the next word
+      while (*startOfNextWord != ' '  && 
+             *startOfNextWord != '.'  && 
+             *startOfNextWord != ','  &&
+             *startOfNextWord != '!'  &&
+             *startOfNextWord != 0x00) 
+        startOfNextWord++;
+      
+      // Calculate the length of the next word
+      uint8_t nextWordLength = startOfNextWord - text;
+
+      // Check if the next word exceeds the screen width
+      if (vdp_cursor.x + nextWordLength > _vdpCursorMaxX) 
+        vdp_newLine();      
+      else
+        vdp_write(' ');
+    }
+
+    vdp_write(*text);
+
+    text++; 
+  }
+}
+
 uint8_t waitForJoyStick() {
 
   while (true) {
@@ -157,8 +191,8 @@ uint8_t screen1() {
 
   ia_getNewsContent(_tmpBuf);
   toupper(_tmpBuf);
-  vdp_setCursor2(0, 12);
-  vdp_print(_tmpBuf);
+  vdp_setCursor2(0, 13);
+  vdp_printJustified(_tmpBuf);
 
   // Allow selecting a category
   // ---------------------------------------------------
