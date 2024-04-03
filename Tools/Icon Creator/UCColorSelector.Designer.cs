@@ -34,7 +34,7 @@
       cbForegroundColor.FormattingEnabled = true;
       cbForegroundColor.Location = new Point(0, 0);
       cbForegroundColor.Name = "cbForegroundColor";
-      cbForegroundColor.Size = new Size(121, 23);
+      cbForegroundColor.Size = new Size(80, 23);
       cbForegroundColor.TabIndex = 0;
       cbForegroundColor.SelectedIndexChanged += cbForegroundColor_SelectedIndexChanged;
       // 
@@ -43,9 +43,9 @@
       cbBackgroundColor.Dock = DockStyle.Left;
       cbBackgroundColor.DropDownStyle = ComboBoxStyle.DropDownList;
       cbBackgroundColor.FormattingEnabled = true;
-      cbBackgroundColor.Location = new Point(121, 0);
+      cbBackgroundColor.Location = new Point(80, 0);
       cbBackgroundColor.Name = "cbBackgroundColor";
-      cbBackgroundColor.Size = new Size(121, 23);
+      cbBackgroundColor.Size = new Size(80, 23);
       cbBackgroundColor.TabIndex = 1;
       cbBackgroundColor.SelectedIndexChanged += cbBackgroundColor_SelectedIndexChanged;
       // 
@@ -56,7 +56,7 @@
       Controls.Add(cbBackgroundColor);
       Controls.Add(cbForegroundColor);
       Name = "UCColorSelector";
-      Size = new Size(249, 29);
+      Size = new Size(170, 29);
       ResumeLayout(false);
     }
 

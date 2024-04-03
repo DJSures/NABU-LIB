@@ -36,6 +36,8 @@ namespace Icon_Creator {
     Color.White // 15
     };
 
+    public event EventHandler ImageUpdated;
+
     public static bool SketchDrawingEnabled = false;
     public static List<string> SketchDrawedIds = new List<string>();
 
@@ -90,6 +92,8 @@ namespace Icon_Creator {
           pixelButtons[i].BackColor = TMS9918aPalettes[ForeGroundColor];
         else
           pixelButtons[i].BackColor = TMS9918aPalettes[BackgroundColor];
+
+      ImageUpdated?.Invoke(this, EventArgs.Empty);
     }
 
     public byte GetColorForRow() {
