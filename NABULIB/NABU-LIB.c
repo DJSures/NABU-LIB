@@ -1539,7 +1539,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     while (*text != 0x00) { 
 
-      if (*text == ' ') {  
+      if (*text == ' ') {
 
         text++;  
 
@@ -1566,6 +1566,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
           vdp_write(' ');
         }
+      }
+
+      if (vdp_cursor.x >= rightMargin) {
+
+        vdp_newLine();
+        vdp_cursor.x = leftMargin;
       }
 
       vdp_write(*text);

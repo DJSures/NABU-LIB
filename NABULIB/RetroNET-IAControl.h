@@ -4,7 +4,7 @@
 // DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on v2024.04.01.00
+// Last updated on v2024.04.03.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -367,6 +367,167 @@ void ia_getNewsDate(uint8_t *dateBuff) {
   hcca_readBytes(0, readCnt, dateBuff);
 
   ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Get the number of news articles
+// -----------------------------------------------------------
+uint8_t ia_extended_getNewsCount() {
+
+  // 0x0e
+  ia_focusInterrupts();
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x0e); // ia_extended_getNewsCount
+
+  uint8_t t = hcca_readByte();
+
+  ia_restoreInterrupts();
+
+  return t;
+}
+
+// -----------------------------------------------------------
+// Get the current news content by index
+//
+// *Note: the newsBuff must be 512 bytes long
+// -----------------------------------------------------------
+void ia_extended_getNewsContentById(uint8_t id, uint8_t *newsBuff) {
+
+  ia_focusInterrupts();
+
+  for (uint16_t i = 0; i < 512; i++)
+    newsBuff[i] = 0x00;
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x0f); // ia_extended_getNewsContentById
+
+  hcca_writeByte(id); 
+
+  uint16_t readCnt = hcca_readUInt16();
+
+  hcca_readBytes(0, readCnt, newsBuff);
+
+  ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Get the current news title by index
+//
+// *Note: the titleBuff must be 64 bytes long
+// -----------------------------------------------------------
+void ia_extended_getNewsTitleById(uint8_t id, uint8_t *titleBuff) {
+
+  ia_focusInterrupts();
+
+  for (uint8_t i = 0; i < 64; i++)
+    titleBuff[i] = 0x00;
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x10); // ia_extended_getNewsTitleById
+
+  hcca_writeByte(id);
+
+  uint8_t readCnt = hcca_readByte();
+
+  hcca_readBytes(0, readCnt, titleBuff);
+
+  ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Get the current news date by id
+//
+// *Note: the dateBuff must be 20 bytes long
+// -----------------------------------------------------------
+void ia_extended_getNewsDateById(uint8_t id, uint8_t *dateBuff) {
+
+  ia_focusInterrupts();
+
+  for (uint8_t i = 0; i < 20; i++)
+    dateBuff[i] = 0x00;
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x11); // ia_extended_getNewsDateById
+
+  hcca_writeByte(id);
+
+  uint8_t readCnt = hcca_readByte();
+
+  hcca_readBytes(0, readCnt, dateBuff);
+
+  ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Get the tile color for the news item by id
+// There's 8 bytes per tile.
+// 0 2
+// 1 3
+// *Note: the colorBuff must be 32 bytes long
+// -----------------------------------------------------------
+void ia_extended_getNewsIconTileColor(uint8_t id, uint8_t *colorBuff) {
+
+  ia_focusInterrupts();
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x12); // ia_extended_getNewsIconTileColor
+
+  hcca_writeByte(id);
+
+  hcca_readBytes(0, 32, colorBuff);
+
+  ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Get the tile pattern for the news item by id
+// There's 8 bytes per tile.
+// 0 2
+// 1 3
+// *Note: the colorBuff must be 32 bytes long
+// -----------------------------------------------------------
+void ia_extended_getNewsIconTilePattern(uint8_t id, uint8_t *patternBuff) {
+
+  ia_focusInterrupts();
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x13); // ia_extended_getNewsIconTilePattern
+
+  hcca_writeByte(id);
+
+  hcca_readBytes(0, 32, patternBuff);
+
+  ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Get the operating system of the internet adapter
+// 0 = Windows
+// 1 = MacOS
+// 2 = Linux
+// 99 = Unknown
+// -----------------------------------------------------------
+uint8_t ia_extended_getOperatingSystem() {
+
+  // 0x14
+  ia_focusInterrupts();
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x14); // ia_extended_getOperatingSystem
+
+  uint8_t t = hcca_readByte();
+
+  ia_restoreInterrupts();
+
+  return t;
 }
 
 #endif
