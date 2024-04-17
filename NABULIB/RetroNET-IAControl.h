@@ -4,7 +4,7 @@
 // DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on v2024.04.03.00
+// Last updated on v2024.04.16.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -528,6 +528,34 @@ uint8_t ia_extended_getOperatingSystem() {
   ia_restoreInterrupts();
 
   return t;
+}
+
+// -----------------------------------------------------------
+// Get the current date/time as a string in the specified format
+// Use the C# DateTime.Now.ToString() format.
+// Send blank dateformat with 0 bytes for a default string.
+// *Note: the dateBuff must be 64 bytes long
+// -----------------------------------------------------------
+void ia_getCurrentDateTimeStr(uint8_t *dateFormatStr, uint8_t dateFormatStrLen, uint8_t *dateBuff) {
+
+  ia_focusInterrupts();
+
+  for (uint8_t i = 0; i < 64; i++)
+    dateBuff[i] = 0x00;
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x15); // ia_getCurrentDateTimeStr
+
+  hcca_writeByte(dateFormatStrLen);
+
+  hcca_writeBytes(0, dateFormatStrLen, dateFormatStr);
+
+  uint8_t readCnt = hcca_readByte();
+
+  hcca_readBytes(0, readCnt, dateBuff);
+
+  ia_restoreInterrupts();
 }
 
 #endif

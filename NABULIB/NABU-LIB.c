@@ -779,16 +779,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setWriteAddress(uint16_t address) {
 
-    IO_VDPLATCH = address & 0xff;
+    IO_VDPLATCH = address;
 
-    IO_VDPLATCH = 0x40 | ((address >> 8) & 0x3f);
+    IO_VDPLATCH = (address >> 8) | 0x40;
   }
 
   void vdp_setReadAddress(uint16_t address) {
 
-    IO_VDPLATCH = address & 0xff;
+    IO_VDPLATCH = address;
 
-    IO_VDPLATCH = (address >> 8) & 0x3f;
+    IO_VDPLATCH = (address >> 8);
   }
 
   void waitVdpISR() __naked {
@@ -842,6 +842,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // uncomment this to enable debugging for the VDP to see if the vdpIsReady flag was
     // set prior to your program calling vdp_waitVDPReadyInt(). That means your program took
     // too long and missed the vertical screen refresh.
+    // If you're using a frame buffer, it's okay if the program is taking too long because
+    // you could use this function to wait for the vdp to be ready before updating the
+    // frame buffer.
 
     #ifdef DEBUG_VDP_INT
 
@@ -852,9 +855,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     #endif
 
-    while (!vdpIsReady);
-
     vdpIsReady = false;
+
+    while (!vdpIsReady);
   }
 
   void vdp_disableVDPReadyInt() {
