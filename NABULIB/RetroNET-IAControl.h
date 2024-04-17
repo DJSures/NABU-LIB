@@ -532,8 +532,40 @@ uint8_t ia_extended_getOperatingSystem() {
 
 // -----------------------------------------------------------
 // Get the current date/time as a string in the specified format
-// Use the C# DateTime.Now.ToString() format.
 // Send blank dateformat with 0 bytes for a default string.
+//
+// Examples: 
+//   "dddd, MMMM dd" outputs "Sunday, April 14"
+//   "yyyy-MM-dd HH:mm:ss" outputs "2024-04-14 19:04:01"
+//   "HH:mm:ss" outputs 19:04:01
+//   "MM/dd/yyyy HH:mm" outputs 04/14/2024 19:04
+//
+// yyyy: Four-digit year.
+// yy: Two-digit year.
+// MMMM: Full month name.
+// MMM: Abbreviated month name.
+// MM: Two-digit month (with leading zero).
+// M: One or two-digit month.
+// dddd: Full name of the day of the week.
+// ddd: Abbreviated name of the day.
+// dd: Two-digit day of the month (with leading zero).
+// d: One or two-digit day of the month.
+// HH: Two digits of hour (24-hour clock) with leading zeros.
+// H: One or two digits of hour (24-hour clock).
+// hh: Two digits of hour (12-hour clock) with leading zeros.
+// h: One or two digits of hour (12-hour clock).
+// mm: Two digits of minute with leading zeros.
+// m: One or two digits of minute.
+// ss: Two digits of second with leading zeros.
+// s: One or two digits of second.
+// fff: Three digits of milliseconds.
+// ff: Two digits of milliseconds.
+// f: One digit of milliseconds.
+// tt: AM or PM designator.
+// zzz: Time zone offset in hours and minutes.
+// zz: Time zone offset in hours.
+// z: Hours of time zone offset.
+// 
 // *Note: the dateBuff must be 64 bytes long
 // -----------------------------------------------------------
 void ia_getCurrentDateTimeStr(uint8_t *dateFormatStr, uint8_t dateFormatStrLen, uint8_t *dateBuff) {
