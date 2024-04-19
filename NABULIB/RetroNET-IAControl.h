@@ -4,7 +4,7 @@
 // DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on v2024.04.16.00
+// Last updated on v2024.04.19.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -588,6 +588,47 @@ void ia_getCurrentDateTimeStr(uint8_t *dateFormatStr, uint8_t dateFormatStrLen, 
   hcca_readBytes(0, readCnt, dateBuff);
 
   ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Returns a string with the internet adapter version
+// versionStr must be 14 bytes long
+// ie 2024.04.19.00
+// -----------------------------------------------------------
+void ia_getAdapterVersion(uint8_t *versionStr) {
+
+  ia_focusInterrupts();
+
+  for (uint8_t i = 0; i < 14; i++)
+    versionStr[i] = 0x00;
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x16); // ia_getAdapterVersion
+
+  uint8_t readCnt = hcca_readByte();
+
+  hcca_readBytes(0, readCnt, versionStr);
+
+  ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Returns true or false if a new version is available
+// -----------------------------------------------------------
+bool ia_getNewVersionAvailable() {
+
+  ia_focusInterrupts();
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x17); // ia_getNewVersionAvailable
+
+  uint8_t val = hcca_readByte();
+
+  ia_restoreInterrupts();
+
+  return (val > 0);
 }
 
 #endif
