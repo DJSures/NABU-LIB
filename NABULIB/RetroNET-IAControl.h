@@ -4,7 +4,7 @@
 // DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on v2024.04.19.00
+// Last updated on v2024.05.18.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -115,18 +115,18 @@ void ia_getParentDescription(uint8_t parentId, uint8_t *titleBuf) {
 // -----------------------------------------------------------
 // Get the number of child items under the parent Id
 // -----------------------------------------------------------
-uint8_t ia_getChildCount(uint8_t parentId) {
+uint16_t ia_getChildCount2(uint8_t parentId) {
 
   // 0xbc
   ia_focusInterrupts();
 
   hcca_writeByte(0xba); // ia_control
 
-  hcca_writeByte(0x02);
+  hcca_writeByte(0x18);
 
   hcca_writeByte(parentId);
 
-  uint8_t t = hcca_readByte();
+  uint16_t t = hcca_readUInt16();
 
   ia_restoreInterrupts();
 
@@ -138,7 +138,7 @@ uint8_t ia_getChildCount(uint8_t parentId) {
 //
 // *Note: the titleBuf must be 64 bytes long
 // -----------------------------------------------------------
-void ia_getChildName(uint8_t parentId, uint8_t childId, uint8_t *titleBuf) {
+void ia_getChildName2(uint8_t parentId, uint16_t childId, uint8_t *titleBuf) {
 
   // 0xbd
   ia_focusInterrupts();
@@ -148,11 +148,11 @@ void ia_getChildName(uint8_t parentId, uint8_t childId, uint8_t *titleBuf) {
 
   hcca_writeByte(0xba); // ia_control
 
-  hcca_writeByte(0x03);
+  hcca_writeByte(0x19);
 
   hcca_writeByte(parentId);
 
-  hcca_writeByte(childId);
+  hcca_writeUInt16(childId);
 
   uint8_t readCnt = hcca_readByte();
 
@@ -164,15 +164,15 @@ void ia_getChildName(uint8_t parentId, uint8_t childId, uint8_t *titleBuf) {
 // -----------------------------------------------------------
 // Set the selection in the NABU Channels
 // -----------------------------------------------------------
-void ia_setSelection(uint8_t parentId, uint8_t childId) {
+void ia_setSelection2(uint8_t parentId, uint16_t childId) {
   
   hcca_writeByte(0xba); // ia_control
 
-  hcca_writeByte(0x04);
+  hcca_writeByte(0x1a);
 
   hcca_writeByte(parentId);
 
-  hcca_writeByte(childId);
+  hcca_writeUInt16(childId);
 }
 
 // -----------------------------------------------------------
@@ -180,7 +180,7 @@ void ia_setSelection(uint8_t parentId, uint8_t childId) {
 //
 // *Note: the descBuff must be 256 bytes long
 // -----------------------------------------------------------
-void ia_getChildDescription(uint8_t parentId, uint8_t childId, uint8_t *descBuff) {
+void ia_getChildDescription2(uint8_t parentId, uint16_t childId, uint8_t *descBuff) {
 
   ia_focusInterrupts();
 
@@ -189,11 +189,11 @@ void ia_getChildDescription(uint8_t parentId, uint8_t childId, uint8_t *descBuff
 
   hcca_writeByte(0xba); // ia_control
 
-  hcca_writeByte(0x05); // ia_extended_getChildDescription
+  hcca_writeByte(0x1b); // ia_extended_getChildDescription
 
   hcca_writeByte(parentId);
 
-  hcca_writeByte(childId);
+  hcca_writeUInt16(childId);
 
   uint8_t readCnt = hcca_readByte();
 
@@ -207,7 +207,7 @@ void ia_getChildDescription(uint8_t parentId, uint8_t childId, uint8_t *descBuff
 //
 // *Note: the authBuff must be 16 bytes long
 // -----------------------------------------------------------
-void ia_getChildAuthor(uint8_t parentId, uint8_t childId, uint8_t *authBuff) {
+void ia_getChildAuthor2(uint8_t parentId, uint16_t childId, uint8_t *authBuff) {
 
   ia_focusInterrupts();
 
@@ -216,11 +216,11 @@ void ia_getChildAuthor(uint8_t parentId, uint8_t childId, uint8_t *authBuff) {
 
   hcca_writeByte(0xba); // ia_control
 
-  hcca_writeByte(0x06); // ia_extended_getChildAuthor
+  hcca_writeByte(0x1c); // ia_extended_getChildAuthor
 
   hcca_writeByte(parentId);
 
-  hcca_writeByte(childId);
+  hcca_writeUInt16(childId);
 
   uint8_t readCnt = hcca_readByte();
 
@@ -259,17 +259,17 @@ void ia_getNewsContent(uint8_t *newsBuff) {
 // 1 3
 // *Note: the colorBuff must be 32 bytes long
 // -----------------------------------------------------------
-void ia_getChildIconTileColor(uint8_t parentId, uint8_t childId, uint8_t *colorBuff) {
+void ia_getChildIconTileColor2(uint8_t parentId, uint16_t childId, uint8_t *colorBuff) {
 
   ia_focusInterrupts();
 
   hcca_writeByte(0xba); // ia_control
 
-  hcca_writeByte(0x08); // ia_extended_iconTileColor
+  hcca_writeByte(0x1d); // ia_extended_iconTileColor
 
   hcca_writeByte(parentId);
 
-  hcca_writeByte(childId);
+  hcca_writeUInt16(childId);
 
   hcca_readBytes(0, 32, colorBuff);
 
@@ -283,17 +283,17 @@ void ia_getChildIconTileColor(uint8_t parentId, uint8_t childId, uint8_t *colorB
 // 1 3
 // *Note: the patternBuff must be 32 bytes long
 // -----------------------------------------------------------
-void ia_getChildIconTilePattern(uint8_t parentId, uint8_t childId, uint8_t *patternBuff) {
+void ia_getChildIconTilePattern2(uint8_t parentId, uint16_t childId, uint8_t *patternBuff) {
 
   ia_focusInterrupts();
 
   hcca_writeByte(0xba); // ia_control
 
-  hcca_writeByte(0x09); // ia_extended_iconTilePattern
+  hcca_writeByte(0x1e); // ia_extended_iconTilePattern
 
   hcca_writeByte(parentId);
 
-  hcca_writeByte(childId);
+  hcca_writeUInt16(childId);
 
   hcca_readBytes(0, 32, patternBuff);
 
