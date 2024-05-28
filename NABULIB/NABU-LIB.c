@@ -1,6 +1,6 @@
 // ****************************************************************************************
 // NABU-LIB C Library
-// DJ Sures (c) 2023
+// DJ Sures (c) 2024
 // https://nabu.ca
 // https://github.com/DJSures/NABU-LIB
 // 
@@ -779,16 +779,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_setWriteAddress(uint16_t address) {
 
-    IO_VDPLATCH = address & 0xff;
+    IO_VDPLATCH = address;
 
-    IO_VDPLATCH = 0x40 | ((address >> 8) & 0x3f);
+    IO_VDPLATCH = (address >> 8) | 0x40;
   }
 
   void vdp_setReadAddress(uint16_t address) {
 
-    IO_VDPLATCH = address & 0xff;
+    IO_VDPLATCH = address;
 
-    IO_VDPLATCH = (address >> 8) & 0x3f;
+    IO_VDPLATCH = (address >> 8);
   }
 
   void waitVdpISR() __naked {
@@ -842,6 +842,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // uncomment this to enable debugging for the VDP to see if the vdpIsReady flag was
     // set prior to your program calling vdp_waitVDPReadyInt(). That means your program took
     // too long and missed the vertical screen refresh.
+    // If you're using a frame buffer, it's okay if the program is taking too long because
+    // you could use this function to wait for the vdp to be ready before updating the
+    // frame buffer.
 
     #ifdef DEBUG_VDP_INT
 
@@ -852,9 +855,9 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     #endif
 
-    while (!vdpIsReady);
-
     vdpIsReady = false;
+
+    while (!vdpIsReady);
   }
 
   void vdp_disableVDPReadyInt() {
@@ -1190,12 +1193,49 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     IO_VDPDATA = patternId;
   }
 
+  void vdp_loadPatternToId(uint8_t patternId, uint8_t *pattern) {
+
+    // datasheet 2-20 : screen is split into 3 and the pattern table therefore is repeated 3 times
+
+    uint8_t *start = pattern;
+    uint8_t *end = start + 8;
+
+    vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + ((uint16_t)patternId * 8));
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    if (_vdpSplitThirds) { 
+
+      vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 2048 + ((uint16_t)patternId * 8));
+      start = pattern;
+      do {
+
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+
+      vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 4096 + ((uint16_t)patternId * 8));
+      start = pattern;
+      do {
+
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+    }
+  }
+
   void vdp_loadPatternTable(uint8_t *patternTable, uint16_t len) {
 
     // datasheet 2-20 : screen is split into 3 and the pattern table therefore is repeated 3 times
 
     uint8_t *start = patternTable;
-    uint8_t *end = patternTable + len;
+    uint8_t *end = start + len;
 
     vdp_setWriteAddress(_vdpPatternGeneratorTableAddr);
     do {
@@ -1218,6 +1258,42 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       vdp_setWriteAddress(_vdpPatternGeneratorTableAddr + 4096);
       start = patternTable;
+      do {
+
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+    }
+  }
+
+  void vdp_loadColorToId(uint8_t patternId,  uint8_t *color) {
+
+    // datasheet 2-20 : screen is split into 3 and the color table therefore is repeated 3 times
+    uint8_t *start = color;
+    uint8_t *end = start + 8;
+      
+    vdp_setWriteAddress(_vdpColorTableAddr + ((uint16_t)patternId * 8));
+    do {
+
+      IO_VDPDATA = *start;
+
+      start++;
+    } while (start != end);
+
+    if (_vdpSplitThirds) {
+
+      vdp_setWriteAddress(_vdpColorTableAddr + 2048 + ((uint16_t)patternId * 8));
+      start = color;
+      do {
+
+        IO_VDPDATA = *start;
+
+        start++;
+      } while (start != end);
+
+      vdp_setWriteAddress(_vdpColorTableAddr + 4096 + ((uint16_t)patternId * 8));
+      start = color;
       do {
 
         IO_VDPDATA = *start;
@@ -1459,6 +1535,51 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       vdp_write(*start);
 
       start++;
+    }
+  }
+
+  void vdp_printJustified(uint8_t *text, uint8_t leftMargin, uint8_t rightMargin) {
+
+    while (*text != 0x00) { 
+
+      if (*text == ' ') {
+
+        text++;  
+
+        uint8_t *startOfNextWord = text;
+
+        // Find the length of the next word
+        while (*startOfNextWord != ' '  && 
+              *startOfNextWord != '.'  && 
+              *startOfNextWord != ','  &&
+              *startOfNextWord != '!'  &&
+              *startOfNextWord != 0x00) 
+          startOfNextWord++;
+        
+        // Calculate the length of the next word
+        uint8_t nextWordLength = startOfNextWord - text;
+
+        // Check if the next word exceeds the screen width
+        if (vdp_cursor.x + nextWordLength >= rightMargin) {
+
+          vdp_newLine();
+          vdp_cursor.x = leftMargin;
+
+        } else if (vdp_cursor.x != leftMargin) {
+
+          vdp_write(' ');
+        }
+      }
+
+      if (vdp_cursor.x >= rightMargin) {
+
+        vdp_newLine();
+        vdp_cursor.x = leftMargin;
+      }
+
+      vdp_write(*text);
+
+      text++; 
     }
   }
 

@@ -1,9 +1,9 @@
 // ****************************************************************************************
 // NABU-LIB C Library - MAKE SOMETHING
-// DJ Sures (c) 2023
+// DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on May 10, 2023 (v2023.05.10.00)
+// Last updated on 2024.04.01.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -990,12 +990,7 @@ extern  struct
 // 
 // Receive bytes from the HCCA port. This uses an interrupt, so you will need
 // to initialize the interrupt before the method can be used. That means you
-// will need to call hcca_EnableReceiveBufferInterrupt() at the beginning of
-// your program. From that point on, use the Buffer specific functions for
-// receiving, such as hcca_readFromBuffer()
-// 
-// Also, make sure you call hcca_IsRxBufferAvailable() before hcca_readFromBuffer()
-// to ensure there is actually data available.
+// will need to call initNABULib(); at the start of your program
 // 
 // **************************************************************************
 #ifndef DISABLE_HCCA_RX_INT
@@ -1111,8 +1106,7 @@ extern  struct
 // Start by calling one of the graphic modes that you wish to initialize.
 // 
 // *Note: Read about the function in this file to see if it's compatible 
-// with your graphic mode. Some text functions, such as scroll up, are only
-// available in text mode.
+// with your graphic mode. Some text functions are only available in text mode.
 // **************************************************************************
 #ifndef DISABLE_VDP
 
@@ -1363,6 +1357,11 @@ extern  struct
   void vdp_loadASCIIFontWithInverse(uint8_t* font);
 
   // **************************************************************************
+  // Initialize vdp with a single 8 byte pattern to the specified pattern id
+  // **************************************************************************
+  void vdp_loadPatternToId(uint8_t patternId, uint8_t *pattern);
+
+  // **************************************************************************
   // Initialize vdp with the pattern table with an array of data. 
   // A pattern table can also contain the font data if needed. If it includes
   // a font, it must start at location 0x100, just like vdp_loadASCIIFont()
@@ -1371,6 +1370,11 @@ extern  struct
   //        default pattern that is displayed on a clear screen (id 0)
   // **************************************************************************
   void vdp_loadPatternTable(uint8_t *patternTable, uint16_t len);
+
+  // **************************************************************************
+  // Initialize vdp with a single 8 byte color to the specified pattern id
+  // **************************************************************************
+  void vdp_loadColorToId(uint8_t patternId,  uint8_t *color);
 
   // **************************************************************************
   // Initialize the vdp with the color table. 
@@ -1435,6 +1439,14 @@ extern  struct
   // - text Text to print
   // **************************************************************************
   void vdp_print(uint8_t* text);
+
+  // **************************************************************************
+  // Print null terminated string at the current cursor position and justify
+  // each word so it does not wrap at the end of the line.
+  //
+  // - text Text to print
+  // **************************************************************************
+  void vdp_printJustified(uint8_t *text, uint8_t leftMargin, uint8_t rightMargin);
 
   // **************************************************************************
   // Print null terminated string at the current cursor position and change the

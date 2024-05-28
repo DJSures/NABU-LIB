@@ -1,12 +1,9 @@
 // ****************************************************************************************
 // NABU-LIB C Library
-// DJ Sures (c) 2023
+// DJ Sures (c) 2024
 // https://nabu.ca
 // 
 // Read the NABU-LIB.h file for details of each function in this file.
-// 
-// *Note: Some TMS9918 graphic functions were from: https://github.com/michalin/TMS9918_Arduino/tree/main/examples
-//        Modified by DJ Sures 2022 for NABU PC
 //
 // **********************************************************************************************
 
