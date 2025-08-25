@@ -300,15 +300,25 @@ __sfr __at 0x00 IO_CONTROL;
 #define IOPORTB  0x0f
 
 // Used for getting the r register from the z80 to seed srand()
+#ifdef PROTOTYPES_ONLY
+extern volatile uint8_t _randomSeed;
+#else
 volatile uint8_t _randomSeed = 0;
+#endif
 
 #ifndef DISABLE_HCCA_RX_INT
+#ifdef PROTOTYPES_ONLY
+    extern volatile uint8_t _rxBuffer[256];
+extern volatile uint8_t _rxBufferReadPos;
+extern volatile uint8_t _rxBufferWritePos;
+#else
   volatile uint8_t _rxBuffer[256];
   volatile uint8_t _rxBufferReadPos  = 0;
   volatile uint8_t _rxBufferWritePos = 0;
   #warning
   #warning HCCA Interupt: Enabled
   #warning
+#endif
 #else
   #warning
   #warning HCCA Interrupt: Disabled
@@ -549,6 +559,10 @@ volatile uint8_t _randomSeed = 0;
 // 
 // **************************************************************************
 
+#ifndef PROTOTYPES_ONLY
+  extern const uint8_t _NOTES_COURSE[];
+  extern const uint8_t _NOTES_FINE[];
+#else
 const uint8_t _NOTES_COURSE[] = {
 13, //  0, midi note: 36 (C2)
 12, //  1, midi note: 37 (�C#2/Db2�)
@@ -702,6 +716,7 @@ const uint8_t _NOTES_FINE[] = {
 
 
 
+  #endif
 
 // **************************************************************************
 // System
@@ -855,11 +870,25 @@ inline uint8_t ayRead(uint8_t reg);
   // This is here because CPM does not provide cursor information. So by using this with STDOUT, you can SET and GET the CPM cursor
   // position rather than using the VT52 commands.
   // **************************************************************************
+#ifdef PROTOTYPES_ONLY
+extern  struct
+  {
+    uint8_t x;
+    uint8_t y;
+  } cpm_cursor;
+#else
   struct {
     uint8_t x;
     uint8_t y;
   } __at (0xff10) cpm_cursor;
+#endif
 
+#ifdef PROTOTYPES_ONLY
+  extern uint8_t _EMULATION_MODE;
+  extern uint8_t _LIST_DEVICE;
+  extern volatile uint8_t _SCREEN_COLOR;
+  extern volatile uint8_t _CLOUD_CPM_KEY;
+#else
   // For Cloud CP/M to access the emulation mode
   // 0 ADM
   // 1 VT52
@@ -874,6 +903,7 @@ inline uint8_t ayRead(uint8_t reg);
 
   // Is this CLOUD CPM? (0x55)
   __at (0xff29) volatile uint8_t  _CLOUD_CPM_KEY;        
+#endif
 
   // The text character display width of the current CPM BIOS. Either 40 or 80
   // Cloud CPM BIOS will always have 80 columns, but on a 40 column system only 40 columns are displayed
@@ -1619,6 +1649,8 @@ inline uint8_t ayRead(uint8_t reg);
 #endif
 
 
+#ifndef PROTOTYPES_ONLY
 #include "NABU-LIB.c"
+#endif
 
 #endif
