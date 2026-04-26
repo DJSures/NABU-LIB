@@ -72,6 +72,14 @@
 #define RN_SEEK_CUR 2
 #define RN_SEEK_END 3
 
+// **************************************************************************
+// These are options for the rn_fileHandleTruncate()
+// TRUNCATE_FLAG_SET_LENGTH      truncateLength is the new absolute file size (extending zero-fills)
+// TRUNCATE_FLAG_REMOVE_FROM_END remove truncateLength bytes from the end
+// **************************************************************************
+#define TRUNCATE_FLAG_SET_LENGTH 0
+#define TRUNCATE_FLAG_REMOVE_FROM_END 1
+
 
 // **************************************************************************
 // The details of each file
@@ -101,8 +109,6 @@ typedef struct {
   bool Exists;
 
 } FileDetailsStruct;
-
-
 
 
 // **************************************************************************************************************
@@ -186,9 +192,41 @@ void rn_fileHandleClose(uint8_t fileHandle);
 // a file handle is assigned. If you want to see if a file exists without creating it first, this
 // is the function you would use. 
 //
+// - filenameLen is the length of the filename to open
+// - filename is a pointer to the filename. All files stored on the IA Server will be in UPPERCASE
+//
 // Note: All files stored on the IA Server will be in UPPERCASE
 // **************************************************************************
 int32_t rn_fileSize(uint8_t filenameLen, uint8_t* filename);
+
+// **************************************************************************
+// Read data from the specified filename without using a file handle.
+// 
+// - filenameLen is the length of the filename to open
+// - filename is a pointer to the filename. All files stored on the IA Server will be in UPPERCASE
+// - buffer is a pointer to a buffer that the data will be written to.
+// - bufferOffset is the offset within the buffer where the data will be written. Use 0 if you're
+//   writing to the beginning of the buffer, for example.
+// - readOffset is the offset of the file that you will be reading from. 
+// - readLength is the amount of data that you will be reading.
+//
+// Returns the number of bytes read or 0 if there was an error or reached EOF
+// **************************************************************************
+uint16_t rn_FileRead(uint8_t filenameLen, uint8_t* filename, uint8_t* buffer, uint16_t bufferOffset, uint32_t readOffset, uint16_t readLength);
+
+// **************************************************************************
+// Replace data in a file by overwriting bytes with the data
+// Files are stored in the RetroNET Storage folder that is defined in the Internet Adapter settings. 
+// The file can contain slashes (\) or (/) to specify directory and drive (i.e. A:)
+// 
+// - filenameLen is the length of the filename to open
+// - filename is a pointer to the filename. All files stored on the IA Server will be in UPPERCASE
+// - fileOffset is the offset of the file where the data will be overwritten
+// - dataOffset is the offset of the data that will be written
+// - dataLen is the length of data that will be written 
+// - data is a pointer to the data
+// **************************************************************************
+void rn_FileReplace(uint8_t filenameLen, uint8_t* filename, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data);
 
 // **************************************************************************
 // Get the file size of the specified file handle.
@@ -220,7 +258,7 @@ void rn_fileDetails(uint8_t filenameLen, uint8_t* filename, FileDetailsStruct* s
 void rn_fileHandleDetails(int8_t fileHandle, FileDetailsStruct* s);
 
 // **************************************************************************
-// Read data from the specified filename.
+// Read data from the specified file handle.
 // 
 // - fileHandle is the obtained by rn_fileOpen()
 // - buffer is a pointer to a buffer that the data will be written to.
@@ -326,7 +364,8 @@ void rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t des
 
 // **************************************************************************
 // Returns the number of files within the path, including wildcards.
-//
+// Populates an internal list of files on the server that can be viewed with rn_fileListItem().
+// 
 // *Note: All files and directories stored on the IA Server will be in UPPERCASE
 // 
 // To get the details of a file, you must do this...
@@ -349,6 +388,7 @@ void rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t* srcFilename, uint8_t des
 // - fileListFlags is one or many values of #define FILE_LIST_FLAG_*
 // 
 // Returns the number of matching files. Call rn_fileListItem() from 0 to N
+// 0 means no files, no directories
 // **************************************************************************
 uint16_t rn_fileList(uint8_t pathLen, uint8_t* path, uint8_t wildcardLen, uint8_t* wildcard, uint8_t fileListFlags);
 
@@ -423,6 +463,39 @@ uint16_t rn_fileHandleLineCount(uint8_t fileHandle);
 // **************************************************************************
 uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *buffer);
 
+// **************************************************************************
+// Resize the file behind a handle.
+//
+// - fileHandle is obtained by rn_fileOpen()
+// - truncateLength is interpreted according to truncateFlag
+// - truncateFlag is one of #define TRUNCATE_FLAG_*
+//     TRUNCATE_FLAG_SET_LENGTH      file becomes exactly truncateLength bytes
+//                                   (extending the file zero-fills the new bytes)
+//     TRUNCATE_FLAG_REMOVE_FROM_END new length = max(0, currentLength - truncateLength)
+//
+// Returns the new file length modulo 64K (cast from int64 on the server). For
+// files that may exceed 64KB after truncation, follow up with rn_fileHandleSize()
+// to get the true post-truncate size. Returns 0 for unknown handle, READONLY
+// handle, or any server-side error.
+//
+// After truncation the handle's sequential-read cursor is clamped to [0, newLength].
+// **************************************************************************
+uint16_t rn_fileHandleTruncate(uint8_t fileHandle, uint16_t truncateLength, uint8_t truncateFlag);
+
+// **************************************************************************
+/// Creates a directory in the file store. The directory can contain slashes (\) or (/) to specify subdirectories
+// **************************************************************************
+uint8_t rn_DirectoryCreate(uint8_t directoryNameLen, uint8_t* directoryName);
+
+// **************************************************************************
+/// Deletes a directory in the file store. The directory can contain slashes (\) or (/) to specify subdirectories. If the directory contains files or other directories or files, they will not be deleted.
+// **************************************************************************
+uint8_t rn_DirectoryDelete(uint8_t directoryNameLen, uint8_t* directoryName);
+
+// **************************************************************************
+/// Returns 1 if the directory exists in the file store, or 0 if it does not exist. The directory can contain slashes (\) or (/) to specify subdirectories. If the directory contains files or other directories, it will still return 1 because the directory itself exists.
+// **************************************************************************
+uint8_t rn_directoryExists(uint8_t directoryNameLen, uint8_t* directoryName);
 
 // **************************************************************************************************************
 //
@@ -492,10 +565,6 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 // Returns: the number of bytes written or -1 if client is disconnected
 // **************************************************************************
 int32_t rn_TCPHandleWrite(uint8_t tcpHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
-
-
-
-
 
 
 // **************************************************************************************************************

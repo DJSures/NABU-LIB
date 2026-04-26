@@ -203,6 +203,57 @@ int32_t rn_fileSize(uint8_t filenameLen, uint8_t* filename) {
   return t;
 }
 
+uint16_t rn_FileRead(uint8_t filenameLen, uint8_t* filename, uint8_t* buffer, uint16_t bufferOffset, uint32_t readOffset, uint16_t readLength) {
+
+  //0xe7
+
+  hcca_DiFocusInterrupts();
+
+  uint8_t *start = buffer + bufferOffset;
+
+  hcca_DiWriteByte(0xe7);
+
+  hcca_DiWriteByte(filenameLen);
+
+  hcca_DiWriteBytes(0, filenameLen, filename);
+
+  hcca_DiWriteUInt32(readOffset);
+
+  hcca_DiWriteUInt16(readLength);
+
+  uint16_t toRead = hcca_DiReadUInt16();
+  uint8_t *end    = start + toRead;
+  
+  while (start != end) {
+
+    while (IO_AYDATA & 0x02);
+    *start = IO_HCCA;
+
+    start++;
+  }
+
+  hcca_DiRestoreInterrupts();
+
+  return toRead;
+}
+
+void rn_FileReplace(uint8_t filenameLen, uint8_t* filename, uint32_t fileOffset, uint16_t dataOffset, uint16_t dataLen, int8_t* data) {
+
+  // 0xe8
+
+  hcca_writeByte(0xe8);
+
+  hcca_DiWriteByte(filenameLen);
+
+  hcca_DiWriteBytes(0, filenameLen, filename);
+
+  hcca_writeUInt32(fileOffset);
+
+  hcca_writeUInt16(dataLen);
+
+  hcca_writeBytes(dataOffset, dataLen, data);
+}
+
 int32_t rn_fileHandleSize(uint8_t fileHandle) {
 
   //0xa4
@@ -600,7 +651,7 @@ uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *
 
   uint16_t toRead = hcca_DiReadUInt16();
   uint8_t *end    = buffer + toRead;
-  
+
   while (buffer != end) {
 
     while (IO_AYDATA & 0x02);
@@ -612,6 +663,80 @@ uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *
   hcca_DiRestoreInterrupts();
 
   return toRead;
+}
+
+uint16_t rn_fileHandleTruncate(uint8_t fileHandle, uint16_t truncateLength, uint8_t truncateFlag) {
+
+  // 0xdf
+
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xdf);
+
+  hcca_DiWriteByte(fileHandle);
+
+  hcca_DiWriteUInt16(truncateLength);
+
+  hcca_DiWriteByte(truncateFlag);
+
+  // Server returns new file length modulo 64K (cast from int64).
+  // Caller should follow up with rn_fileHandleSize() for true size if file may exceed 64KB.
+  uint16_t t = hcca_DiReadUInt16();
+
+  hcca_DiRestoreInterrupts();
+
+  return t;
+}
+
+uint8_t rn_DirectoryCreate(uint8_t directoryNameLen, uint8_t* directoryName) {
+
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xea);
+
+  hcca_DiWriteByte(directoryNameLen);
+
+  hcca_DiWriteBytes(0, directoryNameLen, directoryName);
+
+  uint8_t t = hcca_DiReadByte();
+
+  hcca_DiRestoreInterrupts();
+
+  return t;
+}
+
+uint8_t rn_DirectoryDelete(uint8_t directoryNameLen, uint8_t* directoryName) {
+
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xeb);
+
+  hcca_DiWriteByte(directoryNameLen);
+
+  hcca_DiWriteBytes(0, directoryNameLen, directoryName);
+
+  uint8_t t = hcca_DiReadByte();
+
+  hcca_DiRestoreInterrupts();
+
+  return t;
+}
+
+uint8_t rn_directoryExists(uint8_t directoryNameLen, uint8_t* directoryName) {
+
+  hcca_DiFocusInterrupts();
+
+  hcca_DiWriteByte(0xec);
+
+  hcca_DiWriteByte(directoryNameLen);
+
+  hcca_DiWriteBytes(0, directoryNameLen, directoryName);
+
+  uint8_t t = hcca_DiReadByte();
+
+  hcca_DiRestoreInterrupts();
+
+  return t;
 }
 
 

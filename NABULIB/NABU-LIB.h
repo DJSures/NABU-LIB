@@ -7,6 +7,8 @@
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
+// Use z88dk 23.07.2022 (v2.3)
+// 
 // This is a z88dk C library for the NABU Personal Computer. This is a large library
 // with many functions for the VDP, Sound, HCCA, and Keyboard. The functions are split
 // into sections based on the peripheral.  
@@ -18,11 +20,49 @@
 // There is a SKELETON project in my GitHub that I recommend you begin with. The skeleton project
 // contains the framework that you can start with by following one of my online tutorials in
 // YouTube.
+//
+// Minimal HOMEBREW main.c that gets you a working text-mode hello-world. Save these lines as
+// main.c in the same folder as NABU-LIB.h / NABU-LIB.c, then compile with the zcc command line
+// shown below the example. (For CP/M, use BIN_CPM and the +cpm command line instead.)
+//
+//    // ---- main.c ----
+//    #define BIN_TYPE BIN_HOMEBREW   // or BIN_CPM
+//    #define FONT_STANDARD           // pick one font from patterns.h
+//
+//    #include "patterns.h"
+//    #include "NABU-LIB.h"
+//
+//    void main() {
+//
+//      initNABULib();                                   // audio + interrupts + RNG
+//      vdp_initTextMode(VDP_WHITE, VDP_DARK_BLUE, true); // 40-col text, autoscroll
+//      vdp_loadASCIIFont(ASCII);                        // upload the font you picked
+//
+//      vdp_print("Hello from the NABU!\r\n");
+//
+//      while (!isKeyPressed());                         // wait for any key
+//    }
+//
+//    // Compile (HOMEBREW):
+//    //   zcc +nabu -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "000001.nabu"
+//    //
+//    // Compile (CP/M, after switching to #define BIN_TYPE BIN_CPM):
+//    //   zcc +cpm  -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "APPNAME"
+//
+// IMPORTANT FILE LAYOUT NOTE
+// --------------------------
+// NABU-LIB.h is a "header-only" style library: at the very bottom it does
+// #include "NABU-LIB.c" which pulls the implementation in along with all the
+// global state (rx/kbd buffers, vdp text buffer, cursor, AY note tables, etc).
+// Because of that, you should #include "NABU-LIB.h" from EXACTLY ONE .c file
+// (typically main.c). Including it from multiple translation units will create
+// duplicate symbol/data definitions at link time. Do not pass NABU-LIB.c on
+// the compiler command line as a separate input.
 // ----------------------------------------------------------------------------------------------
 //
 // Make something,
 // DJ Sures
-// 
+//
 // **********************************************************************************************
 
 // No touch
@@ -91,10 +131,12 @@
 // CONFIGURE FONT or PATTERN TABLE
 // ===============================
 // 
-// If you will be using the VDP, you will need either a default font or pattern table.
+// If you will be using the VDP mode, you will need either a default font or pattern table.
 // Loading just a font is smaller than an entire pattern table, but both options are
 // available to you. For just a textmode, that doesn't use CP/M's stdio, then you can
 // use vdp_loadASCIIFont() and supply an existing pattern.h font, or your custom one.
+//
+// You will want to call vdp_loadASCIIFont() with the example below if you're in TEXT MODE.
 //
 // The diference between a FONT and a PATTERN is the size. A FONT is just the visible 
 // written 127 ASCII characters, starting at ASCII Decimal 37 (space bar). The PATTERN
@@ -288,13 +330,11 @@ __sfr __at 0x00 IO_CONTROL;
 #define INT_MASK_VDP      0x10
 
 // **************************************************************************
-// The interupt vector address should not be changed becuase it is shared with CPM.
+// The interupt vector address should not be changed because it is shared with CPM.
 // This is because you can disable either the HCCA RX or Keyboard interrupt and let
 // CPM subsystem (BDOS) continue using it. So this address must always stay the same
-// as CPM is using.
+// as CPM is using. (INTERUPT_VECTOR_MAP_* are defined above; do not redefine here.)
 // **************************************************************************
-#define INTERUPT_VECTOR_MAP_MSB     0xff
-#define INTERUPT_VECTOR_MAP_ADDRESS 0xff00
 
 #define IOPORTA  0x0e
 #define IOPORTB  0x0f
@@ -303,7 +343,7 @@ __sfr __at 0x00 IO_CONTROL;
 volatile uint8_t _randomSeed = 0;
 
 #ifndef DISABLE_HCCA_RX_INT
-  volatile uint8_t _rxBuffer[256];
+  volatile uint8_t _rxBuffer[256] = {0};
   volatile uint8_t _rxBufferReadPos  = 0;
   volatile uint8_t _rxBufferWritePos = 0;
   #warning
@@ -317,7 +357,7 @@ volatile uint8_t _randomSeed = 0;
 
 #ifndef DISABLE_KEYBOARD_INT
 
-  volatile uint8_t _kbdBuffer[256];
+  volatile uint8_t _kbdBuffer[256]= {0};
   volatile uint8_t _kbdBufferReadPos = 0;
   volatile uint8_t _kbdBufferWritePos = 0;
   volatile uint8_t _lastKeyboardIntVal = 0;
@@ -373,7 +413,7 @@ volatile uint8_t _randomSeed = 0;
   // stored in _vdpTextBufferSize
   // **************************************************************************
   #define TEXT_BUFFER_SIZE 1920
-  volatile uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE]; // row * col = 960 bytes
+  volatile uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE] = { 0 }; // row * col = 960 bytes
 
 
   // **************************************************************************

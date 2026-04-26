@@ -124,23 +124,36 @@ void initNABULIBAudio() {
   ayWrite(13, 0);
 }
 
-void nop() {
+void nop() __naked {
+
   __asm
-    NOP
+
+    nop
+
+    ret
+
   __endasm;
 }
 
-void NABU_DisableInterrupts() {
+void NABU_DisableInterrupts() __naked {
 
   __asm
+
     di
+
+    ret
+
   __endasm;
 }
 
-void NABU_EnableInterrupts() {
+void NABU_EnableInterrupts() __naked {
 
   __asm
+
     ei
+
+    ret
+
   __endasm;
 }
 
@@ -217,7 +230,6 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
       push hl;
       push af;
       push iy;
-      ld iy, 0;      
     __endasm;
 
     uint8_t inKey = IO_KEYBOARD;
@@ -324,7 +336,7 @@ void RightShift(uint8_t *arr, uint16_t len, uint8_t n) {
     for (uint8_t i = 0; i < count; i++)
       if (_EMULATION_MODE == 0)
         putchar(8);
-      else;
+      else
         printf("%cD", 27);
   }
 
@@ -450,7 +462,7 @@ uint8_t ayRead(uint8_t reg) {
 
 void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
-  // Set the envolope length
+  // Set the envelope length
   ayWrite(11, delayLength >> 8);
   ayWrite(12, delayLength & 0xff);
 
@@ -630,10 +642,11 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   uint8_t hcca_getSizeOfDataInBuffer() {
 
-    if (_rxBufferReadPos > _rxBufferWritePos)
-      return (0xff - _rxBufferReadPos) + _rxBufferWritePos;
-
-    return _rxBufferWritePos - _rxBufferReadPos;
+    // The rx ring buffer is exactly 256 bytes and the read/write positions
+    // are uint8_t, so natural 8-bit wrap-around subtraction always yields
+    // the correct number of bytes available, including across the wrap.
+    // The previous (0xff - read) + write expression was off-by-one.
+    return (uint8_t)(_rxBufferWritePos - _rxBufferReadPos);
   }
 
   uint8_t hcca_readByte() {
@@ -743,9 +756,15 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   }
 
   void hcca_writeString(uint8_t *str) {
+
+    if (*str == 0x00) 
+      return;      
     
-    for (unsigned int i = 0; str[i] != 0x00; i++)
-      hcca_writeByte(str[i]);
+    do {
+
+      hcca_writeByte(*str); 
+      str++;                
+    } while (*str != 0x00);
   }
 
   void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t *bytes) {
@@ -909,23 +928,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   
   void vdp_removeISR() {
 
-    vdp_setRegister(1, _vdpReg1Val);
-
-    NABU_DisableInterrupts();
-
-    _vdpInterruptEnabled = false;
-
-    // clear any existing interrupts status
-    uint8_t tmp = IO_AYLATCH;
-
-    uint8_t origIntMask = ayRead(IOPORTA);
-
-    if (origIntMask & INT_MASK_VDP)
-      origIntMask ^= INT_MASK_VDP;
-
-    ayWrite(IOPORTA, origIntMask);
-
-    NABU_EnableInterrupts();
+    vdp_disableVDPReadyInt();
   }
 
   void vdp_init(uint8_t mode, uint8_t fgColor, uint8_t bgColor, bool big_sprites, bool magnify, bool autoScroll, bool splitThirds) {
@@ -997,7 +1000,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         vdp_setRegister(2, 0b00000111); // pattern name table address (0x1000)
         _vdpPatternNameTableAddr = 0x1000;     
 
-        vdp_setRegister(4, 0x00);       // pattern geneerator address (0x0000)
+        vdp_setRegister(4, 0x00);       // pattern generator address (0x0000)
 
         _vdpCursorMaxX = 79;
         _vdpCursorMaxXFull = 80;
@@ -1045,27 +1048,67 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_clearVRAM() {
 
+    // 16 KB of VRAM (0x0000 - 0x3FFF). Loop bound was 0x3FFF which left
+    // the final byte uncleared, so use 0x4000 (full 16384 bytes).
     vdp_setWriteAddress(0x00);
 
-    for (uint16_t i = 0; i < 0x3FFF; i++)
-      IO_VDPDATA = 0;  
+    for (uint16_t i = 0; i < 0x4000; i++)
+      IO_VDPDATA = 0;
   }
 
   void vdp_initMSXMode(uint8_t bgColor) {
 
-    // https://konamiman.github.io/MSX2-Technical-Handbook/md/Appendix5.html#screen-1--graphic-1
-
-    vdp_setRegister(0, 0b00000010); 
-    vdp_setRegister(1, 0b11000000); 
+    // Configure TMS9918A for MSX SCREEN 2 (Graphics II) so .SC2 files display correctly.
+    //
+    // SC2 file layout (raw VRAM dump):
+    //   0x0000 - 0x17FF : pattern table
+    //   0x1800 - 0x1AFF : screen image table (name table)
+    //   0x1B00 - 0x1B7F : sprite attribute table
+    //   0x2000 - 0x37FF : color table
+    //
+    // On MSX you would do:
+    //   10 SCREEN 2
+    //   20 BLOAD "FILE.SC2",S
+    //
+    // This function mirrors that mode setup on the NABU's TMS9918A-compatible VDP.
+  
+    // R0: Mode bits, enable Graphic 2 (SCREEN 2)
+    //   bit1 (M1) = 1, other mode bits 0
+    vdp_setRegister(0, 0b00000010);
+  
+    // R1:
+    //   bit7 = 1 -> 16K VRAM
+    //   bit6 = 1 -> display ON (0 when we want to blank)
+    //   bit5 = 1 -> blank leftmost 8 pixels (MSX style, can be 0 if not desired)
+    //   other bits: 8x8 sprites, no magnification
+    uint8_t r1 = 0b11100000;
+ 
+    vdp_setRegister(1, r1);
+  
+    // R2: name (Screen Image) table base: 0x1800
+    //   base = R2 * 0x400 -> 0x06 * 0x400 = 0x1800
     vdp_setRegister(2, 0x06);
-    vdp_setRegister(3, 0xff); // <- ALL LIES! how is 0xff 0x2000? 
+  
+    // R3: color table base for Graphics II.
+    //   For G2, R3 = 0xFF selects the color table at 0x2000 with the proper mask.
+    vdp_setRegister(3, 0xff);
+  
+    // R4: pattern generator base for Graphics II.
+    //   In G2, R4 = 0x03 maps the pattern table to 0x0000 as used by SC2 files.
     vdp_setRegister(4, 0x03);
-    vdp_setRegister(5, 0x36); 
+  
+    // R5: sprite attribute table base: 0x1B00
+    //   base = R5 * 0x80 -> 0x36 * 0x80 = 0x1B00
+    vdp_setRegister(5, 0x36);
+  
+    // R6: sprite pattern table base: 0x3800
+    //   base = R6 * 0x800 -> 0x07 * 0x800 = 0x3800
     vdp_setRegister(6, 0x07);
-
+  
+    // R7: background / border colour (low nibble)
     vdp_setRegister(7, bgColor & 0x0f);
   }
-
+  
   void vdp_initTextMode80(uint8_t fgColor, uint8_t bgColor, bool autoScroll) {
 
     vdp_init(VDP_MODE_TEXT80, fgColor, bgColor , false, false, autoScroll, false);
@@ -1371,9 +1414,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     vdp_setReadAddress(_vdpColorTableAddr + offset);
     uint8_t color = IO_VDPDATA;
 
-    if (color1 != NULL) {
+    // color1 is a uint8_t color index (not a pointer). Pass 0 to plot
+    // a background-only pixel using color2; any non-zero value sets the
+    // foreground bit and uses color1 as the foreground color.
+    if (color1 != 0) {
 
-      pixel |= 0x80 >> (x % 8); // Set bit a "1"
+      pixel |= 0x80 >> (x % 8); // Set bit as "1"
       color = (color & 0x0F) | (color1 << 4);
     } else {
 
@@ -1526,15 +1572,80 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     *xpos = IO_VDPDATA;
   }
 
+  // **************************************************************************
+  // Internal helper used by vdp_print, vdp_printPart, and vdp_write when the
+  // cursor advances past the right margin. Does one of three things:
+  //
+  //  1) Soft wrap to the next row. The TMS9918A auto-increments its internal
+  //     write-address counter as bytes are pushed to IO_VDPDATA, and the name
+  //     table is row-major contiguous in VRAM, so the chip is already pointing
+  //     at the next row's first byte for free - no setWriteAddress needed.
+  //
+  //  2) Bottom-of-region with autoscroll on: scroll the region up, clamp y to
+  //     the bottom row, and re-set the VDP write address (scrollTextUp leaves
+  //     the address one byte past the region).
+  //
+  //  3) Bottom-of-screen with autoscroll off: clamp y to _vdpCursorMaxY and
+  //     re-set the VDP write address.
+  //
+  // Returns the new name-table offset so the caller can keep its mirror index
+  // and the VDP's internal counter in sync.
+  // **************************************************************************
+  static uint16_t _vdp_handleEOL() {
+
+    vdp_cursor.x = 0;
+    vdp_cursor.y++;
+
+    if (_autoScroll && vdp_cursor.y > _autoScrollBottomRow) {
+
+      vdp_scrollTextUp(_autoScrollTopRow, _autoScrollBottomRow);
+      vdp_cursor.y = _autoScrollBottomRow;
+
+      uint16_t off = vdp_cursor.y * _vdpCursorMaxXFull;
+
+      vdp_setWriteAddress(_vdpPatternNameTableAddr + off);
+
+      return off;
+    }
+
+    if (vdp_cursor.y > _vdpCursorMaxY) {
+
+      vdp_cursor.y = _vdpCursorMaxY;
+
+      uint16_t off = vdp_cursor.y * _vdpCursorMaxXFull;
+
+      vdp_setWriteAddress(_vdpPatternNameTableAddr + off);
+
+      return off;
+    }
+
+    // Soft wrap. VDP auto-increment already advanced into the next row.
+    return vdp_cursor.y * _vdpCursorMaxXFull;
+  }
+
   void vdp_print(uint8_t *text) {
 
-    uint8_t *start = text;
+    if (*text == 0x00)
+      return;
 
-    while (*start != 0x00) {
+    // Fast streaming path: set the VDP write address once, then push bytes
+    // and let the chip's auto-incrementing address counter advance through
+    // VRAM. The cold path (right-margin wrap) is handled by _vdp_handleEOL.
+    uint16_t name_offset = vdp_cursor.y * _vdpCursorMaxXFull + vdp_cursor.x;
 
-      vdp_write(*start);
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
 
-      start++;
+    while (*text != 0x00) {
+
+      IO_VDPDATA = *text;
+      _vdp_textBuffer[name_offset] = *text;
+
+      name_offset++;
+      text++;
+      vdp_cursor.x++;
+
+      if (vdp_cursor.x > _vdpCursorMaxX)
+        name_offset = _vdp_handleEOL();
     }
   }
 
@@ -1599,15 +1710,33 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
   void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t *text) {
 
+    if (textLength == 0)
+      return;
+
+    // Same streaming pattern as vdp_print, terminating on length instead
+    // of null. Sharing a helper for the per-character body would cost a
+    // function call per byte on Z80 and undo the speedup, so the loop is
+    // intentionally inlined twice. The shared cold path lives in
+    // _vdp_handleEOL.
+    uint16_t name_offset = vdp_cursor.y * _vdpCursorMaxXFull + vdp_cursor.x;
+
+    vdp_setWriteAddress(_vdpPatternNameTableAddr + name_offset);
+
     uint8_t *start = text + offset;
     uint8_t *end   = start + textLength;
 
-    while (start != end) {
+    do {
 
-      vdp_write(*start);
+      IO_VDPDATA = *start;
+      _vdp_textBuffer[name_offset] = *start;
 
+      name_offset++;
       start++;
-    }
+      vdp_cursor.x++;
+
+      if (vdp_cursor.x > _vdpCursorMaxX)
+        name_offset = _vdp_handleEOL();
+    } while (start != end);
   }
 
   void vdp_newLine() {
@@ -1677,14 +1806,13 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     _vdp_textBuffer[name_offset] = chr;
 
-    if (_autoScroll && vdp_cursor.x == _vdpCursorMaxX && vdp_cursor.y == _autoScrollBottomRow) {
+    vdp_cursor.x++;
 
-      vdp_scrollTextUp(_autoScrollTopRow, _autoScrollBottomRow);
-
-      vdp_cursor.x = 0;
-    }
-
-    vdp_setCursor2(vdp_cursor.x + 1, vdp_cursor.y);
+    // Share the wrap/scroll/clamp logic with vdp_print and vdp_printPart so
+    // all four print paths (write, print, printPart, printColorized) end up
+    // with identical cursor behavior at the right margin.
+    if (vdp_cursor.x > _vdpCursorMaxX)
+      _vdp_handleEOL();
   }
 
   void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c) {
@@ -1743,6 +1871,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
       pop de;
       pop hl;
+      
     __endasm;
   }
 
