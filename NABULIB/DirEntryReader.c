@@ -3,7 +3,7 @@
 // DJ Sures (c) 2024
 // https://nabu.ca
 //
-// Last updated on 2024.04.01.00
+// Last updated on 2026.04.27.00
 //
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -25,6 +25,24 @@
 //   - DirMoveFirst() / DirMoveNext()    Walk a wildcard directory search
 //   - DirGetEntryName()                 Pulls raw 8.3 fields from current entry
 //   - DirGetEntryNameWithExtension()    Builds a trimmed "NAME.EXT" string
+//
+// File system helpers
+// -------------------
+//   - SetDMAAddress()                   Set BDOS DMA buffer address
+//   - SelectDisk() / GetCurrentDisk()   Default-drive control
+//   - ResetDiskSystem()                 Flush buffers, re-select A:
+//   - GetLoggedDrives()                 Bitmap of mounted drives
+//   - GetUserArea() / SetUserArea()     User-area control (0..15)
+//   - FileExists()                      Test for existence (no wildcards)
+//   - OpenFile() / CloseFile()          Open/close an FCB
+//   - CreateFile()                      Create or truncate a file
+//   - DeleteFile()                      Delete (wildcards allowed)
+//   - RenameFile()                      Rename a file
+//   - ReadRecord() / WriteRecord()      Sequential 128-byte record I/O
+//   - ReadRandomRecord() / WriteRandomRecord()
+//                                       Indexed 128-byte record I/O
+//   - ComputeFileSize()                 File size in 128-byte records
+//   - GetFileSizeBytes()                File size in bytes (convenience)
 //
 // Dependencies
 // ------------
@@ -495,5 +513,336 @@ void DirGetEntryNameWithExtension(uint8_t *filenamePtr) {
 
   // Null-terminate the resulting string.
   *dst = '\0';
+}
+
+// SetDMAAddress: Set the BDOS DMA buffer used by subsequent file/directory I/O.
+//
+// Parameters:
+//   addr - Pointer to a buffer (typically 128 bytes) that will receive
+//          data from BDOS reads or supply data to BDOS writes.
+//
+// Notes:
+//   The DMA address persists across BDOS calls until explicitly changed
+//   or until a transient program is loaded. The directory walk routines
+//   (DirMoveFirst/DirMoveNext) reset DMA to copyBuf, so call this again
+//   before file I/O if you want data to land somewhere else.
+void SetDMAAddress(void *addr) {
+
+  BDOS(CPM_SDMA, (uint16_t)addr);
+}
+
+// SelectDisk: Log in and select a drive as the default.
+//
+// Parameters:
+//   drive - 0 = A:, 1 = B:, 2 = C:, ... (BDOS drive code, NOT the FCB
+//           form where 1 = A:).
+//
+// Returns:
+//   The BDOS return code from function 14 (typically 0 on success).
+uint8_t SelectDisk(uint8_t drive) {
+
+  return BDOS(CPM_LGIN, drive);
+}
+
+// GetCurrentDisk: Return the currently selected default drive.
+//
+// Returns:
+//   0 = A:, 1 = B:, 2 = C:, ...
+uint8_t GetCurrentDisk(void) {
+
+  return BDOS(CPM_IDRV, 0);
+}
+
+// ResetDiskSystem: Reset the disk system, flushing buffers and re-selecting A:.
+//
+// Notes:
+//   Call this after changing media or before walking the filesystem
+//   from a known state.
+void ResetDiskSystem(void) {
+
+  BDOS(CPM_RDS, 0);
+}
+
+// GetLoggedDrives: Return a 16-bit bitmap of currently logged-in drives.
+//
+// Returns:
+//   Bit 0 = A:, bit 1 = B:, bit 2 = C:, ... (1 = logged in).
+//
+// Notes:
+//   BDOS function 24 returns the map in HL, but the BDOS() wrapper only
+//   returns the A register. This routine issues the call directly so it
+//   can capture the full HL value.
+uint16_t GetLoggedDrives(void) {
+
+  _TEMP8_1 = CPM_ILOG;
+
+  __asm
+    push bc
+    push de
+    push hl
+
+    ld a, (__TEMP8_1)
+    ld c, a
+    ld b, 0x00
+
+    call 0x05
+
+    ld (__TEMP16_1), hl
+
+    pop hl
+    pop de
+    pop bc
+  __endasm;
+
+  return _TEMP16_1;
+}
+
+// GetUserArea: Return current user area number (0..15).
+//
+// Notes:
+//   BDOS function 32 with E = 0xFF queries the current user area.
+uint8_t GetUserArea(void) {
+
+  return BDOS(CPM_SUID, 0x00FF);
+}
+
+// SetUserArea: Set current user area (0..15).
+//
+// Parameters:
+//   userNo - User area number (0..15).
+void SetUserArea(uint8_t userNo) {
+
+  BDOS(CPM_SUID, (uint16_t)userNo);
+}
+
+// FileExists: Test whether a single named file exists.
+//
+// Parameters:
+//   drive    - Drive code in FCB form (0 = current, 1 = A:, 2 = B:, ...).
+//   filename - "NAME.EXT" form. Wildcards work but the result is "any
+//              match found", not a count.
+//
+// Returns:
+//   true if at least one match exists, false otherwise.
+//
+// Side effects:
+//   Modifies srcFCB and the BDOS DMA buffer (copyBuf is set as DMA).
+bool FileExists(uint8_t drive, uint8_t *filename) {
+
+  // Make sure the find-first uses our known DMA buffer.
+  BDOS(CPM_SDMA, (uint16_t)&copyBuf);
+
+  CreateFcb(&srcFCB, drive, filename);
+
+  return BDOS(CPM_FFST, (uint16_t)&srcFCB) != 0xff;
+}
+
+// OpenFile: Open an existing file for sequential or random access.
+//
+// Parameters:
+//   fc       - Caller-allocated FCB. Will be populated by CreateFcb and
+//              must remain valid for the life of the open file.
+//   drive    - Drive code (0 = current, 1 = A:, ...).
+//   filename - "NAME.EXT" string (uppercased in place by CreateFcb).
+//
+// Returns:
+//   true if opened (BDOS returned anything other than 0xFF),
+//   false if file not found.
+bool OpenFile(struct FCB *fc, uint8_t drive, uint8_t *filename) {
+
+  CreateFcb(fc, drive, filename);
+
+  return BDOS(CPM_OPN, (uint16_t)fc) != 0xff;
+}
+
+// CloseFile: Close a previously opened FCB and flush any directory updates.
+//
+// Parameters:
+//   fc - The FCB previously passed to OpenFile or CreateFile.
+//
+// Returns:
+//   true on success, false on error.
+bool CloseFile(struct FCB *fc) {
+
+  return BDOS(CPM_CLS, (uint16_t)fc) != 0xff;
+}
+
+// CreateFile: Create a new file (truncating any existing file of the same name
+// requires a prior DeleteFile).
+//
+// Parameters:
+//   fc       - Caller-allocated FCB; populated by CreateFcb and must
+//              remain valid until CloseFile.
+//   drive    - Drive code.
+//   filename - "NAME.EXT" string. No wildcards.
+//
+// Returns:
+//   true if file created and ready for writing,
+//   false on directory full or other error.
+bool CreateFile(struct FCB *fc, uint8_t drive, uint8_t *filename) {
+
+  CreateFcb(fc, drive, filename);
+
+  return BDOS(CPM_MAKE, (uint16_t)fc) != 0xff;
+}
+
+// DeleteFile: Delete one or more files. Wildcards in the filename are honored
+// by BDOS (e.g. "*.BAK" deletes every .BAK on the drive).
+//
+// Parameters:
+//   drive    - Drive code.
+//   filename - "NAME.EXT" or wildcard pattern.
+//
+// Returns:
+//   true if at least one file was deleted, false otherwise.
+//
+// Side effects:
+//   Modifies the module-level srcFCB.
+bool DeleteFile(uint8_t drive, uint8_t *filename) {
+
+  CreateFcb(&srcFCB, drive, filename);
+
+  return BDOS(CPM_DEL, (uint16_t)&srcFCB) != 0xff;
+}
+
+// RenameFile: Rename a file from oldName to newName on the given drive.
+//
+// Parameters:
+//   drive   - Drive code.
+//   oldName - Existing filename ("NAME.EXT").
+//   newName - Desired new filename ("NAME.EXT").
+//
+// Returns:
+//   true on success, false if the source was not found or the rename
+//   was rejected (e.g. destination already exists).
+//
+// Notes:
+//   BDOS rename uses a 32-byte argument: source FCB at offset 0,
+//   destination FCB at offset 16. We populate srcFCB (full 36-byte FCB)
+//   and copy the destFCB's drive+name+ext into srcFCB's second half.
+bool RenameFile(uint8_t drive, uint8_t *oldName, uint8_t *newName) {
+
+  // Build source FCB.
+  CreateFcb(&srcFCB, drive, oldName);
+
+  // Build a temporary FCB for the new name.
+  CreateFcb(&destFCB, drive, newName);
+
+  // Copy destFCB's drive + name + ext (16 bytes) into the second half of
+  // srcFCB so BDOS sees a contiguous source/destination pair.
+  memcpy(((uint8_t *)&srcFCB) + 16, &destFCB, 16);
+
+  return BDOS(CPM_REN, (uint16_t)&srcFCB) != 0xff;
+}
+
+// ReadRecord: Read the next 128-byte sequential record into the DMA buffer.
+//
+// Parameters:
+//   fc - Open FCB.
+//
+// Returns:
+//   0   = success (DMA buffer filled, FCB advanced).
+//   1   = end of file.
+//   >1  = read error (see CP/M docs for specific code).
+//
+// Notes:
+//   The caller should set the DMA address (SetDMAAddress) before calling
+//   if data should land somewhere other than the last DMA buffer used.
+uint8_t ReadRecord(struct FCB *fc) {
+
+  return BDOS(CPM_READ, (uint16_t)fc);
+}
+
+// WriteRecord: Write the next 128-byte sequential record from the DMA buffer.
+//
+// Parameters:
+//   fc - Open FCB.
+//
+// Returns:
+//   0   = success.
+//   >0  = error (disk full, directory full, etc.).
+uint8_t WriteRecord(struct FCB *fc) {
+
+  return BDOS(CPM_WRIT, (uint16_t)fc);
+}
+
+// ReadRandomRecord: Read a specific 128-byte record by index.
+//
+// Parameters:
+//   fc       - Open FCB.
+//   recordNo - 0-based record number (only the low 24 bits are used).
+//
+// Returns:
+//   0 = success, non-zero = error
+//   (1 = unwritten data, 4 = past EOF, 6 = record beyond addressable range).
+uint8_t ReadRandomRecord(struct FCB *fc, uint32_t recordNo) {
+
+  // Pack the 24-bit record number into the FCB's random-record field.
+  fc->ranrec[0] = (uint8_t)(recordNo & 0xff);
+  fc->ranrec[1] = (uint8_t)((recordNo >> 8) & 0xff);
+  fc->ranrec[2] = (uint8_t)((recordNo >> 16) & 0xff);
+
+  return BDOS(CPM_RRAN, (uint16_t)fc);
+}
+
+// WriteRandomRecord: Write a specific 128-byte record by index.
+//
+// Parameters:
+//   fc       - Open FCB.
+//   recordNo - 0-based record number (only the low 24 bits are used).
+//
+// Returns:
+//   0 = success, non-zero = error.
+uint8_t WriteRandomRecord(struct FCB *fc, uint32_t recordNo) {
+
+  // Pack the 24-bit record number into the FCB's random-record field.
+  fc->ranrec[0] = (uint8_t)(recordNo & 0xff);
+  fc->ranrec[1] = (uint8_t)((recordNo >> 8) & 0xff);
+  fc->ranrec[2] = (uint8_t)((recordNo >> 16) & 0xff);
+
+  return BDOS(CPM_WRAN, (uint16_t)fc);
+}
+
+// ComputeFileSize: Compute the size of a file in 128-byte records.
+//
+// Parameters:
+//   fc - FCB built via CreateFcb. The file does NOT need to be open;
+//        BDOS function 35 examines the directory.
+//
+// Returns:
+//   Number of 128-byte records, or 0 on failure.
+//
+// Notes:
+//   BDOS writes the size into fc->ranrec as a 24-bit little-endian
+//   record count (the next record number that would be allocated).
+uint32_t ComputeFileSize(struct FCB *fc) {
+
+  if (BDOS(CPM_CFS, (uint16_t)fc) == 0xff)
+    return 0;
+
+  return ((uint32_t)fc->ranrec[0])
+       | (((uint32_t)fc->ranrec[1]) << 8)
+       | (((uint32_t)fc->ranrec[2]) << 16);
+}
+
+// GetFileSizeBytes: Convenience wrapper - returns file size in bytes.
+//
+// Parameters:
+//   drive    - Drive code (0 = current, 1 = A:, ...).
+//   filename - "NAME.EXT" string. No wildcards.
+//
+// Returns:
+//   Size in bytes (record count * 128), or 0 if the file is missing.
+//
+// Notes:
+//   Allocates a temporary FCB on the stack, so the module-level srcFCB
+//   is not disturbed.
+uint32_t GetFileSizeBytes(uint8_t drive, uint8_t *filename) {
+
+  struct FCB tmp;
+
+  CreateFcb(&tmp, drive, filename);
+
+  return ComputeFileSize(&tmp) * 128UL;
 }
 
