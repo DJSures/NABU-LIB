@@ -275,9 +275,11 @@
   #error A BIN_TYPE has not been specified. Look at the NABU-LIB.h to configure your application.
 #endif
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 
 // **************************************************************************
@@ -342,7 +344,14 @@ __sfr __at 0x00 IO_CONTROL;
 // Used for getting the r register from the z80 to seed srand()
 volatile uint8_t _randomSeed = 0;
 
+// NOTE ON INITIALIZERS
+// The buffers below are explicitly initialized with = {0} on purpose. The initializer
+// places the zeroed contents in the program image itself, so every buffer has a defined
+// value the moment the program is loaded, without depending on the z88dk startup code
+// clearing BSS (which a #pragma can turn off). Do not remove them to shrink the file.
 #ifndef DISABLE_HCCA_RX_INT
+
+  // Ring buffer filled by isrHCCARX. Initialized so it starts out defined (see NOTE ON INITIALIZERS)
   volatile uint8_t _rxBuffer[256] = {0};
   volatile uint8_t _rxBufferReadPos  = 0;
   volatile uint8_t _rxBufferWritePos = 0;
@@ -357,13 +366,18 @@ volatile uint8_t _randomSeed = 0;
 
 #ifndef DISABLE_KEYBOARD_INT
 
+  // Ring buffer filled by isrKeyboard. Initialized so it starts out defined (see NOTE ON INITIALIZERS)
   volatile uint8_t _kbdBuffer[256]= {0};
   volatile uint8_t _kbdBufferReadPos = 0;
   volatile uint8_t _kbdBufferWritePos = 0;
   volatile uint8_t _lastKeyboardIntVal = 0;
+
+  // Last state of each joystick. Initialized to 0 so getJoyStatus() reports "nothing pressed"
+  // before the first joystick byte arrives (see NOTE ON INITIALIZERS)
   volatile uint8_t _joyStatus[4] = {0};
 
-  typedef enum JOYSTICKENUM {
+  // (was "typedef enum" with no type name, which only produced a compiler warning)
+  enum JOYSTICKENUM {
     Joy_Left = 0b00000001,
     Joy_Down = 0b00000010,
     Joy_Right = 0b00000100,
@@ -411,9 +425,29 @@ volatile uint8_t _randomSeed = 0;
   // 
   // The amount of this buffer that is used based on the current mode is
   // stored in _vdpTextBufferSize
+  //
+  // Not volatile (nothing changes it behind the program's back), which lets the
+  // compiler generate much better code for the loops that walk it.
   // **************************************************************************
   #define TEXT_BUFFER_SIZE 1920
-  volatile uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE] = { 0 }; // row * col = 960 bytes
+  //
+  // Initialized so the buffer is defined even before vdp_init()/vdp_clearScreen() run
+  // (see NOTE ON INITIALIZERS near the top of this file)
+  uint8_t _vdp_textBuffer[TEXT_BUFFER_SIZE] = { 0 }; // row * col = 960 bytes
+
+  // Number of text rows, and the last row index, as compile time constants
+  #define VDP_ROWS  24
+  #define VDP_MAX_Y 23
+
+  // **************************************************************************
+  // _vdpRowOffset[row] = row * _vdpCursorMaxXFull, filled by vdp_init(). There is one
+  // extra entry (row 24 = size of the screen) so a range end can be looked up too.
+  // Lets the text functions find a character position without a slow 8x8 multiply.
+  // **************************************************************************
+  //
+  // Initialized to 0 so text functions called before vdp_init() stay on row 0 instead of
+  // using unknown offsets (see NOTE ON INITIALIZERS near the top of this file)
+  uint16_t _vdpRowOffset[VDP_ROWS + 1] = { 0 };
 
 
   // **************************************************************************
@@ -1069,36 +1103,36 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   // Write a byte to the HCCA
   // **************************************************************************
-  void hcca_writeByte(uint8_t c);
+  void hcca_writeByte(uint8_t c) __z88dk_fastcall;
 
   // **************************************************************************
   // Write the unsigned 32-bit integer to the HCCA.
   // This is LSB First
   // **************************************************************************
-  void hcca_writeUInt32(uint32_t val);
+  void hcca_writeUInt32(uint32_t val) __z88dk_fastcall;
 
   // **************************************************************************
   // Write the signed 32-bit integer to the HCCA.
   // This is LSB First
   // **************************************************************************
-  void hcca_writeInt32(int32_t val);
+  void hcca_writeInt32(int32_t val) __z88dk_fastcall;
 
   // **************************************************************************
   // Write the unsigned 16-bit integer to the HCCA.
   // This is LSB First
   // **************************************************************************
-  void hcca_writeUInt16(uint16_t val);
+  void hcca_writeUInt16(uint16_t val) __z88dk_fastcall;
 
   // **************************************************************************
   // Write the signed 16-bit integer to the HCCA.
   // This is LSB First
   // **************************************************************************
-  void hcca_writeInt16(int16_t val);
+  void hcca_writeInt16(int16_t val) __z88dk_fastcall;
 
   // **************************************************************************
   // Write null terminated string to the HCCA
   // **************************************************************************
-  void hcca_writeString(uint8_t* str);
+  void hcca_writeString(uint8_t* str) __z88dk_fastcall;
 
   // **************************************************************************
   // Write to the HCCA
@@ -1324,10 +1358,11 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   // Fills the screen with the character
   // **************************************************************************
-  void vdp_fillScreen(uint8_t c);
+  void vdp_fillScreen(uint8_t c) __z88dk_fastcall;
 
   // **************************************************************************
   // Clear the rows with 0x20 between topRow and bottomRow
+  // (topRow up to but not including bottomRow, so 0, 24 clears the whole screen)
   // **************************************************************************
   void vdp_clearRows(uint8_t topRow, uint8_t bottomRow);
 
@@ -1354,7 +1389,7 @@ inline uint8_t ayRead(uint8_t reg);
   // *Note: You must call this function if you're using text mode because it requires 
   //        a font to be set
   // **************************************************************************
-  void vdp_loadASCIIFont(uint8_t* font);
+  void vdp_loadASCIIFont(uint8_t* font) __z88dk_fastcall;
 
 
   // **************************************************************************
@@ -1364,7 +1399,7 @@ inline uint8_t ayRead(uint8_t reg);
   // With the default 768 byte ASCII font, you just need to add 96 to the
   // character. For example, vdp_write(96 + "H") will print an inverted capital H
   // **************************************************************************
-  void vdp_loadASCIIFontWithInverse(uint8_t* font);
+  void vdp_loadASCIIFontWithInverse(uint8_t* font) __z88dk_fastcall;
 
   // **************************************************************************
   // Initialize vdp with a single 8 byte pattern to the specified pattern id
@@ -1448,7 +1483,7 @@ inline uint8_t ayRead(uint8_t reg);
   //
   // - text Text to print
   // **************************************************************************
-  void vdp_print(uint8_t* text);
+  void vdp_print(uint8_t* text) __z88dk_fastcall;
 
   // **************************************************************************
   // Print null terminated string at the current cursor position and justify
@@ -1507,12 +1542,12 @@ inline uint8_t ayRead(uint8_t reg);
   //
   // - chr Pattern at the respective location of the  pattern memory. Graphic Mode 1 and Text Mode: Ascii code of character
   // **************************************************************************
-  void vdp_write(uint8_t chr);
+  void vdp_write(uint8_t chr) __z88dk_fastcall;
 
   // **************************************************************************
   //  Disable a sprite
   // **************************************************************************
-  void vdp_disableSprite(uint8_t id);
+  void vdp_disableSprite(uint8_t id) __z88dk_fastcall;
 
   // **************************************************************************
   //  Write a sprite into the sprite pattern table
@@ -1627,12 +1662,12 @@ inline uint8_t ayRead(uint8_t reg);
   void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c);
 
   // **************************************************************************
-  // Scroll all lines up between topRow and bottomRow
+  // Scroll all lines up between topRow and bottomRow (both inclusive)
   // **************************************************************************
   void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow);
 
   // **************************************************************************
-  // Scroll all lines down between topRow and bottomRow
+  // Scroll all lines down between topRow and bottomRow (both inclusive)
   // **************************************************************************
 //  void vdp_scrollTextDown(uint8_t topRow, uint8_t bottomRow);
 
@@ -1644,17 +1679,17 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   // Display the binary value of the variable
   // **************************************************************************
-  void vdp_writeUInt8ToBinary(uint8_t v);
+  void vdp_writeUInt8ToBinary(uint8_t v) __z88dk_fastcall;
 
   // **************************************************************************
   // Display the binary value of the variable
   // **************************************************************************
-  void vdp_writeUInt16ToBinary(uint16_t v);
+  void vdp_writeUInt16ToBinary(uint16_t v) __z88dk_fastcall;
 
   // **************************************************************************
   // Display the binary value of the variable
   // **************************************************************************
-  void vdp_writeUInt32ToBinary(uint32_t v);
+  void vdp_writeUInt32ToBinary(uint32_t v) __z88dk_fastcall;
 
 #endif
 

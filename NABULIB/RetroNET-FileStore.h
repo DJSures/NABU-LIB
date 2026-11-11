@@ -82,6 +82,28 @@
 
 
 // **************************************************************************
+// Ping Error Respones
+// (parenthesized and without the trailing semicolon they used to have, so they
+// can be used in comparisons and as case labels)
+// **************************************************************************
+// catch-all / unknown
+#define PING_ERR_GENERIC  (-1)
+// IPStatus.TimedOut
+#define PING_ERR_TIMEOUT  (-2)
+// hostname could not be resolved
+#define PING_ERR_DNS  (-3)
+// malformed ip / empty string
+#define PING_ERR_BAD_ADDRESS  (-4)
+// DestinationHostUnreachable / NetworkUnreachable / etc.
+#define PING_ERR_DEST_UNREACHABLE  (-5)
+// TtlExpiredTransit / TtlReassemblyTimeExceeded
+#define PING_ERR_TTL_EXPIRED  (-6)
+// null reply object
+#define PING_ERR_NO_REPLY  (-7)
+// local socket / network down
+#define PING_ERR_NO_NETWORK  (-8)
+
+// **************************************************************************
 // The details of each file
 // **************************************************************************
 typedef struct {
@@ -461,7 +483,7 @@ uint16_t rn_fileHandleLineCount(uint8_t fileHandle);
 // 
 // Returns the length of the line read
 // **************************************************************************
-uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *buffer);
+uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t* buffer);
 
 // **************************************************************************
 // Resize the file behind a handle.
@@ -608,7 +630,122 @@ void rn_TCPServerWrite(uint16_t dataOffset, uint8_t dataLen, uint8_t* data);
 
 
 
+// **************************************************************************************************************
+//
+// HOST SHELL
+// ----------
+//
+// These functions drop a NABU program to a host command shell on the
+// Internet Adapter side (cmd.exe on Windows, $SHELL / /bin/sh on Linux/macOS).
+// Stdin/stdout/stderr are buffered: write lines into the shell with
+// rn_ShellWrite() (caller appends "\r\n" to execute), then drain output
+// with rn_ShellAvailable() / rn_ShellRead().
+//
+// The IA must have "Enable RetroNET host shell" turned on in Settings;
+// otherwise rn_ShellOpen() returns 0xff and no shell is launched.
+//
+// **************************************************************************************************************
 
+// **************************************************************************
+// Open a new host shell session.
+//
+// Returns a handle (0x00..0xfe) for use with the other rn_Shell* functions,
+// or 0xff if the IA refused the request (feature disabled in Settings, or
+// no free handle slots).
+// **************************************************************************
+uint8_t rn_ShellOpen();
+
+// **************************************************************************
+// Close a previously-opened shell session and tear down the host process.
+//
+// - shellHandle is obtained by rn_ShellOpen()
+//
+// Unknown handles are ignored. Any handles still open at INIT time will
+// be closed automatically by the IA.
+// **************************************************************************
+void rn_ShellClose(uint8_t shellHandle);
+
+// **************************************************************************
+// Returns the number of bytes waiting in the shell's stdout/stderr buffer
+// for the NABU to read, or -1 if the handle is unknown / the shell has
+// exited and its buffer has been fully drained.
+//
+// - shellHandle is obtained by rn_ShellOpen()
+// **************************************************************************
+int32_t rn_ShellAvailable(uint8_t shellHandle);
+
+// **************************************************************************
+// Read up to readLength bytes off the front of the shell's stdout/stderr
+// buffer.
+//
+// - shellHandle is obtained by rn_ShellOpen()
+// - buffer is a pointer to a buffer that the data will be written to
+// - bufferOffset is the offset within the buffer where data will be written
+// - readLength is the maximum number of bytes to read
+//
+// Returns the number of bytes actually read (may be less than readLength
+// when fewer bytes are buffered), 0 if no output is waiting yet, or -1 if
+// the handle is unknown.
+// **************************************************************************
+int32_t rn_ShellRead(uint8_t shellHandle, uint8_t* buffer, uint16_t bufferOffset, uint16_t readLength);
+
+// **************************************************************************
+// Write raw bytes to the shell's stdin. The caller is responsible for
+// including a CR / LF when the shell should execute the line — bytes are
+// piped through verbatim, exactly as if a human were typing them.
+//
+// - shellHandle is obtained by rn_ShellOpen()
+// - dataOffset is the offset of the data that will be written
+// - dataLen is the length of data that will be written
+// - data is a pointer to the data
+//
+// Returns the number of bytes written, or -1 if the handle is unknown or
+// the shell has exited.
+// **************************************************************************
+int32_t rn_ShellWrite(uint8_t shellHandle, uint16_t dataOffset, uint16_t dataLen, uint8_t* data);
+
+
+// **************************************************************************************************************
+//
+// Returns a ping response from the host or an error as defined above
+//
+// **************************************************************************************************************
+int32_t rn_PingIP(uint8_t ipLen, uint8_t* ipStr);
+
+
+
+// **************************************************************************
+// Resolves a hostname to an IPv4 address. Writes a NUL-terminated ASCII
+// string into outBuffer. On success the string is the resolved IP. On
+// failure the string is a human-readable error description ("Host not
+// found", "Network unreachable: ...", etc.) so the caller can show
+// something useful. The response is always non-empty.
+//
+// The IA wire response is length-prefixed: a single uint8_t length byte
+// followed by that many ASCII bytes. This routine reads both, NUL-terminates
+// the buffer, and returns the payload length. outBuffer must have room for
+// at least 256 bytes (255 max payload + NUL).
+//
+// Returns:
+//    >0  payload length (success or descriptive failure string)
+//     0  empty response (should not happen per protocol)
+//
+// Note: this is a separate IA sub-command from rn_PingIP; it shares the
+// ICMP-resolver path on the IA side which is why it lives next to ping.
+// **************************************************************************
+uint8_t rn_DnsLookup(uint8_t hostLen, uint8_t* host, uint8_t* outBuffer);
+
+// **************************************************************************
+// Returns the available disk space on the CPM drive
+// -1 means error
+// **************************************************************************
+int64_t rn_GetFreeDiskSpace();
+
+// **************************************************************************
+// Returns the used disk space on the CPM drive
+// -1 means error
+// **************************************************************************
+int64_t rn_GetUsedDiskSpace();
 
 // **************************************************************************************************************
 //

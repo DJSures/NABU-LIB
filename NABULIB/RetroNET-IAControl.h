@@ -43,6 +43,26 @@ void ia_restoreInterrupts() {
 }
 
 // -----------------------------------------------------------
+// Reads a reply of readCnt bytes into buf, which is bufLen bytes long.
+// - Bytes beyond bufLen are read and discarded, so a long reply can never
+//   overrun the caller's buffer (the old code wrote readCnt bytes regardless).
+// - The unused tail of buf is zeroed. This replaces the byte-by-byte clear loops
+//   each function used to run before sending its command.
+// - A readCnt of 0 is safe (hcca_readBytes used to read 65536 bytes and hang).
+// -----------------------------------------------------------
+void _ia_readReply(uint16_t readCnt, uint8_t *buf, uint16_t bufLen) {
+
+  uint16_t keep = (readCnt > bufLen) ? bufLen : readCnt;
+
+  hcca_readBytes(0, keep, buf);
+
+  memset(buf + keep, 0x00, bufLen - keep);
+
+  for (readCnt -= keep; readCnt != 0; readCnt--)
+    hcca_readByte();
+}
+
+// -----------------------------------------------------------
 // Get the number of items at the parent level of nabu channels
 // -----------------------------------------------------------
 uint8_t ia_getParentCount() {
@@ -70,8 +90,6 @@ void ia_getParentName(uint8_t parentId, uint8_t *titleBuf) {
   // 0xbb
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 64; i++)
-    titleBuf[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -81,7 +99,7 @@ void ia_getParentName(uint8_t parentId, uint8_t *titleBuf) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, titleBuf);
+  _ia_readReply(readCnt, titleBuf, 64);
 
   ia_restoreInterrupts();
 }
@@ -90,14 +108,13 @@ void ia_getParentName(uint8_t parentId, uint8_t *titleBuf) {
 // Get the name of the parent by it's ID
 //
 // *Note: the titleBuf must be 64 bytes long
+// (correction: this is the description, so titleBuf must be at least 255 bytes long)
 // -----------------------------------------------------------
 void ia_getParentDescription(uint8_t parentId, uint8_t *titleBuf) {
 
   // 0xbb
   ia_focusInterrupts();
 
-  for (uint16_t i = 0; i < 255; i++)
-    titleBuf[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -107,7 +124,7 @@ void ia_getParentDescription(uint8_t parentId, uint8_t *titleBuf) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, titleBuf);
+  _ia_readReply(readCnt, titleBuf, 255);
 
   ia_restoreInterrupts();
 }
@@ -143,8 +160,6 @@ void ia_getChildName2(uint8_t parentId, uint16_t childId, uint8_t *titleBuf) {
   // 0xbd
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 64; i++)
-    titleBuf[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -156,7 +171,7 @@ void ia_getChildName2(uint8_t parentId, uint16_t childId, uint8_t *titleBuf) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, titleBuf);
+  _ia_readReply(readCnt, titleBuf, 64);
 
   ia_restoreInterrupts();
 }
@@ -184,8 +199,6 @@ void ia_getChildDescription2(uint8_t parentId, uint16_t childId, uint8_t *descBu
 
   ia_focusInterrupts();
 
-  for (unsigned int i = 0; i < 255; i++)
-    descBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -197,7 +210,7 @@ void ia_getChildDescription2(uint8_t parentId, uint16_t childId, uint8_t *descBu
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, descBuff);
+  _ia_readReply(readCnt, descBuff, 255);
 
   ia_restoreInterrupts();
 }
@@ -211,8 +224,6 @@ void ia_getChildAuthor2(uint8_t parentId, uint16_t childId, uint8_t *authBuff) {
 
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 16; i++)
-    authBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -224,7 +235,7 @@ void ia_getChildAuthor2(uint8_t parentId, uint16_t childId, uint8_t *authBuff) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, authBuff);
+  _ia_readReply(readCnt, authBuff, 16);
 
   ia_restoreInterrupts();
 }
@@ -238,8 +249,6 @@ void ia_getNewsContent(uint8_t *newsBuff) {
 
   ia_focusInterrupts();
 
-  for (uint16_t i = 0; i < 512; i++)
-    newsBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -247,7 +256,7 @@ void ia_getNewsContent(uint8_t *newsBuff) {
 
   uint16_t readCnt = hcca_readUInt16();
 
-  hcca_readBytes(0, readCnt, newsBuff);
+  _ia_readReply(readCnt, newsBuff, 512);
 
   ia_restoreInterrupts();
 }
@@ -309,8 +318,6 @@ void ia_getLog(uint8_t *logBuff) {
 
   ia_focusInterrupts();
 
-  for (uint16_t i = 0; i < 512; i++)
-    logBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -318,7 +325,7 @@ void ia_getLog(uint8_t *logBuff) {
 
   uint16_t readCnt = hcca_readUInt16();
 
-  hcca_readBytes(0, readCnt, logBuff);
+  _ia_readReply(readCnt, logBuff, 512);
 
   ia_restoreInterrupts();
 }
@@ -332,8 +339,6 @@ void ia_getNewsTitle(uint8_t *titleBuff) {
 
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 64; i++)
-    titleBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -341,7 +346,7 @@ void ia_getNewsTitle(uint8_t *titleBuff) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, titleBuff);
+  _ia_readReply(readCnt, titleBuff, 64);
 
   ia_restoreInterrupts();
 }
@@ -355,8 +360,6 @@ void ia_getNewsDate(uint8_t *dateBuff) {
 
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 20; i++)
-    dateBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -364,7 +367,7 @@ void ia_getNewsDate(uint8_t *dateBuff) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, dateBuff);
+  _ia_readReply(readCnt, dateBuff, 20);
 
   ia_restoreInterrupts();
 }
@@ -397,8 +400,6 @@ void ia_extended_getNewsContentById(uint8_t id, uint8_t *newsBuff) {
 
   ia_focusInterrupts();
 
-  for (uint16_t i = 0; i < 512; i++)
-    newsBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -408,7 +409,7 @@ void ia_extended_getNewsContentById(uint8_t id, uint8_t *newsBuff) {
 
   uint16_t readCnt = hcca_readUInt16();
 
-  hcca_readBytes(0, readCnt, newsBuff);
+  _ia_readReply(readCnt, newsBuff, 512);
 
   ia_restoreInterrupts();
 }
@@ -422,8 +423,6 @@ void ia_extended_getNewsTitleById(uint8_t id, uint8_t *titleBuff) {
 
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 64; i++)
-    titleBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -433,7 +432,7 @@ void ia_extended_getNewsTitleById(uint8_t id, uint8_t *titleBuff) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, titleBuff);
+  _ia_readReply(readCnt, titleBuff, 64);
 
   ia_restoreInterrupts();
 }
@@ -447,8 +446,6 @@ void ia_extended_getNewsDateById(uint8_t id, uint8_t *dateBuff) {
 
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 20; i++)
-    dateBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -458,7 +455,7 @@ void ia_extended_getNewsDateById(uint8_t id, uint8_t *dateBuff) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, dateBuff);
+  _ia_readReply(readCnt, dateBuff, 20);
 
   ia_restoreInterrupts();
 }
@@ -572,8 +569,6 @@ void ia_getCurrentDateTimeStr(uint8_t *dateFormatStr, uint8_t dateFormatStrLen, 
 
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 64; i++)
-    dateBuff[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -585,7 +580,7 @@ void ia_getCurrentDateTimeStr(uint8_t *dateFormatStr, uint8_t dateFormatStrLen, 
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, dateBuff);
+  _ia_readReply(readCnt, dateBuff, 64);
 
   ia_restoreInterrupts();
 }
@@ -599,8 +594,6 @@ void ia_getAdapterVersion(uint8_t *versionStr) {
 
   ia_focusInterrupts();
 
-  for (uint8_t i = 0; i < 14; i++)
-    versionStr[i] = 0x00;
 
   hcca_writeByte(0xba); // ia_control
 
@@ -608,7 +601,7 @@ void ia_getAdapterVersion(uint8_t *versionStr) {
 
   uint8_t readCnt = hcca_readByte();
 
-  hcca_readBytes(0, readCnt, versionStr);
+  _ia_readReply(readCnt, versionStr, 14);
 
   ia_restoreInterrupts();
 }

@@ -22,6 +22,28 @@
 #include "NABU-LIB.h"
 
 // -----------------------------------------------------------
+// Shared by cpm_buildDrive() and cpm_extractDrive(): sends the
+// command and drive, then reads the length-prefixed response.
+// The response is clipped to the 128 byte responseMsg buffer
+// (extra bytes are read and discarded) so a long message can
+// never overrun it. An empty response is safe too.
+// -----------------------------------------------------------
+void _cpm_driveCmd(uint8_t cmd, uint8_t driveLetter, uint8_t *responseMsg) {
+
+  hcca_writeByte(cmd);
+
+  hcca_writeByte(driveLetter);
+
+  uint8_t readCnt = hcca_readByte();
+  uint8_t keep    = (readCnt > 128) ? 128 : readCnt;
+
+  hcca_readBytes(0, keep, responseMsg);
+
+  for (readCnt -= keep; readCnt != 0; readCnt--)
+    hcca_readByte();
+}
+
+// -----------------------------------------------------------
 // Build the specified drive and receive the response message
 // Yeah, i'm just receiving a response message becuase this way
 // I can release a new IA with new features and not have to update
@@ -33,12 +55,7 @@
 void cpm_buildDrive(uint8_t driveLetter, uint8_t *responseMsg) {
 
   // 0xde
-  hcca_writeByte(0xde);
-
-  hcca_writeByte(driveLetter);
-
-  uint8_t readCnt = hcca_readByte();
-  hcca_readBytes(0, readCnt, responseMsg);
+  _cpm_driveCmd(0xde, driveLetter, responseMsg);
 }
 
 // -----------------------------------------------------------
@@ -53,12 +70,7 @@ void cpm_buildDrive(uint8_t driveLetter, uint8_t *responseMsg) {
 void cpm_extractDrive(uint8_t driveLetter, uint8_t *responseMsg) {
 
   // 0xdf
-  hcca_writeByte(0xdf);
-
-  hcca_writeByte(driveLetter);
-
-  uint8_t readCnt = hcca_readByte();
-  hcca_readBytes(0, readCnt, responseMsg);
+  _cpm_driveCmd(0xdf, driveLetter, responseMsg);
 }
 
 #endif

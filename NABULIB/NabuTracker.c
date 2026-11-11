@@ -39,15 +39,20 @@ static void nt_handleNote(void) {
   // instead of reloading the global each time.
   const uint16_t *song = _song;
 
+  // Walk the song with a pointer instead of indexing song[_itemCntr + n].
+  // Every index costs an add and a shift (16-bit entries) on the Z80, the
+  // pointer only needs an increment. _itemCntr is written back at the end.
+  const uint16_t *p = song + _itemCntr;
+
   // Process all events scheduled for the current beat.
   // Multiple items can share the same time value and will be processed
   // sequentially before advancing the beat counter.
-  while (song[_itemCntr] == _beatCntr) {
+  while (*p == _beatCntr) {
 
-    _itemCntr++;
+    p++;
 
     // command
-    switch (song[_itemCntr]) {
+    switch (*p) {
 
       case NT_NOTE_OFF: {
 
@@ -57,12 +62,12 @@ static void nt_handleNote(void) {
         // Bounds-check the channel before writing: an out-of-range
         // value would otherwise hit AY registers 11+ (envelope period
         // and shape) and corrupt the chip's audio state.
-        const uint8_t channel = (uint8_t)song[_itemCntr + 1];
+        const uint8_t channel = (uint8_t)p[1];
 
         if (channel < 3)
           ayWrite(8 + channel, 0);
 
-        _itemCntr += 2;
+        p += 2;
 
         break;
       }
@@ -83,9 +88,9 @@ static void nt_handleNote(void) {
         //
         // _NOTES_FINE and _NOTES_COURSE are external lookup tables in
         // NABU-LIB that map note index to tone period for the AY-3-8910.
-        const uint8_t channel = (uint8_t)song[_itemCntr + 1];
-        const uint8_t note    = (uint8_t)song[_itemCntr + 2];
-        const uint8_t volume  = (uint8_t)song[_itemCntr + 3];
+        const uint8_t channel = (uint8_t)p[1];
+        const uint8_t note    = (uint8_t)p[2];
+        const uint8_t volume  = (uint8_t)p[3];
 
         if (channel < 3) {
 
@@ -96,7 +101,7 @@ static void nt_handleNote(void) {
           ayWrite(8 + channel, volume & 0x0F);
         }
 
-        _itemCntr += 4;
+        p += 4;
 
         break;
       }
@@ -115,7 +120,7 @@ static void nt_handleNote(void) {
 
         ayWrite(8,  0);
         
-        if (song[_itemCntr + 1]) {
+        if (p[1]) {
 
           // Note (tone) mode on all channels
           ayWrite(7, 0b01111000);
@@ -127,7 +132,7 @@ static void nt_handleNote(void) {
           ayWrite(7, 0b01110001);
         }
 
-        _itemCntr += 2;
+        p += 2;
         
         break;
       }
@@ -138,7 +143,7 @@ static void nt_handleNote(void) {
         // The beat counter is reset and the item counter is rewound,
         // then processing continues within the same tick so that
         // the first beat of the loop can be played without a gap.
-        _itemCntr = 0;
+        p = song;
         
         _beatCntr = 0;
 
@@ -151,10 +156,15 @@ static void nt_handleNote(void) {
         // To avoid walking off into random memory, stop processing
         // this tick. You could also choose to call nt_stopSounds()
         // or null out _song here if you prefer a hard fail.
+        // (_itemCntr is left on the command, exactly as before.)
+        _itemCntr = p - song;
+
         return;
       }
     }
   }
+
+  _itemCntr = p - song;
 
   _beatCntr++;
 }

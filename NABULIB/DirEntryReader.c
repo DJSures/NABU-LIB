@@ -152,33 +152,38 @@ uint8_t _directoryRecordIndex = 0;
 //   BC, DE, AF are preserved across the call by push/pop. The temp
 //   variables _TEMP8_1 and _TEMP16_2 are used to marshal arguments
 //   from C into the inline asm block.
-uint8_t BDOS(uint8_t func, uint16_t arg) {
-
-  // store the arguments in the temporary variables that can be accessed by the inline assembly code.
-  _TEMP8_1 = func;
-  _TEMP16_2 = arg;
+//
+//   Now a naked function that reads func/arg straight off the stack and
+//   returns A in L, instead of copying through the _TEMP globals. BC/DE/AF
+//   do not need saving (SDCC treats them as scratch); IX (the SDCC frame
+//   pointer) and IY are saved because the BIOS/BDOS is not required to
+//   preserve them. The _TEMP variables are kept for compatibility.
+uint8_t BDOS(uint8_t func, uint16_t arg) __naked {
 
   __asm
-    push bc
-    push de
-    push af
 
-    ld a, (__TEMP8_1)
-    ld c, a
+    ld hl, 2
+    add hl, sp
+    ld c, (hl)
     ld b, 0x00
+    inc hl
+    ld e, (hl)
+    inc hl
+    ld d, (hl)
 
-    ld de, (__TEMP16_2)
+    push ix
+    push iy
 
     call 0x05
 
-    ld (__TEMP8_1), a // store the value in A into the location of temp8_1
+    pop iy
+    pop ix
 
-    pop af
-    pop de
-    pop bc
+    ; return the value in A
+    ld l, a
+    ret
+
   __endasm;
-
-  return _TEMP8_1;
 }
 
 // ResetTFCB: Resets the default FCB (File Control Block) and fills it with the
@@ -208,8 +213,8 @@ void ResetTFCB(uint8_t *args) {
   uint8_t *fcb2 = (uint8_t *)0x6c;
 
   // Reset both FCB values to 0 (each FCB is 16 bytes)
-  memset(fcb1, 0, 16);
-  memset(fcb2, 0, 16);
+  // (they are contiguous, 0x5C-0x7B, so one 32 byte memset clears both)
+  memset(fcb1, 0, 32);
 
   // FCB 1:
   // Set filename and extension (11 bytes) to 0x20 (space)
@@ -572,29 +577,27 @@ void ResetDiskSystem(void) {
 //   BDOS function 24 returns the map in HL, but the BDOS() wrapper only
 //   returns the A register. This routine issues the call directly so it
 //   can capture the full HL value.
-uint16_t GetLoggedDrives(void) {
-
-  _TEMP8_1 = CPM_ILOG;
+//
+//   Naked: BDOS already returns the map in HL, which is exactly where SDCC
+//   expects a uint16_t return value, so no temp variable is needed.
+uint16_t GetLoggedDrives(void) __naked {
 
   __asm
-    push bc
-    push de
-    push hl
 
-    ld a, (__TEMP8_1)
-    ld c, a
+    ld c, CPM_ILOG
     ld b, 0x00
+
+    push ix
+    push iy
 
     call 0x05
 
-    ld (__TEMP16_1), hl
+    pop iy
+    pop ix
 
-    pop hl
-    pop de
-    pop bc
+    ret
+
   __endasm;
-
-  return _TEMP16_1;
 }
 
 // GetUserArea: Return current user area number (0..15).
@@ -778,9 +781,8 @@ uint8_t WriteRecord(struct FCB *fc) {
 uint8_t ReadRandomRecord(struct FCB *fc, uint32_t recordNo) {
 
   // Pack the 24-bit record number into the FCB's random-record field.
-  fc->ranrec[0] = (uint8_t)(recordNo & 0xff);
-  fc->ranrec[1] = (uint8_t)((recordNo >> 8) & 0xff);
-  fc->ranrec[2] = (uint8_t)((recordNo >> 16) & 0xff);
+  // (The Z80 is little-endian like the FCB, so the low 3 bytes copy directly.)
+  memcpy(fc->ranrec, &recordNo, 3);
 
   return BDOS(CPM_RRAN, (uint16_t)fc);
 }
@@ -796,9 +798,8 @@ uint8_t ReadRandomRecord(struct FCB *fc, uint32_t recordNo) {
 uint8_t WriteRandomRecord(struct FCB *fc, uint32_t recordNo) {
 
   // Pack the 24-bit record number into the FCB's random-record field.
-  fc->ranrec[0] = (uint8_t)(recordNo & 0xff);
-  fc->ranrec[1] = (uint8_t)((recordNo >> 8) & 0xff);
-  fc->ranrec[2] = (uint8_t)((recordNo >> 16) & 0xff);
+  // (The Z80 is little-endian like the FCB, so the low 3 bytes copy directly.)
+  memcpy(fc->ranrec, &recordNo, 3);
 
   return BDOS(CPM_WRAN, (uint16_t)fc);
 }
@@ -820,9 +821,13 @@ uint32_t ComputeFileSize(struct FCB *fc) {
   if (BDOS(CPM_CFS, (uint16_t)fc) == 0xff)
     return 0;
 
-  return ((uint32_t)fc->ranrec[0])
-       | (((uint32_t)fc->ranrec[1]) << 8)
-       | (((uint32_t)fc->ranrec[2]) << 16);
+  // Copy the 3 little-endian bytes into the low bytes of a zeroed 32-bit value
+  // (replaces two 32-bit shifts and ORs)
+  uint32_t records = 0;
+
+  memcpy(&records, fc->ranrec, 3);
+
+  return records;
 }
 
 // GetFileSizeBytes: Convenience wrapper - returns file size in bytes.
@@ -843,6 +848,7 @@ uint32_t GetFileSizeBytes(uint8_t drive, uint8_t *filename) {
 
   CreateFcb(&tmp, drive, filename);
 
-  return ComputeFileSize(&tmp) * 128UL;
+  // * 128 as a shift
+  return ComputeFileSize(&tmp) << 7;
 }
 
