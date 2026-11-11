@@ -11,7 +11,24 @@
 // Control the CPM Drive manager features of the Internet Adapter
 // 
 // Read the summaries below for details of each function in this file.
-// 
+//
+// **********************************************************************************************
+
+// **********************************************************************************************
+// FUNCTION INDEX
+// --------------
+// A quick reference for every function in this file. Scroll down to a function for its
+// full description.
+//
+//   void     cpm_buildDrive(uint8_t driveLetter, uint8_t *responseMsg)
+//              Asks the adapter to build CP/M drive driveLetter (0 = A ... 15 = P).
+//              responseMsg (128 bytes): the adapter's reply text.
+//
+//   void     cpm_extractDrive(uint8_t driveLetter, uint8_t *responseMsg)
+//              Asks the adapter to extract CP/M drive driveLetter (0 = A ... 15 = P).
+//              responseMsg (128 bytes): the adapter's reply text.
+//
+//   _cpm_driveCmd() is the internal helper both of them use.
 // **********************************************************************************************
 
 #ifndef RETRONET_CPM_FILE_STORE_H

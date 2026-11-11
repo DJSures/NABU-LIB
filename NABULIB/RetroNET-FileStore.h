@@ -17,6 +17,210 @@
 // DJ Sures
 // **********************************************************************************************
 
+// **********************************************************************************************
+// FUNCTION INDEX
+// --------------
+// A quick reference for every function in this file. Scroll down to a function for its
+// full description.
+//
+// Conventions used by most functions:
+//   - Strings are passed as a length plus a pointer (filenameLen, filename). They do not
+//     need a NUL terminator.
+//   - bufferOffset / dataOffset are offsets into YOUR buffer, not into the file.
+//   - Files live in the RetroNET Storage folder set in the adapter's settings, and their
+//     names are stored in UPPERCASE. Backslash (\) separates directories.
+//   - Handles (files, TCP, shell) are released when the adapter receives an INIT, e.g.
+//     after the NABU resets, but you should still close them.
+//
+// FILES BY NAME
+//   uint8_t  rn_fileOpen(uint8_t filenameLen, uint8_t *filename, uint16_t fileFlag,
+//                        uint8_t fileHandle)
+//              Opens a local file (created empty if missing) or an ftp:// http:// https://
+//              URL. fileFlag: OPEN_FILE_FLAG_READONLY or OPEN_FILE_FLAG_READWRITE.
+//              fileHandle: your own handle, or 0xff to have one assigned. Returns the handle.
+//
+//   int32_t  rn_fileSize(uint8_t filenameLen, uint8_t *filename)
+//              File size, or -1 when it doesn't exist. Does NOT create the file.
+//
+//   void     rn_fileDetails(uint8_t filenameLen, uint8_t *filename, FileDetailsStruct *s)
+//              s (out): size, created / modified date and time, name, IsFile, Exists.
+//
+//   uint16_t rn_FileRead(uint8_t filenameLen, uint8_t *filename, uint8_t *buffer,
+//                        uint16_t bufferOffset, uint32_t readOffset, uint16_t readLength)
+//              Reads readLength bytes from file offset readOffset without a handle.
+//              Returns bytes read, 0 on error or end of file.
+//
+//   void     rn_FileReplace(uint8_t filenameLen, uint8_t *filename, uint32_t fileOffset,
+//                           uint16_t dataOffset, uint16_t dataLen, int8_t *data)
+//              Overwrites dataLen bytes at fileOffset without a handle.
+//
+//   void     rn_fileDelete(uint8_t filenameLen, uint8_t *filename)
+//              Deletes the file. Closes its handle if it has one.
+//
+//   void     rn_fileHandleCopy(uint8_t srcFilenameLen, uint8_t *srcFilename,
+//                              uint8_t destFilenameLen, uint8_t *destFilename,
+//                              uint8_t copyMoveFlag)
+//              Copies a file. The source may be a URL, the destination must be a local
+//              file. copyMoveFlag: COPY_MOVE_FLAG_NO_REPLACE or COPY_MOVE_FLAG_YES_REPLACE.
+//
+//   void     rn_fileHandleMove(uint8_t srcFilenameLen, uint8_t *srcFilename,
+//                              uint8_t destFilenameLen, uint8_t *destFilename,
+//                              uint8_t copyMoveFlag)
+//              Moves / renames a file. Close its handle first. copyMoveFlag as above.
+//
+// FILES BY HANDLE (handle from rn_fileOpen())
+//   void     rn_fileHandleClose(uint8_t fileHandle)
+//              Closes the file and frees the handle.
+//
+//   int32_t  rn_fileHandleSize(uint8_t fileHandle)
+//              File size. -1 only for a URL that could not be downloaded.
+//
+//   void     rn_fileHandleDetails(int8_t fileHandle, FileDetailsStruct *s)
+//              s (out): same details as rn_fileDetails().
+//
+//   uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t *buffer, uint16_t bufferOffset,
+//                              uint32_t readOffset, uint16_t readLength)
+//              Reads readLength bytes from file offset readOffset.
+//              Returns bytes read, 0 on error or end of file.
+//
+//   uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t *buffer, uint16_t bufferOffset,
+//                                 uint16_t readLength)
+//              Reads from the current position and moves it forward. 0 at end of file.
+//
+//   int32_t  rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption)
+//              Moves the rn_fileHandleReadSeq() position. seekOption: RN_SEEK_SET,
+//              RN_SEEK_CUR or RN_SEEK_END. Returns the new position, kept inside the file.
+//
+//   void     rn_fileHandleAppend(uint8_t fileHandle, uint16_t dataOffset, uint16_t dataLen,
+//                                uint8_t *data)
+//              Adds dataLen bytes to the end of the file.
+//
+//   void     rn_fileHandleInsert(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset,
+//                                uint16_t dataLen, uint8_t *data)
+//              Inserts dataLen bytes at fileOffset, shifting the rest of the file along.
+//
+//   void     rn_fileHandleReplace(uint8_t fileHandle, uint32_t fileOffset, uint16_t dataOffset,
+//                                 uint16_t dataLen, uint8_t *data)
+//              Overwrites dataLen bytes at fileOffset.
+//
+//   void     rn_fileHandleDeleteRange(uint8_t fileHandle, uint32_t fileOffset, uint16_t deleteLen)
+//              Removes deleteLen bytes at fileOffset.
+//
+//   void     rn_fileHandleEmptyFile(uint8_t fileHandle)
+//              Removes all content, leaving a 0 byte file.
+//
+//   uint16_t rn_fileHandleTruncate(uint8_t fileHandle, uint16_t truncateLength,
+//                                  uint8_t truncateFlag)
+//              Resizes the file. truncateFlag: TRUNCATE_FLAG_SET_LENGTH (new size) or
+//              TRUNCATE_FLAG_REMOVE_FROM_END (bytes to cut). Returns the new length
+//              modulo 64K, 0 on error.
+//
+//   uint16_t rn_fileHandleLineCount(uint8_t fileHandle)
+//              Number of text lines in the file, for rn_fileHandleGetLine().
+//
+//   uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *buffer)
+//              Copies one text line into buffer. Returns its length. The line is not NUL
+//              terminated and buffer must be big enough for the longest line.
+//
+// DIRECTORIES AND LISTING
+//   uint16_t rn_fileList(uint8_t pathLen, uint8_t *path, uint8_t wildcardLen,
+//                        uint8_t *wildcard, uint8_t fileListFlags)
+//              Lists path matching wildcard (e.g. "*.*") into a list on the adapter.
+//              fileListFlags: FILE_LIST_FLAG_INCLUDE_FILES and / or _DIRECTORIES.
+//              Returns the count, 0 when nothing matched.
+//
+//   void     rn_fileListItem(uint16_t fileItemIndex, FileDetailsStruct *s)
+//              s (out): entry 0..count-1 from the last rn_fileList().
+//
+//   uint8_t  rn_DirectoryCreate(uint8_t directoryNameLen, uint8_t *directoryName)
+//              Creates a directory (subdirectories allowed). Returns the adapter's result.
+//
+//   uint8_t  rn_DirectoryDelete(uint8_t directoryNameLen, uint8_t *directoryName)
+//              Deletes a directory. Files and directories inside it are not deleted.
+//
+//   uint8_t  rn_directoryExists(uint8_t directoryNameLen, uint8_t *directoryName)
+//              1 when the directory exists, 0 when it doesn't.
+//
+// TCP CLIENT
+//   uint8_t  rn_TCPOpen(uint8_t hostnameLen, uint8_t *hostname, uint16_t port,
+//                       uint8_t tcpHandle)
+//              Connects to hostname:port. tcpHandle: your own handle, or 0xff to have one
+//              assigned. Returns the handle, or 0xff when the connection failed.
+//
+//   void     rn_TCPHandleClose(uint8_t tcpHandle)
+//              Closes the connection and frees the handle.
+//
+//   int32_t  rn_TCPHandleSize(uint8_t tcpHandle)
+//              Bytes waiting to be read, -1 when not connected.
+//
+//   int32_t  rn_TCPHandleRead(uint8_t tcpHandle, uint8_t *buffer, uint16_t bufferOffset,
+//                             uint16_t readLength)
+//              Reads up to readLength bytes. Returns bytes read, -1 when disconnected.
+//
+//   int32_t  rn_TCPHandleWrite(uint8_t tcpHandle, uint16_t dataOffset, uint16_t dataLen,
+//                              uint8_t *data)
+//              Sends dataLen bytes. Returns bytes written, -1 when disconnected.
+//
+// TCP SERVER (the adapter's TCP server, set up in its settings)
+//   uint8_t  rn_TCPServerClientCnt()
+//              Number of clients connected.
+//
+//   uint8_t  rn_TCPServerAvailable()
+//              Bytes waiting to be read.
+//
+//   uint8_t  rn_TCPServerRead(uint8_t *buffer, uint16_t bufferOffset, uint8_t readLength)
+//              Reads up to readLength bytes. Returns bytes read.
+//
+//   void     rn_TCPServerWrite(uint16_t dataOffset, uint8_t dataLen, uint8_t *data)
+//              Sends dataLen bytes to every connected client.
+//
+// HOST SHELL (needs "Enable RetroNET host shell" turned on in the adapter's settings)
+//   uint8_t  rn_ShellOpen()
+//              Starts a shell on the adapter's computer. Returns a handle, or 0xff when
+//              refused (setting off, or no free handles).
+//
+//   void     rn_ShellClose(uint8_t shellHandle)
+//              Ends the shell.
+//
+//   int32_t  rn_ShellAvailable(uint8_t shellHandle)
+//              Output bytes waiting, -1 when the handle is unknown or the shell exited
+//              and all its output was read.
+//
+//   int32_t  rn_ShellRead(uint8_t shellHandle, uint8_t *buffer, uint16_t bufferOffset,
+//                         uint16_t readLength)
+//              Reads shell output. Returns bytes read, 0 when none yet, -1 unknown handle.
+//
+//   int32_t  rn_ShellWrite(uint8_t shellHandle, uint16_t dataOffset, uint16_t dataLen,
+//                          uint8_t *data)
+//              Types into the shell. End a command with "\r\n" to run it.
+//              Returns bytes written, -1 when the handle is unknown or the shell exited.
+//
+// NETWORK TOOLS
+//   int32_t  rn_PingIP(uint8_t ipLen, uint8_t *ipStr)
+//              Pings an IP or hostname. Returns the round-trip time in milliseconds,
+//              or a negative PING_ERR_* code.
+//
+//   uint8_t  rn_DnsLookup(uint8_t hostLen, uint8_t *host, uint8_t *outBuffer)
+//              outBuffer (256 bytes): the IPv4 address as text, or a readable error.
+//              NUL terminated. Returns its length.
+//
+// CP/M DISK SPACE
+//   int64_t  rn_GetFreeDiskSpace()
+//              Bytes free on the host drive holding the RetroNET storage folder,
+//              -1 on error.
+//
+//   int64_t  rn_GetUsedDiskSpace()
+//              Bytes used by the CP/M drives (the storage folder's CPM folder),
+//              -1 on error.
+//
+// PRINTER
+//   void     rn_Printer(uint8_t c)
+//              Writes one character to LST.TXT in the adapter's storage folder.
+//
+//   void     rn_PunchOut(uint8_t c)
+//              Writes one character to PUNCH.TXT in the adapter's storage folder.
+// **********************************************************************************************
+
 
 #ifndef RETRONET_FILE_STORE_H
 #define RETRONET_FILE_STORE_H
@@ -464,11 +668,9 @@ int32_t rn_fileHandleSeek(uint8_t fileHandle, int32_t offset, uint8_t seekOption
 // function that assists the rn_fileHandleGetLine()
 // 
 // - fileHandle is obtained by rn_fileOpen()
-// 
-// Returns the new position of the file. If the seek is set past the end of the file, the
-// end of the file position is returned. The seek function will not let you seek past
-// the end of a file, or before a file. That is why we give you this value so you can be sure
-// the pointer is always within the file.
+//
+// Returns the number of text lines in the file. Use it as the upper limit for the
+// lineNumber you pass to rn_fileHandleGetLine().
 // **************************************************************************
 uint16_t rn_fileHandleLineCount(uint8_t fileHandle);
 
@@ -707,7 +909,13 @@ int32_t rn_ShellWrite(uint8_t shellHandle, uint16_t dataOffset, uint16_t dataLen
 
 // **************************************************************************************************************
 //
-// Returns a ping response from the host or an error as defined above
+// Pings a host from the Internet Adapter.
+//
+// - ipLen is the length of the address string
+// - ipStr is a pointer to the address: an IP such as "8.8.8.8" or a hostname
+//
+// Returns the round-trip time in milliseconds (0 or more) when the host replied, or a
+// negative PING_ERR_* code as defined above when it did not.
 //
 // **************************************************************************************************************
 int32_t rn_PingIP(uint8_t ipLen, uint8_t* ipStr);
@@ -736,13 +944,16 @@ int32_t rn_PingIP(uint8_t ipLen, uint8_t* ipStr);
 uint8_t rn_DnsLookup(uint8_t hostLen, uint8_t* host, uint8_t* outBuffer);
 
 // **************************************************************************
-// Returns the available disk space on the CPM drive
-// -1 means error
+// Returns the available disk space, in bytes, on the host drive that holds the
+// Internet Adapter's RetroNET storage folder (where the CPM drives live)
+// -1 means error, e.g. the storage folder is missing
 // **************************************************************************
 int64_t rn_GetFreeDiskSpace();
 
 // **************************************************************************
-// Returns the used disk space on the CPM drive
+// Returns the used disk space, in bytes, of the CPM drives: the total size of
+// every file under the CPM folder inside the RetroNET storage folder.
+// 0 when the CPM folder doesn't exist yet
 // -1 means error
 // **************************************************************************
 int64_t rn_GetUsedDiskSpace();

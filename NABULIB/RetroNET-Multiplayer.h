@@ -41,6 +41,189 @@
 // Full wire protocol: retronetMultiplayerManual.md in the Internet Adapter repository.
 // **********************************************************************************************
 
+// **********************************************************************************************
+// FUNCTION INDEX
+// --------------
+// A quick reference for every function in this file. Scroll down to a function for its
+// full description.
+//
+// [NET]    waits on the internet: up to 5 seconds, then MP_ERR_TIMEOUT. Don't call these
+//          every frame. Everything else is answered at once from the adapter's memory.
+// uint8_t  functions return a result code, MP_OK (0) or one of MP_ERR_*, unless noted.
+// "out"    parameters are written by the function. Most may be NULL if you don't need them.
+//
+// SETUP
+//   bool     mp_isSupported()
+//              True when the adapter is at least MP_MIN_IA_VERSION. Call it FIRST: an older
+//              adapter never answers the other mp_ functions and the NABU would hang.
+//
+//   uint8_t  mp_init(uint16_t gameId)                                                  [NET]
+//              Connects the adapter to the server for your game id (register it at
+//              nabu.ca/my/multiplayer). Fills mp_protocolVersion, mp_gameMaxPlayers and
+//              mp_maxPacket.
+//
+//   uint8_t  mp_shutdown()
+//              Leaves any session and disconnects from the server.
+//
+//   void     mp_getPlayerName(uint8_t *name)
+//              name (16 bytes, out): default player name from the adapter's settings.
+//              Empty string when none is set.
+//
+//   void     mp_getLastError(uint8_t *text)
+//              text (64 bytes, out): readable reason for the last error.
+//
+// BROWSING
+//   uint8_t  mp_listSessions(uint8_t filter, uint8_t *count)                           [NET]
+//              Fetches this game's sessions into a snapshot on the adapter.
+//              filter: MP_LIST_ALL or MP_LIST_JOINABLE (skips full, locked, started).
+//              count (out): number of sessions, for mp_getSessionInfo().
+//
+//   void     mp_getSessionInfo(uint8_t index, MpSessionInfo *info)
+//              info (out): session index 0..count-1 from the last mp_listSessions().
+//              info->sessionId is 0 when index is out of range.
+//
+//   void     mp_getSessionInfoById(uint16_t sessionId, MpSessionInfo *info)            [NET]
+//              Looks up one session by id, e.g. a private one a friend told you about.
+//              info->sessionId is 0 when not found.
+//
+// CREATE, JOIN, LEAVE
+//   uint8_t  mp_create(uint8_t maxPlayers, uint8_t flags, const char *code,
+//                      const char *playerName, const char *sessionName,
+//                      const char *description, uint16_t *sessionId, uint8_t *myId)   [NET]
+//              Creates a session and makes you its host.
+//              maxPlayers: 2-16, clamped to the game's limit. flags: MP_FLAG_* OR'd.
+//              code: 5 digits such as "12345", or NULL for none.
+//              Names clip to 15 / 23 / 63 characters. sessionId, myId (out).
+//
+//   uint8_t  mp_join(uint16_t sessionId, const char *code, const char *playerName,
+//                    uint8_t *myId)                                                    [NET]
+//              Joins a session by id. code: 5 digits, or NULL when none is needed.
+//              myId (out): your player id 0-15.
+//
+//   uint8_t  mp_quickJoin(uint8_t maxPlayers, uint8_t flags, const char *playerName,
+//                         uint16_t *sessionId, uint8_t *myId, bool *created)          [NET]
+//              Joins an open public session, or creates one with maxPlayers / flags when
+//              none is open. created (out): true when a new one was made (you are host).
+//
+//   uint8_t  mp_leave()
+//              Leaves the current session. The server connection stays open.
+//
+// SESSION MANAGEMENT
+//   void     mp_status(MpStatus *status)
+//              status (out): state, flags, ids, player count, rx / chat waiting, etc.
+//              Cheap: poll it every frame or two.
+//
+//   void     mp_getPlayer(uint8_t playerId, MpPlayerInfo *player)
+//              player (out): one roster slot. MP_PLAYER_PRESENT is clear when empty.
+//              Only re-read when MpStatus.rosterRev changes.
+//
+//   uint8_t  mp_setReady(bool ready)
+//              Sets your ready flag in the lobby.
+//
+//   uint8_t  mp_setPlayerData(const uint8_t *data)
+//              Sets your 8 bytes of player data (colour, character, team...).
+//
+//   uint8_t  mp_setSessionData(uint8_t offset, uint8_t len, const uint8_t *data)
+//              Writes len bytes of the 16 bytes of session data, starting at offset.
+//              Visible when browsing. Host only, unless MP_FLAG_SHARED_DATA.
+//
+//   void     mp_getSessionData(uint8_t *buf)
+//              buf (16 bytes, out): the session data.
+//
+//   uint8_t  mp_start()                                                                [NET]
+//              Host only. Starts the game: everyone sees MP_STATE_IN_GAME.
+//
+//   void     mp_getStartInfo(MpStartInfo *info)
+//              info (out): shared seed, start time, players. All zero before the start.
+//
+//   uint8_t  mp_end(uint16_t winnerMask, uint8_t flags)
+//              Host only. winnerMask: bit n = player n won (match history).
+//              flags: MP_END_FLAG_TO_LOBBY for a rematch, else the session ENDS.
+//
+//   uint8_t  mp_kick(uint8_t playerId)
+//              Host only. Removes a player.
+//
+//   uint8_t  mp_setLocked(bool locked)
+//              Host only. Locks or unlocks the session to new joins.
+//
+//   uint8_t  mp_setHost(uint8_t playerId)
+//              Host only. Hands the host role to another player.
+//
+// PACKETS
+//   uint8_t  mp_send(uint8_t target, uint8_t channel, uint16_t len, const uint8_t *data)
+//              target: player id 0-15, MP_TARGET_OTHERS, MP_TARGET_ALL or MP_TARGET_HOST.
+//              channel: 0 reliable and ordered, 1-255 latest-only. len: 1..mp_maxPacket.
+//              MP_ERR_RATE_LIMIT / MP_ERR_TOO_LARGE mean the packet was dropped.
+//
+//   uint16_t mp_recv(uint8_t *buf, uint16_t maxLen, uint8_t *from, uint8_t *channel)
+//              Takes the next packet into buf. Returns its length, 0 when none waiting.
+//              Longer packets are truncated to maxLen. from, channel (out).
+//
+//   uint16_t mp_peek(uint8_t *from, uint8_t *channel)
+//              Length of the next packet without removing it, 0 when none.
+//
+//   uint8_t  mp_flush()
+//              Throws away every waiting packet.
+//
+//   uint16_t mp_exchange(uint8_t target, uint8_t channel, uint16_t len,
+//                        const uint8_t *data, uint8_t *buf, uint16_t maxLen,
+//                        uint8_t *from, uint8_t *rxChannel, uint8_t *sendResult)
+//              mp_send() and mp_recv() in one round trip. sendResult (out): send result.
+//              Returns the received length, 0 when nothing was waiting.
+//
+// CHAT
+//   uint8_t  mp_chatSend(const char *text)
+//              Sends a chat line to the session, clipped to 127 characters.
+//
+//   uint8_t  mp_chatRecv(uint8_t *from, uint8_t *name, uint8_t *text)
+//              Takes the next chat line. Returns its length, 0 when none.
+//              from (out): player id, MP_CHAT_FROM_WEB or MP_CHAT_FROM_SYSTEM.
+//              name (16 bytes, out), text (128 bytes, out), both NUL terminated.
+//
+// TIME
+//   uint32_t mp_time()
+//              Milliseconds since the session was created, the same on every player.
+//
+//   uint16_t mp_ping()
+//              Round trip from the adapter to the server, in milliseconds.
+//
+// SCORES AND STATUS TEXT
+//   uint8_t  mp_setScore(int32_t score)
+//              Sets your live score, shown in the roster and on nabu.ca.
+//
+//   uint8_t  mp_setStatusText(const char *text)
+//              Host only. Session status line on nabu.ca, e.g. "Round 3 of 5" (63 chars).
+//
+//   uint8_t  mp_scoreSubmit(uint8_t board, int32_t score, const char *name,
+//                           uint16_t *rank)                                            [NET]
+//              Submits to a leaderboard defined for the game on nabu.ca.
+//              rank (out): the placing.
+//
+//   uint8_t  mp_scoreCount(uint8_t board, uint8_t *count)                              [NET]
+//              Fetches a leaderboard (top 100) into the adapter.
+//              count (out): number of rows, for mp_scoreGet().
+//
+//   void     mp_scoreGet(uint8_t board, uint8_t index, MpScoreEntry *entry)
+//              entry (out): one row from the last mp_scoreCount(). rank 0 = out of range.
+//
+// CLOUD SAVES (per adapter, per game: 4 slots of up to 1024 bytes)
+//   uint8_t  mp_storeWrite(uint8_t slot, uint16_t len, const uint8_t *data)            [NET]
+//              Saves len bytes into slot 0-3.
+//
+//   uint16_t mp_storeRead(uint8_t slot, uint8_t *buf, uint16_t maxLen)                 [NET]
+//              Loads slot 0-3 into buf. Returns bytes read, 0 when the slot is empty.
+//
+// CONVENIENCE
+//   const char *mp_resultName(uint8_t result)
+//              Short name for a result code ("TIMEOUT", "SESSION FULL"...), never NULL.
+//
+// LOW LEVEL (every mp_ function already does this; you rarely need them)
+//   void     mp_focusInterrupts()
+//   void     mp_restoreInterrupts()
+//              Mask every interrupt except HCCA receive around an adapter exchange, then
+//              put the previous mask back. Functions starting with _mp_ are internal.
+// **********************************************************************************************
+
 #ifndef RETRONET_MULTIPLAYER_H
 #define RETRONET_MULTIPLAYER_H
 

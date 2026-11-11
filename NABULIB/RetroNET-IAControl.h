@@ -11,7 +11,102 @@
 // Interface for controlling the Internet Adapter settings from the NABU
 // 
 // Read the summaries below for details of each function in this file.
-// 
+//
+// **********************************************************************************************
+
+// **********************************************************************************************
+// FUNCTION INDEX
+// --------------
+// A quick reference for every function in this file. Scroll down to a function for its
+// full description.
+//
+// Buffer sizes are the sizes the function writes. Give it at least that many bytes. Text
+// replies are padded with zeros to the end of the buffer.
+//
+// NABU CHANNELS (the categories and programs the adapter offers)
+//   uint8_t  ia_getParentCount()
+//              Number of top-level categories (parents).
+//
+//   void     ia_getParentName(uint8_t parentId, uint8_t *titleBuf)
+//              titleBuf (64 bytes): name of the parent.
+//
+//   void     ia_getParentDescription(uint8_t parentId, uint8_t *titleBuf)
+//              titleBuf (255 bytes): description of the parent.
+//
+//   uint16_t ia_getChildCount2(uint8_t parentId)
+//              Number of programs (children) under a parent.
+//
+//   void     ia_getChildName2(uint8_t parentId, uint16_t childId, uint8_t *titleBuf)
+//              titleBuf (64 bytes): name of the child.
+//
+//   void     ia_getChildDescription2(uint8_t parentId, uint16_t childId, uint8_t *descBuff)
+//              descBuff (255 bytes): description of the child. Use 256 bytes and set
+//              descBuff[255] = 0 if you need it NUL terminated.
+//
+//   void     ia_getChildAuthor2(uint8_t parentId, uint16_t childId, uint8_t *authBuff)
+//              authBuff (16 bytes): author of the child.
+//
+//   void     ia_getChildIconTileColor2(uint8_t parentId, uint16_t childId, uint8_t *colorBuff)
+//              colorBuff (32 bytes): icon colours, 4 tiles x 8 bytes, tile order 0 2 / 1 3.
+//
+//   void     ia_getChildIconTilePattern2(uint8_t parentId, uint16_t childId, uint8_t *patternBuff)
+//              patternBuff (32 bytes): icon patterns, same layout as the colours.
+//
+//   void     ia_setSelection2(uint8_t parentId, uint16_t childId)
+//              Sets the selection in the NABU Channels.
+//
+// NEWS
+//   void     ia_getNewsContent(uint8_t *newsBuff)
+//              newsBuff (512 bytes): body of the current news item.
+//
+//   void     ia_getNewsTitle(uint8_t *titleBuff)
+//              titleBuff (64 bytes): title of the current news item.
+//
+//   void     ia_getNewsDate(uint8_t *dateBuff)
+//              dateBuff (20 bytes): date of the current news item.
+//
+//   uint8_t  ia_extended_getNewsCount()
+//              Number of news articles, for the ...ById functions below.
+//
+//   void     ia_extended_getNewsContentById(uint8_t id, uint8_t *newsBuff)
+//              newsBuff (512 bytes): body of news article id.
+//
+//   void     ia_extended_getNewsTitleById(uint8_t id, uint8_t *titleBuff)
+//              titleBuff (64 bytes): title of news article id.
+//
+//   void     ia_extended_getNewsDateById(uint8_t id, uint8_t *dateBuff)
+//              dateBuff (20 bytes): date of news article id.
+//
+//   void     ia_extended_getNewsIconTileColor(uint8_t id, uint8_t *colorBuff)
+//              colorBuff (32 bytes): icon colours of news article id (tile order 0 2 / 1 3).
+//
+//   void     ia_extended_getNewsIconTilePattern(uint8_t id, uint8_t *patternBuff)
+//              patternBuff (32 bytes): icon patterns of news article id.
+//
+// ADAPTER
+//   void     ia_getLog(uint8_t *logBuff)
+//              logBuff (512 bytes): the last 512 bytes of the adapter's log.
+//
+//   uint8_t  ia_extended_getOperatingSystem()
+//              OS the adapter runs on: 0 Windows, 1 MacOS, 2 Linux, 99 unknown.
+//
+//   void     ia_getCurrentDateTimeStr(uint8_t *dateFormatStr, uint8_t dateFormatStrLen,
+//                                     uint8_t *dateBuff)
+//              dateBuff (64 bytes): current date / time in a format such as
+//              "yyyy-MM-dd HH:mm:ss". Pass length 0 for the default format. The format
+//              codes are listed at the function.
+//
+//   void     ia_getAdapterVersion(uint8_t *versionStr)
+//              versionStr (14 bytes): adapter version, e.g. "2024.04.19.00".
+//
+//   bool     ia_getNewVersionAvailable()
+//              True when a newer adapter version is available.
+//
+// LOW LEVEL (the functions above already do this; you rarely need them)
+//   void     ia_focusInterrupts()
+//   void     ia_restoreInterrupts()
+//              Mask every interrupt except HCCA receive around an adapter exchange, then
+//              put the previous mask back. _ia_readReply() is internal.
 // **********************************************************************************************
 
 #ifndef RETRONET_IA_FILE_STORE_H
@@ -193,7 +288,11 @@ void ia_setSelection2(uint8_t parentId, uint16_t childId) {
 // -----------------------------------------------------------
 // Get the description of the child Id under the parent Id
 //
-// *Note: the descBuff must be 256 bytes long
+// *Note: the descBuff must be at least 255 bytes long. The function
+// writes exactly 255 bytes: the description, padded with zeros. A
+// description of the full 255 characters leaves no room for a NUL,
+// so if you need a terminated string use a 256 byte buffer and set
+// descBuff[255] = 0 yourself.
 // -----------------------------------------------------------
 void ia_getChildDescription2(uint8_t parentId, uint16_t childId, uint8_t *descBuff) {
 

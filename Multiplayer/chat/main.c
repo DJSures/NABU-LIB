@@ -21,6 +21,34 @@
 #include "../../NABULIB/patterns.h"
 #include "../../NABULIB/RetroNET-Multiplayer.h"
 
+// ---------------------------------------------------------------------------
+// Multiplayer calls used by this program (all from RetroNET-Multiplayer.h)
+// ---------------------------------------------------------------------------
+//
+// Order of calls:
+//
+//   mp_isSupported()     Is the Internet Adapter new enough? ALWAYS call first.
+//   mp_init()            Connect the adapter to nabu.ca for this game id.
+//   mp_getPlayerName()   Read the player name saved in the adapter's settings.
+//   mp_quickJoin()       Join an open room, or create one if none is open.
+//   loop:
+//     mp_status()        Cheap poll: state, player count, what is waiting.
+//     mp_chatSend()      Send a line of chat to everyone in the room.
+//     mp_chatRecv()      Read the next waiting chat line.
+//     mp_recv()          Read the next waiting raw packet.
+//   mp_leave()           Leave the room.
+//   mp_shutdown()        Disconnect the adapter from the server.
+//
+// Error helpers:
+//
+//   mp_resultName()      Short text for a result code ("TIMEOUT", "OFFLINE"...).
+//   mp_getLastError()    The adapter's longer explanation of the last error.
+//
+// Most mp_ functions return a result code: MP_OK (0) on success, otherwise one of
+// the MP_ERR_* values. Most calls are answered instantly from the adapter's memory.
+// Only the ones marked "NETWORK CALL" below wait on the internet, and those give up
+// after 5 seconds with MP_ERR_TIMEOUT, so don't call them every frame.
+
 // The sandbox works without registering. Swap in your own game id from
 // nabu.ca/my/multiplayer when you make something real.
 // (The shared sandbox id was removed: every program needs its own registered id.)
@@ -49,15 +77,25 @@
 // make fast typing drop keys.
 #define POLL_FRAMES     6
 
+// Filled by mp_status(). The fields this program uses:
+//   state        MP_STATE_LOBBY / MP_STATE_IN_GAME while the room is alive,
+//                MP_STATE_ENDED / MP_STATE_CLOSED / MP_STATE_NONE once it is gone
+//   playerCount  how many players are in the room right now (including me)
+//   chatWaiting  chat lines queued in the adapter for mp_chatRecv()
+//   rxWaiting    raw packets queued in the adapter for mp_recv() (capped at 255)
+// Others: flags (MP_STATUS_*), myId, hostId, playerMask, rosterRev, dataRev, endReason.
 MpStatus _status;
-uint8_t  _myName[16];
+
+// The buffer sizes marked "must be" are required by the library. The adapter always
+// writes that many bytes, so a smaller buffer would be overrun.
+uint8_t  _myName[16];         // must be 16 bytes: mp_getPlayerName() (15 chars + NUL)
 uint8_t  _input[INPUT_MAX + 1];
 uint8_t  _inputLen = 0;
 uint8_t  _line[48];
-uint8_t  _chatName[16];
-uint8_t  _chatText[128];
-uint8_t  _packet[128];
-uint8_t  _errText[64];
+uint8_t  _chatName[16];       // must be 16 bytes: mp_chatRecv() sender name
+uint8_t  _chatText[128];      // must be 128 bytes: mp_chatRecv() text (127 chars + NUL)
+uint8_t  _packet[128];        // any size: mp_recv() is told the size and truncates
+uint8_t  _errText[64];        // must be 64 bytes: mp_getLastError()
 uint8_t  _lastPlayerCount = 0;
 
 // ---------------------------------------------------------------------------
@@ -156,10 +194,19 @@ void printError(const char *what, uint8_t result) {
   uint8_t pos = appendStr(_line, 0, what, 40);
 
   pos = appendStr(_line, pos, ": ", 40);
+
+  // mp_resultName(result)
+  //   result   a result code returned by another mp_ function (MP_OK, MP_ERR_*)
+  //   returns  a short upper-case name such as "TIMEOUT" or "SESSION FULL", or
+  //            "UNKNOWN ERROR" for a code it doesn't know. Never NULL.
   appendStr(_line, pos, mp_resultName(result), 40);
 
   printMessage(_line);
 
+  // mp_getLastError(text)
+  //   text     buffer of at least 64 bytes. Receives the adapter's readable
+  //            explanation of the most recent error, always NUL terminated.
+  //            More detail than mp_resultName(), e.g. why the server refused.
   mp_getLastError(_errText);
 
   printMessage(_errText);
@@ -219,6 +266,13 @@ void handleKeys() {
 
         _input[_inputLen] = 0x00;
 
+        // mp_chatSend(text)
+        //   text     NUL-terminated line to send to everyone in the room. Clipped
+        //            to MP_CHAT_MAX (127) characters.
+        //   returns  MP_OK, or e.g. MP_ERR_RATE_LIMIT (sending too fast, line
+        //            dropped) or MP_ERR_NOT_IN_SESSION.
+        // The line isn't printed here: this program expects it to come back
+        // through mp_chatRecv() along with everyone else's.
         result = mp_chatSend((const char *)_input);
 
         if (result != MP_OK)
@@ -250,6 +304,15 @@ void drainChat() {
 
   uint8_t from;
 
+  // mp_chatRecv(from, name, text)
+  //   from     receives who sent the line: a player id (0 - 15),
+  //            MP_CHAT_FROM_WEB (someone chatting on nabu.ca) or
+  //            MP_CHAT_FROM_SYSTEM (a server notice such as "LEO joined").
+  //            May be NULL if you don't care.
+  //   name     buffer of at least 16 bytes. Receives the sender's name, NUL terminated.
+  //   text     buffer of at least 128 bytes. Receives the line, NUL terminated.
+  //   returns  the length of the line, or 0 when no chat is waiting (name and
+  //            text are left untouched in that case).
   while (mp_chatRecv(&from, _chatName, _chatText) != 0) {
 
     uint8_t pos;
@@ -283,6 +346,16 @@ void drainPackets() {
   uint8_t  from;
   uint16_t len;
 
+  // mp_recv(buf, maxLen, from, channel)
+  //   buf      where the packet's bytes are copied. Not NUL terminated: packets
+  //            are raw binary.
+  //   maxLen   the most bytes to copy into buf. A longer packet is truncated and
+  //            the rest is thrown away.
+  //   from     receives the sender's player id (0 - 15). May be NULL.
+  //   channel  receives the channel it was sent on: 0 (MP_CHANNEL_RELIABLE) is
+  //            reliable and in order, 1 - 255 keep only the newest packet per
+  //            sender. May be NULL, as it is here.
+  //   returns  the number of bytes copied into buf, or 0 when nothing is waiting.
   while ((len = mp_recv(_packet, sizeof(_packet) - 1, &from, NULL)) != 0) {
 
     uint8_t pos = appendStr(_line, 0, "P", 40);
@@ -308,6 +381,11 @@ void drainPackets() {
 // One poll of the adapter. Returns false when the session is over.
 bool pollNetwork() {
 
+  // mp_status(status)
+  //   status   an MpStatus struct to fill (see _status above for the fields).
+  //   returns  nothing. Answered from the adapter's memory, so it is cheap
+  //            enough to call every frame or two. Use chatWaiting / rxWaiting to
+  //            decide whether mp_chatRecv() / mp_recv() are worth calling.
   mp_status(&_status);
 
   if (_status.state != MP_STATE_LOBBY && _status.state != MP_STATE_IN_GAME) {
@@ -361,6 +439,11 @@ void main() {
   vdp_newLine();
 
   // Must come first: an older adapter would hang on any other mp_ call
+  //
+  // mp_isSupported()
+  //   returns  true when the Internet Adapter's version is at least
+  //            MP_MIN_IA_VERSION. Uses an older adapter command that every
+  //            adapter answers, so it can never hang.
   if (!mp_isSupported()) {
 
     vdp_print("Your Internet Adapter is too old.");
@@ -373,6 +456,14 @@ void main() {
   vdp_print("Connecting...");
   vdp_newLine();
 
+  // mp_init(gameId)                                          NETWORK CALL
+  //   gameId   your game's id from nabu.ca/my/multiplayer. Rooms are separated
+  //            by game id, so only programs using the same id meet each other.
+  //   returns  MP_OK, or e.g. MP_ERR_OFFLINE (adapter can't reach nabu.ca),
+  //            MP_ERR_UNKNOWN_GAME (id not registered or disabled),
+  //            MP_ERR_OUTDATED (adapter needs an update) or MP_ERR_TIMEOUT.
+  //   On success it also fills the globals mp_protocolVersion,
+  //   mp_gameMaxPlayers and mp_maxPacket (largest packet the server accepts).
   result = mp_init(CHAT_GAME_ID);
 
   if (result != MP_OK) {
@@ -388,6 +479,11 @@ void main() {
   }
 
   // Use the name from the adapter settings, or ask for one
+  //
+  // mp_getPlayerName(name)
+  //   name     buffer of at least 16 bytes. Receives the default player name
+  //            the user saved in the Internet Adapter's settings, NUL
+  //            terminated. name[0] is 0 when no name has been set.
   mp_getPlayerName(_myName);
 
   if (_myName[0] == 0x00) {
@@ -403,6 +499,25 @@ void main() {
     vdp_newLine();
   }
 
+  // mp_quickJoin(maxPlayers, flags, playerName, sessionId, myId, created)   NETWORK CALL
+  //   Joins an open public room of this game (no access code, not full, not
+  //   locked), or creates a new one when none is open.
+  //   maxPlayers  room size to use IF a new room is created: 2 - 16, clamped to
+  //               the game's limit (mp_gameMaxPlayers, filled by mp_init()).
+  //               Ignored when joining an existing room.
+  //   flags       options IF a new room is created, MP_FLAG_* OR'd together, e.g.
+  //               MP_FLAG_PRIVATE (unlisted), MP_FLAG_LATE_JOIN (join after the
+  //               game starts), MP_FLAG_HOST_MIGRATION (keep the room alive when
+  //               the host leaves), MP_FLAG_WEB_CHAT (let people on nabu.ca chat in).
+  //   playerName  your name as others will see it. Clipped to 15 characters and
+  //               may be refused by the name filter (MP_ERR_NAME).
+  //   sessionId   receives the room's id. May be NULL.
+  //   myId        receives your player id (0 - 15) in the room. This is the
+  //               "from" value others see on your packets. May be NULL.
+  //   created     receives true when a new room was created, which makes you
+  //               the host. May be NULL.
+  //   returns     MP_OK, or e.g. MP_ERR_FULL, MP_ERR_NAME, MP_ERR_BUSY,
+  //               MP_ERR_TIMEOUT.
   result = mp_quickJoin(CHAT_MAX_PLAYERS, MP_FLAG_NONE, (const char *)_myName, &sessionId, &myId, &created);
 
   if (result != MP_OK) {
@@ -442,8 +557,16 @@ void main() {
       break;
   }
 
+  // mp_leave()
+  //   Leaves the current room; the others see their playerCount drop. Returns
+  //   a result code. The adapter also leaves on its own if the NABU resets,
+  //   disconnects, or stops talking to it for 30 seconds while in a room.
   mp_leave();
 
+  // mp_shutdown()
+  //   Leaves any room still joined and disconnects the adapter from the
+  //   multiplayer server. Call mp_init() again before using mp_ functions again.
+  //   Returns a result code.
   mp_shutdown();
 
   while (true);
