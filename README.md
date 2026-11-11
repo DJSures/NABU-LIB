@@ -7,7 +7,9 @@ For HomeBrew and Cloud CP/M (HTTPS://NABU.CA) RetroNet of the NABU Personal Comp
 This library is optimized to be as efficient as possible, including a text mode double buffer for scrolling, special function registers, and inlining where appropriate. This project aims to build a library for Cloud CP/M and homebrew development of the NABU PC with the easiest and fastest toolset.
 
 # Z88DK
-When installing Z88DK, make sure you use the NIGHTLY BUILD for your OS. Also, for Windows users, simply put it in C:\Z88DK and my BUILD.BAT files in the examples will work easily. Linux users will have to fend for themselves :D
+Use z88dk from 23.07.2022 (v2.3)
+- You can use a newer version if you wanna change nabulib, but they made a lot of changes to the compiler that i'm not a fan of so i'll continue using this version that works
+- When installing Z88DK, make sure you use the NIGHTLY BUILD for your OS. Also, for Windows users, simply put it in C:\Z88DK and my BUILD.BAT files in the examples will work easily. Linux users will have to fend for themselves :D
 
 # The NABU-LIB Library
 The main library in the directories above is NABULIB. Within that folder, you will find the main NABULIB libraries, which is the only stuff that needs to be included in your NABU program. I have included fonts and utilities for graphics, sound, joystick, CPM, and more. If an example is missing or not working, ask me and I'll create it for you.
