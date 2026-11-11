@@ -585,6 +585,22 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     return key;
   }
 
+  // Emulates CP/M BDOS call #6 (direct console input), which returns 0 if no
+  // char is waiting. Reads the buffer directly instead of calling getChar()
+  // because getChar() also erases the cursor character, which would overwrite
+  // whatever is on screen at the cursor position every time a key is polled.
+  uint8_t getKey() {
+
+    if (_kbdBufferWritePos == _kbdBufferReadPos)
+      return 0;
+
+    uint8_t key = _kbdBuffer[_kbdBufferReadPos];
+
+    _kbdBufferReadPos++;
+
+    return key;
+  }
+
   // Inline: a single memory load at the call site
   inline uint8_t getJoyStatus(uint8_t joyNum) {
 

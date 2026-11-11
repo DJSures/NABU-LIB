@@ -881,6 +881,13 @@ inline uint8_t ayRead(uint8_t reg);
   uint8_t getChar();
 
   // **************************************************************************
+  // Does not block. Returns 0 if no key is waiting, otherwise removes the key
+  // from the buffer and returns its value (like CP/M BDOS call #6).
+  // Unlike getChar(), no cursor is drawn or erased.
+  // **************************************************************************
+  uint8_t getKey();
+
+  // **************************************************************************
   // Read a line of text inputed by the keyboard. This does not null terminate the
   // user input. If you need the input null terminated, make the maxInputLen one byte
   // less than the buffer size, and manually set the 0x00 yourself after the return.
