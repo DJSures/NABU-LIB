@@ -1,9 +1,9 @@
 // ****************************************************************************************
 // NABU-LIB C Library - MAKE SOMETHING
-// DJ Sures (c) 2024
+// DJ Sures (c) 2026
 // https://nabu.ca
 // 
-// Last updated on 2024.04.01.00
+// Last updated on 2026.11.11.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
