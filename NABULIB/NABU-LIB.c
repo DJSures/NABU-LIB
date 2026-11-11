@@ -1192,6 +1192,38 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
         _vdpTextBufferSize = 768;
 
         break;
+      case VDP_MODE_G1:
+
+        // G1 has no split tables. Leaving splitThirds on would make the pattern/color
+        // loaders write copies at +2048/+4096, over the sprite attribute and name tables.
+        _vdpSplitThirds = false;
+
+        vdp_setRegister(0, 0b00000000);
+
+        _vdpReg1Val = 0b11000000 | (big_sprites << 1) | magnify;
+        vdp_setRegister(1, _vdpReg1Val);
+
+        vdp_setRegister(2, 0x05);             // name table 0x05 * 0x400 = 0x1400
+        _vdpPatternNameTableAddr = 0x1400;
+
+        vdp_setRegister(3, 0x80);             // color table 0x80 * 0x40 = 0x2000
+        _vdpColorTableAddr = 0x2000;
+
+        vdp_setRegister(4, 0x01);             // pattern generator 0x01 * 0x800 = 0x0800
+        _vdpPatternGeneratorTableAddr = 0x800;
+
+        vdp_setRegister(5, 0x20);             // sprite attributes 0x20 * 0x80 = 0x1000
+        _vdpSpriteAttributeTableAddr = 0x1000;
+
+        vdp_setRegister(6, 0x00);             // sprite patterns 0x00 * 0x800 = 0x0000
+        _vdpSpriteGeneratorTableAddr = 0x0000;
+
+        fgColor = 0;
+        _vdpCursorMaxX = 31;
+        _vdpCursorMaxXFull = 32;
+        _vdpTextBufferSize = 768;
+
+        break;
     }
 
     // Pre-compute row * columns for every row (and one past the last row) so the
@@ -1208,17 +1240,22 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
       rowPtr++;
     } while (rowPtr != rowEnd);
 
-    if (_vdpSplitThirds)
-      vdp_setRegister(3, 0xff);
-    else
-      vdp_setRegister(3, 0x9f);
-    _vdpColorTableAddr = 0x2000;
+    // G1 sets its own color and sprite table locations in the switch above, so
+    // these shared defaults are only applied to the other modes.
+    if (mode != VDP_MODE_G1) {
 
-    vdp_setRegister(5, 0x36);
-    _vdpSpriteAttributeTableAddr = 0x1b00;
+      if (_vdpSplitThirds)
+        vdp_setRegister(3, 0xff);
+      else
+        vdp_setRegister(3, 0x9f);
+      _vdpColorTableAddr = 0x2000;
 
-    vdp_setRegister(6, 0x07);
-    _vdpSpriteGeneratorTableAddr = 0x3800;
+      vdp_setRegister(5, 0x36);
+      _vdpSpriteAttributeTableAddr = 0x1b00;
+
+      vdp_setRegister(6, 0x07);
+      _vdpSpriteGeneratorTableAddr = 0x3800;
+    }
 
     vdp_setRegister(7, (fgColor << 4) | (bgColor & 0x0f));
 
@@ -1257,9 +1294,20 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
     // R1:
     //   bit7 = 1 -> 16K VRAM
     //   bit6 = 1 -> display ON (0 when we want to blank)
-    //   bit5 = 1 -> blank leftmost 8 pixels (MSX style, can be 0 if not desired)
+    //   bit5     -> VDP frame interrupt enable (IE). Left off here, the same as
+    //               vdp_init(); vdp_addISR()/vdp_enableVDPReadyInt() ORs it in.
+    //               Kept on if a VDP ISR is already running.
     //   other bits: 8x8 sprites, no magnification
-    vdp_setRegister(1, 0b11100000);
+    //
+    // _vdpReg1Val must be recorded because vdp_addISR() and vdp_disableVDPReadyInt()
+    // rewrite R1 from it. Left at its old value, enabling the VDP interrupt after
+    // this call would write a stale R1 (e.g. 0x20 = display off).
+    _vdpReg1Val = 0b11000000;
+
+    if (_vdpInterruptEnabled)
+      vdp_setRegister(1, _vdpReg1Val | 0b00100000);
+    else
+      vdp_setRegister(1, _vdpReg1Val);
 
     // R2: name (Screen Image) table base: 0x1800
     //   base = R2 * 0x400 -> 0x06 * 0x400 = 0x1800
@@ -1283,6 +1331,19 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
 
     // R7: background / border colour (low nibble)
     vdp_setRegister(7, bgColor & 0x0f);
+
+    // Record the mode and table addresses so the rest of the library (sprites,
+    // vdp_loadPatternTable/ColorTable, plotting) writes to the SC2 locations.
+    // splitThirds is true because R3/R4 = 0xFF/0x03 give each third of the screen
+    // its own 2K of patterns and colors, exactly like vdp_init(..., splitThirds = true).
+    _vdpMode                      = VDP_MODE_G2;
+    _vdpSplitThirds               = true;
+    _vdpSpriteSizeSelected        = false;
+    _vdpPatternGeneratorTableAddr = 0x0000;
+    _vdpPatternNameTableAddr      = 0x1800;
+    _vdpSpriteAttributeTableAddr  = 0x1b00;
+    _vdpColorTableAddr            = 0x2000;
+    _vdpSpriteGeneratorTableAddr  = 0x3800;
   }
 
   void vdp_initTextMode80(uint8_t fgColor, uint8_t bgColor, bool autoScroll) {
@@ -1298,6 +1359,12 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds) {
 
     vdp_init(VDP_MODE_G2, 0, bgColor, bigSprites, scaleSprites, autoScroll, splitThirds);
+  }
+
+  void vdp_initG1Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds) {
+
+    // splitThirds is ignored by vdp_init() for G1, it is forced to false there
+    vdp_init(VDP_MODE_G1, 0, bgColor, bigSprites, scaleSprites, autoScroll, splitThirds);
   }
 
   void vdp_initMultiColorMode() {
@@ -1409,6 +1476,16 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) {
   }
 
   void vdp_colorizePattern(uint8_t patternId, uint8_t fg, uint8_t bg) {
+
+    // G1 has a 32 byte color table with one byte per group of 8 patterns, so this
+    // colors patternId and the 7 other patterns in its group
+    if (_vdpMode == VDP_MODE_G1) {
+
+      vdp_setWriteAddress(_vdpColorTableAddr + (patternId >> 3));
+      IO_VDPDATA = (fg << 4) | (bg & 0x0f);
+
+      return;
+    }
 
     _vdp_fillThirds(_vdpColorTableAddr + ((uint16_t)patternId << 3), 8, (fg << 4) | (bg & 0x0f));
   }

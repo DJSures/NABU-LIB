@@ -560,6 +560,7 @@ volatile uint8_t _randomSeed = 0;
     VDP_MODE_MULTICOLOR = 2,
     VDP_MODE_TEXT40 = 3,
     VDP_MODE_TEXT80 = 4,
+    VDP_MODE_G1 = 5,
   };
 
 
@@ -1318,6 +1319,25 @@ inline uint8_t ayRead(uint8_t reg);
   void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds);
 
   // **************************************************************************
+  // Initializes the VDP in Graphic Mode 1 (32x24 tiles, 256 patterns, one color
+  // byte per group of 8 patterns)
+  //
+  // VRAM map: sprite patterns 0x0000, patterns 0x0800, sprite attributes 0x1000,
+  //           names 0x1400, colors 0x2000
+  //
+  // bgColor:      Background color
+  // bigSprites:   true for 16x16 sprites, or false for 8x8 sprites
+  // scaleSprites: use software to scale the sprites by 2.
+  //               You will still provide the sprite size specified from 'spriteSize' but
+  //               they will be double the size when put on the screen
+  // autoScroll:   Will text scroll when it reaches bottom of the screen
+  // splitThirds:  Ignored. G1 has no split tables, it is always treated as false.
+  //               Kept so the parameters match vdp_initG2Mode()
+  //
+  // **************************************************************************
+  void vdp_initG1Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds);
+
+  // **************************************************************************
   // Initializes the VDP in 64x48 Multicolor Mode. Not really useful if more than 4k Video ram is available
   //
   // **************************************************************************
@@ -1326,12 +1346,17 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   // Initializes the VDP in MSX Basic compatible mode for loading .SC2 files
   //
+  // Graphics II with the SC2 VRAM map: patterns 0x0000, names 0x1800, sprite
+  // attributes 0x1B00, colors 0x2000, sprite patterns 0x3800. Only the registers
+  // are set; load the pattern, name and color tables yourself. 8x8 sprites. The
+  // sprite and VDP interrupt functions can be used afterwards.
+  //
   // **************************************************************************
   void vdp_initMSXMode(uint8_t bgColor);
 
   // **************************************************************************
   // 
-  // mode:         One of the graphic modes (VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT)
+  // mode:         One of the graphic modes (VDP_MODE_G1 | VDP_MODE_G2 | VDP_MODE_MULTICOLOR | VDP_MODE_TEXT)
   // fgColor:        Color of the foreground (for text mode only)
   // bgColor:        Color of the background
   // spriteSize:   true for 16x16 sprites, or false for 8x8 sprites
