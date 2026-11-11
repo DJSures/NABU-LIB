@@ -281,9 +281,6 @@ Update the VDP right after `vdp_waitVDPReadyInt()`, and use `DEBUG_VDP_INT` to c
 **Network features don't work**
 Make sure you didn't `#define DISABLE_HCCA_RX_INT`, and that your Internet Adapter is up to date.
 
-**MAME misses incoming characters**
-MAME needs a TX delay set in the Internet Adapter. A real NABU receives at the full 111 kb/s with no delay.
-
 ---
 
 ## License
