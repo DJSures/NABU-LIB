@@ -8,7 +8,7 @@ This library is optimized to be as efficient as possible, including a text mode 
 
 # Z88DK
 Use z88dk from 23.07.2022 (v2.3)
-- You can use a newer version if you wanna change nabulib, but they made a lot of changes to the compiler that i'm not a fan of so i'll continue using this version that works
+- You can use a newer version if you wanna change nabulib, but they made a lot of changes to the compiler that i'm not a fan of so i'll continue using this version that works. That doesn't mean i don't agree with their changes, i'm just happy with how it worked before :D and I appreciate their NABU support <3
 - When installing Z88DK, make sure you use the NIGHTLY BUILD for your OS. Also, for Windows users, simply put it in C:\Z88DK and my BUILD.BAT files in the examples will work easily. Linux users will have to fend for themselves :D
 
 # The NABU-LIB Library
