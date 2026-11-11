@@ -1,59 +1,135 @@
 # NABU-LIB
 
-MAKE SOME SOMETHING :D
+### MAKE SOMETHING :D
 
-For HomeBrew and Cloud CP/M (HTTPS://NABU.CA) RetroNet of the NABU Personal Computer Preservation Project. This repo is a z88dk C library for the NABU PC (personal computer). It includes efficient C functions for video, audio, hcca, keyboard, and more for the NABU Computer. This is an ongoing project, so follow this repo for additions, changes, and bug fixes.
+A fast, friendly **z88dk C library for the NABU Personal Computer**. Write homebrew programs and **Cloud CP/M** apps in C, with video, audio, keyboard, joysticks, the HCCA network port, RetroNET internet features, and now **online multiplayer**.
 
-This library is optimized to be as efficient as possible, including a text mode double buffer for scrolling, special function registers, and inlining where appropriate. This project aims to build a library for Cloud CP/M and homebrew development of the NABU PC with the easiest and fastest toolset.
+It's built for the [NABU Personal Computer Preservation Project](https://nabu.ca) and the NABU Internet Adapter (IA). It's a work in progress, so **watch/star this repo** to keep up with new features and fixes.
 
-# Z88DK
-Use z88dk from 23.07.2022 (v2.3)
-- You can use a newer version if you wanna change nabulib, but they made a lot of changes to the compiler that i'm not a fan of so i'll continue using this version that works. That doesn't mean i don't agree with their changes, i'm just happy with how it worked before :D and I appreciate their NABU support <3
-- When installing Z88DK, make sure you use the NIGHTLY BUILD for your OS. Also, for Windows users, simply put it in C:\Z88DK and my BUILD.BAT files in the examples will work easily. Linux users will have to fend for themselves :D
+---
 
-# The NABU-LIB Library
-The main library in the directories above is NABULIB. Within that folder, you will find the main NABULIB libraries, which is the only stuff that needs to be included in your NABU program. I have included fonts and utilities for graphics, sound, joystick, CPM, and more. If an example is missing or not working, ask me and I'll create it for you.
+## Contents
 
-# Get Started
-I recommend starting with the SKELETON project. The skeleton project contains the batch files (for Windows) and a template main.c with all the stuff ready for you to get going.
+- [Why NABU-LIB?](#why-nabu-lib)
+- [Quick Start (5 minutes)](#quick-start-5-minutes)
+- [Your First Program](#your-first-program)
+- [Homebrew or Cloud CP/M?](#homebrew-or-cloud-cpm)
+- [Building Homebrew Apps (.NABU)](#building-homebrew-apps-nabu)
+- [Building Cloud CP/M Apps (.COM)](#building-cloud-cpm-apps-com)
+- [Configuration Switches](#configuration-switches)
+- [What's in the Library](#whats-in-the-library)
+- [Examples](#examples)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+- [Version Notes](#version-notes)
 
-# Tips
-I'm not using homebrew much because I prefer Cloud CP/M builds. So you'll see my examples are leaning toward Cloud CP/M. It'll make your program friendly to distribute and will easily work on other CP/M systems if it isn't using hardware-specific stuff. So if you disable keyboard, disable hcca, disable vdp, and use fprint/stdout and vt52 commands, it'll work on any Z80 CP/M computer. Now, if you use VDP and maintain interrupts for the keyboard, then your program is stuck with NABU, but I still prefer CP/M builds. Either way, the instructions for both are provided below.
+---
 
-# Cloud CP/M Apps
-When building for Cloud CP/M, I recommend using the +cpm target with z88dk. The +cpm with -subtype=nabu or -subtype=nabudos will take the VDP interrupt, create an unwanted hcca buffer, and a few other things.
+## Why NABU-LIB?
 
-For building apps for Cloud CP/M, this is the suggested command-line (replace MYAPP with your app title):
+- **Fast.** Hand-tuned for the Z80: a double-buffered text mode for smooth scrolling, special function registers, inlining where it helps, and interrupt handlers that only save the registers they use.
+- **Complete.** VDP graphics (text, 80-column text, G2, sprites, bitmaps), AY-3-8910 sound and a music tracker, keyboard, up to 4 joysticks, HCCA serial, and vsync timing for games.
+- **Online.** RetroNET lets your NABU fetch HTTP/HTTPS/FTP files, read and write files on the Internet Adapter, open TCP connections, control the IA, and host or join multiplayer games.
+- **One include.** Add `NABU-LIB.h` and you're done. You don't need to link anything else.
 
-``
-   zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "MYAPP"
-``
+---
 
-That command-line will create a MYAPP.COM file, which you can simply copy to a Cloud CP/M disk image and run it. I have a BUILD.BAT for every project, and in the project folder I include the CPMTOOLS (mkfs.cpm, cpmcp, diskdefs) files. In my BUILD.BAT, I create a Cloud CP/M disk image with the MYAPP.com and copy it to my Internet Adapter Storage Folder. I usually use B: and that way you can just switch to B: in Cloud CP/M and test the program. You don't need to reboot the NABU every time you create a new build/disk image. Just run the program again after a rebuild and the new binary will be read - that's what's great about CP/M not having disk cache. It really only caches the directory contents, so the same program name can be ran over and over. Now, if your program crashes the NABU, you'll need to reboot because that's your problem :)
+## Quick Start (5 minutes)
 
-# Sample Cloud CP/M BUILD.BAT
-CPM apps have a .COM extension. Because NABULIB is created for z88dk and I use Windows, this is a batch file. I always put the latest (nightly build) of z88dk in C:\Z88DK folder so it's easy to find and works with all my BUILD.BAT files. Another thing is that I name all my programs main.c, so that's a thing you'll notice. I put a pause at the end of the batch file so I can see if there were any errors. I also have a DIR *.COM because I like to see the file size of my program when optimizing. The parameters that are used for z88dk will create a LST and MAP file for you, as well.
+### 1. Install z88dk
+
+NABU-LIB is developed and tested with **z88dk v2.3 (the 23.07.2022 build)**.
+
+- **Windows:** unzip z88dk to **`C:\z88dk`**. Every `build.bat` in this repo expects it there, so the examples build without any edits.
+- **Linux / macOS:** install z88dk your usual way and run the same `zcc` commands shown below. The batch files are Windows-only, so you're on your own for scripts (sorry! :D).
+
+> Newer z88dk versions may work, but they changed a lot in the compiler. I'm happy with how v2.3 works, so that's what NABULIB is built against. Nothing against their changes, and I really appreciate their NABU support <3
+
+### 2. Get the code
+
+Clone or download this repo. Keep the folder layout as it is, because the examples include the library with relative paths like `../NABULIB/NABU-LIB.h`.
+
+### 3. Build the Skeleton Project
+
+The **Skeleton Project** folder is a ready-to-go template with build scripts and a `main.c` that has every option already in place.
 
 ```
-@echo off
-
-SET Z88DK_DIR=c:\z88dk\
-SET ZCCCFG=%Z88DK_DIR%lib\config\
-SET PATH=%Z88DK_DIR%bin;%PATH%
-
-zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "YOURAPP"
-
-mkfs.cpm -f naburn "C:\My Documents\NABU Internet Adapter\Store\b.dsk"
-
-cpmcp -f naburn    "C:\My Documents\NABU Internet Adapter\Store\b.dsk" YOURAPP.com 0:
-
-dir *.com
-
-pause
+cd "Skeleton Project"
+build.bat         <- builds a homebrew 000001.nabu
+build-cpm.bat     <- builds a Cloud CP/M MYAPP.COM
 ```
-# Home Brew Apps
-Building a homebrew app is just as easy as a CPM App. It will generate a .NABU file, which is an executable binary that will load from the ROM when the NABU is first booted up. You can find more details about how that works and how I created the .NABU file format on my early YouTube NABU Hacking videos. But, the great folks at z88dk have created a +NABU targer for the compiler, which will generate a .NABU file. Here is an example z88dk commandline for compiling a .NABU file.
+
+### 4. Run it
+
+- **Homebrew (.NABU):** point your Internet Adapter at the `.nabu` file and boot the NABU (or MAME).
+- **Cloud CP/M (.COM):** copy the `.COM` onto a Cloud CP/M disk image and run it from the CP/M prompt. See [Building Cloud CP/M Apps](#building-cloud-cpm-apps-com) for a script that does this for you.
+
+That's it. You're making something!
+
+---
+
+## Your First Program
+
+Here's a complete text-mode "hello world". Save it as `main.c` in a new folder next to `NABULIB` (for example `MyApp/main.c`):
+
+```c
+#define BIN_TYPE BIN_HOMEBREW   // or BIN_CPM for a Cloud CP/M .COM
+#define FONT_STANDARD           // pick a font: FONT_AMIGA, FONT_SET1, FONT_STANDARD, FONT_LM80C
+#define DISABLE_HCCA_RX_INT     // not using the network, so save some space
+
+#include "../NABULIB/NABU-LIB.h"
+#include "../NABULIB/patterns.h"
+
+void main() {
+
+  // Set up audio, interrupts and the random number generator
+  initNABULib();
+
+  // 40-column white-on-blue text mode with auto scrolling
+  vdp_initTextMode(VDP_WHITE, VDP_DARK_BLUE, true);
+  vdp_loadASCIIFont(ASCII);
+
+  vdp_print("Hello from the NABU!\r\n");
+
+  // Wait for any key
+  while (!isKeyPressed());
+}
 ```
+
+Build it:
+
+```
+zcc +nabu -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "000001.nabu"
+```
+
+> **Important:** `NABU-LIB.h` pulls in `NABU-LIB.c` itself. Include it from **exactly one** `.c` file (normally `main.c`), and **don't** put `NABU-LIB.c` on the `zcc` command line.
+
+---
+
+## Homebrew or Cloud CP/M?
+
+| | **Homebrew** | **Cloud CP/M** |
+|---|---|---|
+| Output | `000001.nabu` | `MYAPP.COM` |
+| `BIN_TYPE` | `BIN_HOMEBREW` | `BIN_CPM` |
+| `zcc` target | `+nabu` | `+cpm` |
+| How it runs | Loads from the NABU ROM at boot, through the Internet Adapter or as a NABU Channel | Runs from the Cloud CP/M prompt, like any CP/M program |
+| Rebuild/test loop | Reboot the NABU | Just run it again. No reboot needed |
+| Best for | Full-screen games and demos that own the whole machine | Apps and tools you want to share easily |
+
+**My tip:** I prefer Cloud CP/M builds. They're easy to share, and the test loop is quick. If you disable the keyboard, HCCA, and VDP (see [Configuration Switches](#configuration-switches)) and stick to `printf`/stdio and the VT52 commands, your program will run on **any Z80 CP/M computer**. Once you use the VDP or the NABULIB keyboard interrupt, the program is NABU-only, and that's totally fine too.
+
+> Make sure `BIN_TYPE` in `main.c` matches the build you run. `BIN_HOMEBREW` goes with `+nabu`, and `BIN_CPM` goes with `+cpm`.
+
+---
+
+## Building Homebrew Apps (.NABU)
+
+A `.nabu` file is a standalone binary that the NABU ROM loads at boot. The z88dk team added a `+nabu` target that creates it for you. (My early NABU Hacking videos on YouTube explain how the format works.)
+
+**`build.bat`**
+
+```bat
 @echo off
 
 SET Z88DK_DIR=c:\z88dk\
@@ -70,93 +146,153 @@ echo ***************************************************************************
 pause
 ```
 
-# LICENSE
-This is a library for a 40 year old computer - so there's no license other than asking for fair acknowledgement/credit of my effort that got you this far. The only thing I ask is if you could give me credit if you use it. If you make changes to NABULIB or my programs, please send them my way so I can update this repo with your additions. You can find me on the NABU forum at https://forums.nabu.ca. Remember, this is a hobby for all of us, not a business so share and enjoy!
+---
 
+## Building Cloud CP/M Apps (.COM)
 
-# Version Notes
+Use the plain **`+cpm`** target. **Don't** use `-subtype=nabu` or `-subtype=nabudos`. Those take over the VDP interrupt, create an HCCA buffer you don't want, and stop stdin from going through BDOS.
 
-## v2023.05.10.00
-Added a new constant so your CPM program can determine what the visible character width is (40 or 80)
+```
+zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "MYAPP"
+```
 
-## v2023.03.30.00
-Added new functions to retronet file system for the new IA TCP Server feature. For example, CPM can now have input and output redirected to a TCP socket on the IA
+That creates `MYAPP.COM`. Copy it onto a Cloud CP/M disk image and run it.
 
-## v2023.03.22.00
-Removed the write16, write8 stuff because it was left over from the old debug days of original NABULIB and z88dk integration. You can simply use sprintf() or printf() now, and not worry about it
+### The fast test loop
 
-## v2023.03.11.00
-Added a new parameter for splitThirds for vdp_init that splits the nametable and color table generator into thirds. this is needed for bitmap graphics (i.e. drawing lines and stuff). See the Graphic Bitmap Test example project of how it works. Otherwise, just set this to FALSE for your projects because you probably don't use it
+My `build.bat` builds the app, creates a fresh disk image straight in the **Internet Adapter's Store folder**, and copies the `.COM` onto it. I use drive **B:**, so all I do is switch to `B:` in Cloud CP/M and run the program.
 
-## v2023.02.13.00
-Huge performance improvements on scrolling, hcca and other stuff. A few bug fixes. Also the retronet tcp client library is checked in. Requires the IA to be updated to 2023.02.14.00
+You **don't need to reboot** after each build. CP/M has no disk cache (it only caches the directory), so running the same program name again loads the new binary. If your program crashes the NABU, though, a reboot is on you :)
 
-## v2023.02.11.00
-Updated many routines to be much faster. Also added a scroll down.
+The CP/M disk tools (`mkfs.cpm.exe`, `cpmcp.exe`, `diskdefs`) are in the **Skeleton Project** folder. Copy them into your project folder.
 
-## v2023.02.13.00
-A few bug fixes (specifically vdp_clearRows()). Also added the new TCP library for the latest internet adapter. This allows NABU programs to establish stream TCP connections. 
+**`build.bat`** (change `YOURAPP` and the Store path to match your setup)
 
-## v2023.02.03.00
-Added new vdp functions for syncing game speed with vsync. Check the nabulib.h header in the VDP section for instructions and sample code. I'll add more examples and fix the build of other examples as time permits. Right now I'm breaking things while I continue to build GameManYeah!. I'll update the code on here for it someday when I'm a bit more comfortable with what I've created. There's also the NABU Tracker uploaded in here. But I need to provide examples for that as well. Stay tuned, I guess :)
+```bat
+@echo off
 
-## v2023.02.04.00
-Few fixes for vdp text features in any mode. A few additional commands for changing pattern colors on the fly (useful for multiple character sets). And the IA control library for the new retronet menu. IA is losing it's interface in the next few days and it will entirely be controlled by a menu on the NABU
+SET Z88DK_DIR=c:\z88dk\
+SET ZCCCFG=%Z88DK_DIR%lib\config\
+SET PATH=%Z88DK_DIR%bin;%PATH%
 
-## v2023.02.01.01
-Sorry, I broke your build! This release has a bunch of changes that allows G2 and Text mode to operate the same. You can load ASCII fonts -or- entire patterns. Even performing text print/write functions to G2 mode will work, including scrolling. So there's a number of changes that will break your build - but it's worth it.
+zcc +cpm -vn --list -m -create-app -compiler=sdcc -O3 --opt-code-speed main.c -o "YOURAPP"
 
-## v2023.02.01.00
-VDP uses default MSX memory mapping so you can load .sc2 files directly from vdp's 0x0. RetroNET remote filesystem calls that include reading now disable all other interrupts so it can get the job done without being annoyed with keyboard and vdp interrupts.
+REM Make a fresh Cloud CP/M disk image in the Internet Adapter's Store folder
+mkfs.cpm -f naburn "C:\My Documents\NABU Internet Adapter\Store\b.dsk"
 
-## v2023.01.30.00
-Fixed a bunch of sprite stuff.
+REM Copy the app onto the disk image (user area 0)
+cpmcp -f naburn "C:\My Documents\NABU Internet Adapter\Store\b.dsk" YOURAPP.com 0:
 
-## v2023.01.29.00
-optimized interrupts by reviewing the LIS and only saving registered that are needed. Added new assignable interrupt for vdp (read documentation) vdp_addISR()
+REM Show the file size, which is handy when optimizing
+dir *.com
 
-## v2023.01.28.00
-Added a G2 graphics mode 2 demo. I'll be rewriting the entire G2 graphics part because the stuff that's in NABULIB is not easy to work with.
+pause
+```
 
-## v2023.01.27.00
-Added joystick support to nabulib. The keyboard interrupt must be left enabled, and up to 4 joysticks can be used.
+Every build also writes a `.lis` listing and a `.map` file, which help when you're tuning for size or speed.
 
-## v2023.01.25.00
-The Telnet CPM application demonstrates how to build a CPM program without needing the -subtype=nabu on the commandline. This fixes the issue where z88dk was taking the interupts and not using bdos for STDIN. The latest Cloud CP/M BIOS 2.7b with virtual 80 display is using this build.
+### Optional CP/M size savers
 
-## v2023.01.23.00
-Includes VT52 commands for the CPM VT52 terminal emulation. There's also a VT52 and CPM Cursor project added.
+Add any of these to the top of `main.c` to strip out z88dk features you don't use:
 
-## v2023.01.21.00
-Update includes the check in the HCCA TX for the interrupt flag. Also a few other fixes and restructures. A fix for not disabling the COAX output on the control port in initNABULib()
+```c
+#pragma output nostreams       // no stdio (only if you're NOT using DISABLE_VDP)
+#pragma output nofileio        // no CP/M file read/write
+#pragma output noprotectmsdos  // strip the MS-DOS protection header (recommended)
+#pragma output noredir         // no command-line redirection (useless with nostreams)
+#pragma output nogfxglobals    // no z88dk graphics globals (recommended, NABULIB does graphics)
+```
 
-## v2023.01.18.00
-Includes options for enabling and disabling VDP, HCCA, Keyboard, and others. There is also a way to specify if the program you are creating is CPM or HOMEBREW. Read the NABU-LIB.h file for description of settings.
+---
 
-## v2023.01.15.00
-Updated NABU-LIB to have a initNABULib() function that will be called at the start of the program. It does a bunch of configuring, such as disabling the ROM, enabling HCCA and Keyboard interrupts, and audio.
+## Configuration Switches
 
-## v2023.01.09.00
-Minor change in that the NABU-LIB and Retro File System stuff has been seperated into files. This is because I'm working on a new NABU-LIB-CPM, that will include the remote file system. There is also a chnage to the rn_handleFileRead() because it now returns the number of bytes read. That makes it operate more like standard C streams. In addition, I have added rn_handleFileReadSeq() for sequential reading, and a related rn_handleSeek() to seek through the file. These changes require the latest Internet Adapter 2023.01.09.00
+Put these `#define`s **above** `#include "NABU-LIB.h"` in `main.c`. The Skeleton Project already has them all, commented out.
 
-## v2023.01.04.00
-Ability to choose your own font per application, rather than being LIB specific. Before the #include "nabu-lib.h" in your program, #define the font. Look at any of the examples in this github repo to see how it's done. And if you want to load a font programmatically while the program is running, there is a vdp_setTextModeFont() as well.
+| Define | What it does |
+|---|---|
+| `BIN_TYPE BIN_HOMEBREW` / `BIN_TYPE BIN_CPM` | **Required.** Which kind of binary you're building. |
+| `FONT_AMIGA`, `FONT_SET1`, `FONT_STANDARD`, `FONT_LM80C` | Picks a built-in font from `patterns.h`. Load it with `vdp_loadASCIIFont(ASCII)`. |
+| `DISABLE_KEYBOARD_INT` | Turns off the NABULIB keyboard (`isKeyPressed()`, `getChar()`, `readLine()`). **Required** if you read input with CP/M stdio/conio (`gets()`, etc.). |
+| `DISABLE_HCCA_RX_INT` | Turns off the HCCA receive interrupt. Use it when you don't need RetroNET, the file store, or IA control. Saves space. |
+| `DISABLE_VDP` | Removes the VDP functions. For CP/M console apps that use `printf`/`puts` and the VT52 `vt_` commands. |
+| `DISABLE_CURSOR` | Hides the NABULIB text cursor (it doesn't affect the CP/M cursor). |
+| `DEBUG_VDP_INT` | Flashes the ALERT LED if your frame takes longer than one vsync before `vdp_waitVDPReadyInt()`. Use it while debugging, then remove it for release. |
 
-## v2023.01.03.00
-Updated with additional file functions for listing directories, files, searching with wildcards and more. Use the HTTP Get Test project to see it in action.
+Want to use your own font? Define `const uint8_t ASCII[768] = { ... };` and pass it to `vdp_loadASCIIFont(ASCII)`.
 
-## v2023.01.01.00
-Happy New Year! The update to nabu-lib includes a much faster interrupt for handling RX buffer. There is also a larger RX buffer, which the size can be changed if you don't need it. With this RX interrupt change, the real NABU PC can receice data at full 111kb/s speed. That means the Internet Adapter no longer has a TX delay value for Serial connections. However, MAME still requires a TX delay because it will miss characters if they are transmitted too quickly. 
+---
 
-To see the new RX interrupt in action, use the RetroNET Telnet Client from the NABU Channels, or compile it from source here.
+## What's in the Library
 
-## v2022.12.31.00
-Added support for Internet Adapter (2022.12.31.00) remote file storage functions. This allows HomeBrew apps to read/write files from the Internet Adapter. It includes HTTP, FTP, HTTPS, and any file name with drives/directories. Check the NABU-LIB.h file for details about each function. There is also an example project named "HTTP Get" that you can try out. It demonstrates HTTP get, clearing file contents, writing files, inserting into files, replacing contents in a file, and more. 
+Everything lives in the **`NABULIB`** folder. The **only required file is `NABU-LIB.h`**. Add the others when you need them, and include them **after** `NABU-LIB.h`.
 
-## v2022.12.26.01
-Added a new function for keyboard input called readLine(). Also added an example on how to use it (Example - User Input and Print)
+| File | What it's for |
+|---|---|
+| `NABU-LIB.h` / `.c` | The core: VDP graphics and text, sprites, sound, keyboard, joysticks, HCCA, interrupts, VT52, vsync timing. Include only the `.h`. |
+| `patterns.h` | Built-in fonts and pattern tables. |
+| `NabuTracker.h` / `.c` | A lightweight music tracker for the AY-3-8910. |
+| `RetroNET-FileStore.h` / `.c` | Read and write files on the Internet Adapter, including HTTP/HTTPS/FTP downloads, directory listings, seeking, and TCP client/server sockets. |
+| `RetroNET-IAControl.h` | Control Internet Adapter settings and browse NABU Channels from the NABU. |
+| `RetroNET-CPMDrive.h` | Ask the IA to build or extract Cloud CP/M drive images. |
+| `RetroNET-Multiplayer.h` | **New!** Host, browse, and join online multiplayer sessions, and send packets between NABUs. |
+| `DirEntryReader.c` | CP/M BDOS directory walking and FCB helpers for CP/M utilities. |
 
-## v2022.12.26.00
+Every header starts with a **function index** and full descriptions, so the headers are the reference manual.
 
-This update includes http get features and requires the most recent Internet Adapter from https://nabu.ca. Now NABU HomeBrew applications can query data on the internet and the Internet Adapter will cache it. When the NABU application needs the data, it can request it from the Internet Adapter. Up to 256 queries per application can be stored in the IA for each NABU HomeBrew program. This can include additional code, music, images, etc.. Essentially, this gives a NABU a practically unlimited amount of storage space because it can use the cloud for obtaining resources. 
+---
+
+## Examples
+
+There are lots of real programs to learn from. Each folder has its own `build.bat`.
+
+| Folder | What you'll find |
+|---|---|
+| **Skeleton Project** | Start here. A template with build scripts and CP/M disk tools. |
+| **Demos** | Hello World, Bad Apple, Doom, Mandelbrot, JukeBox, NetMuse, SlideShow, NABUCAM, an `.sc2` image viewer, and more. |
+| **Games** | Brick Battle, 8-Bit Abyss, Battleship, NADoom, NetHack, CPM Life, and a **Game Dev 1-5** tutorial series. |
+| **Multiplayer** | Online **Chat**, **Tic-Tac-Toe**, and **Hockey** using the new multiplayer library. |
+| **RetroNET** | Telnet (VT100), IRC, chat, ping, nslookup, IA Control, and drive tools. |
+| **Utilities** | CP/M tools: `nano`, `vim`, `grep`, `more`, `wget`, `copy`, `move`, `ren`, `chkdsk`, `tnfs`, `playmidi`, and more. |
+| **Tests** | Small focused tests: G2, bitmap graphics, scrolling, 80 columns, HTTP Get, TCP Server, VT52, digital audio, music, input, and more. |
+
+If an example you need is missing or doesn't build, ask me and I'll make one for you.
+
+---
+
+## Troubleshooting
+
+**"Duplicate symbol" errors when linking**
+`NABU-LIB.h` contains the whole library. Include it from only one `.c` file, and don't pass `NABU-LIB.c` to `zcc`.
+
+**Keyboard input doesn't work in my CP/M app**
+If you use stdio (`gets()`, `getchar()`, etc.), add `#define DISABLE_KEYBOARD_INT`. Otherwise, NABULIB's keyboard interrupt grabs the keys before CP/M sees them.
+
+**My CP/M app acts strangely or stdin is broken**
+Build with plain `+cpm`, not `-subtype=nabu` or `-subtype=nabudos`.
+
+**The NABU hangs when I start multiplayer**
+Call `mp_isSupported()` before any other `mp_` function. Older Internet Adapters don't answer multiplayer commands, so update your IA from [nabu.ca](https://nabu.ca).
+
+**My game stutters or flickers**
+Update the VDP right after `vdp_waitVDPReadyInt()`, and use `DEBUG_VDP_INT` to check whether your frame takes longer than one vsync.
+
+**Network features don't work**
+Make sure you didn't `#define DISABLE_HCCA_RX_INT`, and that your Internet Adapter is up to date.
+
+**MAME misses incoming characters**
+MAME needs a TX delay set in the Internet Adapter. A real NABU receives at the full 111 kb/s with no delay.
+
+---
+
+## License
+
+This is a library for a 40-year-old computer, so there's no license. All I ask is **fair acknowledgment and credit** for the effort that got you this far. If you use it, please give me credit.
+
+If you change NABULIB or my programs, please send the changes my way so I can add them to this repo. You can find me on the NABU forum at **[forums.nabu.ca](https://forums.nabu.ca)**.
+
+This is a hobby for all of us, not a business, so share and enjoy!
+
+**Make something,**
+**DJ Sures**
 
