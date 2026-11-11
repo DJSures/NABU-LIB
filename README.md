@@ -1,3 +1,5 @@
+![NABU-LIB](NABU-LIB-hero.png)
+
 # NABU-LIB
 
 ### MAKE SOMETHING :D
@@ -21,7 +23,6 @@ It's built for the [NABU Personal Computer Preservation Project](https://nabu.ca
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
-- [Version Notes](#version-notes)
 
 ---
 
@@ -266,7 +267,7 @@ If an example you need is missing or doesn't build, ask me and I'll make one for
 `NABU-LIB.h` contains the whole library. Include it from only one `.c` file, and don't pass `NABU-LIB.c` to `zcc`.
 
 **Keyboard input doesn't work in my CP/M app**
-If you use stdio (`gets()`, `getchar()`, etc.), add `#define DISABLE_KEYBOARD_INT`. Otherwise, NABULIB's keyboard interrupt grabs the keys before CP/M sees them.
+If you use stdio (`gets()`, `getchar()`, etc.), add `#define DISABLE_KEYBOARD_INT`. Otherwise NABULIB's keyboard interrupt grabs the keys before CP/M sees them.
 
 **My CP/M app acts strangely or stdin is broken**
 Build with plain `+cpm`, not `-subtype=nabu` or `-subtype=nabudos`.
@@ -287,7 +288,7 @@ MAME needs a TX delay set in the Internet Adapter. A real NABU receives at the f
 
 ## License
 
-This is a library for a 40-year-old computer, so there's no license. All I ask is **fair acknowledgment and credit** for the effort that got you this far. If you use it, please give me credit.
+This is a library for a 40-year-old computer, so there's no license. All I ask is **fair acknowledgement and credit** for the effort that got you this far. If you use it, please give me credit.
 
 If you change NABULIB or my programs, please send the changes my way so I can add them to this repo. You can find me on the NABU forum at **[forums.nabu.ca](https://forums.nabu.ca)**.
 
@@ -295,4 +296,3 @@ This is a hobby for all of us, not a business, so share and enjoy!
 
 **Make something,**
 **DJ Sures**
-
