@@ -4,7 +4,7 @@
 // DJ Sures (c) 2024
 // https://nabu.ca
 // 
-// Last updated on v2024.05.18.00
+// Last updated on v2026.11.12.00 (weather)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 //
@@ -99,8 +99,40 @@
 //   void     ia_getAdapterVersion(uint8_t *versionStr)
 //              versionStr (14 bytes): adapter version, e.g. "2024.04.19.00".
 //
+//   uint32_t ia_getAdapterVersionNumber()
+//              Adapter version as a number, e.g. 2026111200 for "2026.11.12.00", so you
+//              can write if (ia_getAdapterVersionNumber() >= 2026111200UL). Works with
+//              every adapter (it reads the version string, it doesn't need 0x23).
+//
 //   bool     ia_getNewVersionAvailable()
 //              True when a newer adapter version is available.
+//
+// WEATHER (needs adapter IA_WEATHER_MIN_VERSION or newer - check ia_isWeatherSupported() first)
+//   bool     ia_isWeatherSupported()
+//              True when the adapter understands the weather functions. An older adapter
+//              never answers them and the NABU would hang, so call this FIRST.
+//
+//   uint8_t  ia_getWeather(uint8_t daysFromNow, uint8_t partOfDay, uint8_t units,
+//                          WeatherInfo *info)
+//              Fills info (WEATHER_INFO_SIZE = 177 bytes) with the forecast for
+//              daysFromNow (0 = today ... 6) and partOfDay (WEATHER_PART_*): temperatures,
+//              condition text + icon id, precipitation, wind, UV, sunrise/sunset and a
+//              ready-to-print summary. Returns WEATHER_STATUS_OK or WEATHER_STATUS_*.
+//              The adapter caches the forecast for 30 minutes, so after the first call
+//              (which can take a few seconds) every call is answered instantly.
+//
+//   void     ia_getWeatherIcon(uint8_t conditionId, uint8_t bgColor,
+//                              uint8_t *patternBuff, uint8_t *colorBuff)
+//              patternBuff (32 bytes), colorBuff (32 bytes): 16x16 icon for a
+//              WEATHER_COND_* id (info.conditionId), tile order 0 2 / 1 3, same layout
+//              as the channel icons. bgColor is the TMS9918 background colour (0-15).
+//
+//   uint8_t  ia_setWeatherLocation(uint8_t *location, uint8_t locationLen,
+//                                  bool saveToSettings, uint8_t *resolvedName)
+//              Changes the weather location: "Toronto", "Portland, ME", a postal code
+//              or "43.65,-79.38". saveToSettings false = this session only. Length 0
+//              goes back to the adapter's setting. resolvedName (32 bytes, may be NULL):
+//              the place found, e.g. "Toronto, Ontario". Returns WEATHER_STATUS_*.
 //
 // LOW LEVEL (the functions above already do this; you rarely need them)
 //   void     ia_focusInterrupts()
@@ -706,6 +738,60 @@ void ia_getAdapterVersion(uint8_t *versionStr) {
 }
 
 // -----------------------------------------------------------
+// Returns the internet adapter version as a number so versions
+// can be compared with a plain >=
+// ie "2026.11.12.00" returns 2026111200
+//
+// Adapters since 2026.11.12.00 also answer 0xBA 0x23 with this
+// number directly, but an older adapter would never answer it
+// and the NABU would hang. So this builds the number from the
+// version string (0x16), which every adapter since 2024 answers.
+// Returns 0 if the version can't be read.
+// -----------------------------------------------------------
+uint32_t ia_getAdapterVersionNumber() {
+
+  uint8_t version[14];
+
+  ia_getAdapterVersion(version);
+
+  uint32_t result = 0;
+  uint16_t part   = 0;
+  uint8_t  parts  = 0;
+  uint8_t  *p     = version;
+
+  // "yyyy.mm.dd.bb" -> yyyy, then * 100 + mm, * 100 + dd, * 100 + bb
+  while (parts < 4) {
+
+    if (*p >= '0' && *p <= '9') {
+
+      part = (part * 10) + (*p - '0');
+
+      p++;
+
+      continue;
+    }
+
+    // '.' or end of string closes the part
+    result = (parts == 0) ? part : (result * 100) + part;
+
+    part = 0;
+
+    parts++;
+
+    if (*p == 0x00)
+      break;
+
+    p++;
+  }
+
+  // Missing parts (e.g. "2026.11") count as 00
+  for (; parts < 4; parts++)
+    result *= 100;
+
+  return result;
+}
+
+// -----------------------------------------------------------
 // Returns true or false if a new version is available
 // -----------------------------------------------------------
 bool ia_getNewVersionAvailable() {
@@ -721,6 +807,247 @@ bool ia_getNewVersionAvailable() {
   ia_restoreInterrupts();
 
   return (val > 0);
+}
+
+// **********************************************************************************************
+// WEATHER
+//
+// Forecasts come from Open-Meteo through the Internet Adapter. The location and default
+// units are set in the adapter's Settings -> Weather tab (or with ia_setWeatherLocation).
+//
+// Example
+// -------
+//   WeatherInfo wx;
+//   uint8_t     pattern[32];
+//   uint8_t     color[32];
+//
+//   if (!ia_isWeatherSupported())
+//     -> tell the user to update their Internet Adapter
+//
+//   if (ia_getWeather(0, WEATHER_PART_NOW, WEATHER_UNITS_DEFAULT, &wx) == WEATHER_STATUS_OK) {
+//
+//     // wx.locationStr  "Toronto, Ontario"
+//     // wx.periodStr    "Now"
+//     // wx.summaryStr   "Cloudy, 3C. Feels like -1C. Wind 15 km/h NW."
+//     // wx.temperature  3   (wx.units: 0 = C, 1 = F)
+//
+//     ia_getWeatherIcon(wx.conditionId, VDP_BLACK, pattern, color);
+//     // load pattern / color into 4 tiles, drawn as   0 2
+//     //                                                1 3
+//   }
+//
+//   // Tomorrow afternoon, always in Fahrenheit
+//   ia_getWeather(1, WEATHER_PART_AFTERNOON, WEATHER_UNITS_IMPERIAL, &wx);
+// **********************************************************************************************
+
+// The minimum Internet Adapter version that understands the weather functions, as
+// returned by ia_getAdapterVersionNumber(). Define your own value before including this
+// file to override it.
+#ifndef IA_WEATHER_MIN_VERSION
+#define IA_WEATHER_MIN_VERSION 2026111200UL
+#endif
+
+// Number of bytes the adapter sends for a WeatherInfo
+#define WEATHER_INFO_SIZE 177
+
+// Result / WeatherInfo.status
+#define WEATHER_STATUS_OK                 0 // all good
+#define WEATHER_STATUS_NOT_CONFIGURED     1 // no location set in the adapter
+#define WEATHER_STATUS_LOCATION_NOT_FOUND 2 // the location could not be found
+#define WEATHER_STATUS_UNAVAILABLE        3 // weather service unreachable (no internet?)
+#define WEATHER_STATUS_BAD_REQUEST        4 // daysFromNow or partOfDay out of range
+
+// partOfDay
+#define WEATHER_PART_FULL_DAY  0 // the whole day (midnight to midnight)
+#define WEATHER_PART_MORNING   1 // 6am - noon
+#define WEATHER_PART_AFTERNOON 2 // noon - 6pm
+#define WEATHER_PART_EVENING   3 // 6pm - midnight
+#define WEATHER_PART_OVERNIGHT 4 // midnight - 6am of the following day ("tonight")
+#define WEATHER_PART_NOW       5 // current conditions, daysFromNow is ignored
+
+// daysFromNow can be 0 (today) to WEATHER_MAX_DAYS
+#define WEATHER_MAX_DAYS 6
+
+// units
+#define WEATHER_UNITS_DEFAULT  0 // whatever the adapter is set to
+#define WEATHER_UNITS_METRIC   1 // C, km/h, tenths of mm
+#define WEATHER_UNITS_IMPERIAL 2 // F, mph, hundredths of an inch
+
+// WeatherInfo.conditionId - also the icon id for ia_getWeatherIcon()
+#define WEATHER_COND_UNKNOWN             0
+#define WEATHER_COND_CLEAR_DAY           1
+#define WEATHER_COND_CLEAR_NIGHT         2
+#define WEATHER_COND_PARTLY_CLOUDY_DAY   3
+#define WEATHER_COND_PARTLY_CLOUDY_NIGHT 4
+#define WEATHER_COND_CLOUDY              5
+#define WEATHER_COND_FOG                 6
+#define WEATHER_COND_DRIZZLE             7
+#define WEATHER_COND_RAIN                8
+#define WEATHER_COND_HEAVY_RAIN          9
+#define WEATHER_COND_FREEZING_RAIN       10
+#define WEATHER_COND_SNOW                11
+#define WEATHER_COND_HEAVY_SNOW          12
+#define WEATHER_COND_THUNDERSTORM        13
+#define WEATHER_COND_WINDY               14
+#define WEATHER_COND_COUNT               15
+
+// The weather for one day / part of day. Exactly WEATHER_INFO_SIZE (177) bytes, in the
+// order the adapter sends them (z88dk does not pad structs). Strings are NUL terminated.
+//
+// For WEATHER_PART_NOW: temperature / feelsLike / humidity / wind are the current
+// readings and tempHigh / tempLow are today's. For a part of the day they are the
+// average (temperature, feelsLike, humidity), highest (tempHigh, precipChance, windSpeed,
+// uvIndex), lowest (tempLow) and total (precipAmount) over those hours.
+typedef struct {
+  uint8_t  status;           // 0   WEATHER_STATUS_*. When not OK everything else is 0
+  uint8_t  conditionId;      // 1   WEATHER_COND_*, pass to ia_getWeatherIcon()
+  uint8_t  wmoCode;          // 2   raw WMO weather code, for programs that want more detail
+  uint8_t  units;            // 3   0 = metric (C, km/h, mm), 1 = imperial (F, mph, in)
+  int16_t  temperature;      // 4   degrees
+  int16_t  tempHigh;         // 6   degrees
+  int16_t  tempLow;          // 8   degrees
+  int16_t  feelsLike;        // 10  degrees (wind chill / humidex)
+  uint8_t  humidity;         // 12  percent
+  uint8_t  precipChance;     // 13  percent
+  uint16_t precipAmount;     // 14  metric: tenths of mm (25 = 2.5mm), imperial: hundredths of an inch (25 = 0.25in)
+  uint16_t windSpeed;        // 16  km/h or mph
+  uint16_t windDirection;    // 18  degrees the wind comes from, 0 = north, 90 = east
+  uint8_t  uvIndex;          // 20  UV index (0 at night)
+  uint8_t  isDay;            // 21  1 = the icon is a daytime icon (sun), 0 = night (moon)
+  uint8_t  sunriseHour;      // 22  local time at the location, 24 hour clock
+  uint8_t  sunriseMinute;    // 23
+  uint8_t  sunsetHour;       // 24
+  uint8_t  sunsetMinute;     // 25
+  uint8_t  month;            // 26  1 - 12, date of the forecast day
+  uint8_t  day;              // 27  1 - 31
+  uint8_t  dayOfWeek;        // 28  0 = Sunday ... 6 = Saturday
+  uint8_t  windDirStr[4];    // 29  compass point, e.g. "NNE"
+  uint8_t  conditionStr[24]; // 33  e.g. "Partly cloudy", "Light snow"
+  uint8_t  periodStr[24];    // 57  e.g. "Now", "This afternoon", "Tomorrow", "Friday overnight"
+  uint8_t  locationStr[32];  // 81  e.g. "Toronto, Ontario"
+  uint8_t  summaryStr[64];   // 113 e.g. "Partly cloudy. High 12C, low 4C. Precip 30%. Wind 15 km/h NW."
+} WeatherInfo;
+
+// -----------------------------------------------------------
+// Returns true when the Internet Adapter supports the weather
+// functions. Call it before any other weather function: an older
+// adapter does not answer them and the NABU would hang waiting.
+// -----------------------------------------------------------
+bool ia_isWeatherSupported() {
+
+  return ia_getAdapterVersionNumber() >= IA_WEATHER_MIN_VERSION;
+}
+
+// -----------------------------------------------------------
+// Get the weather for a day and part of the day.
+//
+// daysFromNow: 0 = today, 1 = tomorrow ... WEATHER_MAX_DAYS
+// partOfDay:   WEATHER_PART_*
+// units:       WEATHER_UNITS_*
+// info:        filled with WEATHER_INFO_SIZE bytes
+//
+// Returns info->status (WEATHER_STATUS_OK on success).
+//
+// The first call can take a few seconds while the adapter
+// downloads the forecast. It is then cached by the adapter for
+// 30 minutes, so you can call this as often as you like.
+// -----------------------------------------------------------
+uint8_t ia_getWeather(uint8_t daysFromNow, uint8_t partOfDay, uint8_t units, WeatherInfo *info) {
+
+  ia_focusInterrupts();
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x20); // ia_getWeather
+
+  hcca_writeByte(daysFromNow);
+
+  hcca_writeByte(partOfDay);
+
+  hcca_writeByte(units);
+
+  hcca_readBytes(0, WEATHER_INFO_SIZE, (uint8_t *)info);
+
+  ia_restoreInterrupts();
+
+  return info->status;
+}
+
+// -----------------------------------------------------------
+// Get the 16x16 icon for a weather condition (WEATHER_COND_*,
+// usually WeatherInfo.conditionId). There are 4 tiles that form
+// a square, 8 bytes per tile:
+// 0 2
+// 1 3
+// bgColor is the TMS9918 colour behind the icon (0 = transparent,
+// 1 = black ... 15 = white).
+//
+// *Note: patternBuff and colorBuff must each be 32 bytes long
+// -----------------------------------------------------------
+void ia_getWeatherIcon(uint8_t conditionId, uint8_t bgColor, uint8_t *patternBuff, uint8_t *colorBuff) {
+
+  ia_focusInterrupts();
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x21); // ia_getWeatherIcon
+
+  hcca_writeByte(conditionId);
+
+  hcca_writeByte(bgColor);
+
+  hcca_readBytes(0, 32, patternBuff);
+
+  hcca_readBytes(0, 32, colorBuff);
+
+  ia_restoreInterrupts();
+}
+
+// -----------------------------------------------------------
+// Change the weather location from the NABU.
+//
+// location:       "Toronto", "Portland, ME", "Paris, France",
+//                 a postal code, or "latitude,longitude"
+// locationLen:    length of location. 0 = forget the session
+//                 location and use the adapter's setting again
+// saveToSettings: true saves it in the adapter's settings,
+//                 false keeps it until the adapter restarts
+// resolvedName:   32 bytes (may be NULL). The place that was
+//                 found, e.g. "Portland, Maine"
+//
+// Returns WEATHER_STATUS_OK, or WEATHER_STATUS_LOCATION_NOT_FOUND
+// / WEATHER_STATUS_UNAVAILABLE (the location is left unchanged).
+// -----------------------------------------------------------
+uint8_t ia_setWeatherLocation(uint8_t *location, uint8_t locationLen, bool saveToSettings, uint8_t *resolvedName) {
+
+  ia_focusInterrupts();
+
+  hcca_writeByte(0xba); // ia_control
+
+  hcca_writeByte(0x22); // ia_setWeatherLocation
+
+  hcca_writeByte(saveToSettings ? 0x01 : 0x00);
+
+  hcca_writeByte(locationLen);
+
+  hcca_writeBytes(0, locationLen, location);
+
+  uint8_t status = hcca_readByte();
+
+  uint8_t readCnt = hcca_readByte();
+
+  if (resolvedName) {
+
+    _ia_readReply(readCnt, resolvedName, 32);
+  } else {
+
+    for (; readCnt != 0; readCnt--)
+      hcca_readByte();
+  }
+
+  ia_restoreInterrupts();
+
+  return status;
 }
 
 #endif

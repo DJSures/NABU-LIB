@@ -3,7 +3,7 @@
 // DJ Sures (c) 2026
 // https://nabu.ca
 // 
-// Last updated on 2026.11.11.00
+// Last updated on 2026.11.13.00
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -793,24 +793,32 @@ const uint8_t _NOTES_FINE[] = {
 void initNABULib();
 
 // **************************************************************************
+// NOTE ON MACROS
+// The tiny helpers below (NABU_DisableInterrupts, ayWrite, vdp_setRegister, ...)
+// are macros. They compile to the same one or two IN/OUT instructions an inline
+// function would, but no unused callable copy of each one is linked into every
+// program. Use them like functions. (You can not take their address.)
+// **************************************************************************
+
+// **************************************************************************
 // Disable interrupts on the nabu
 // **************************************************************************
-inline void NABU_DisableInterrupts();
+#define NABU_DisableInterrupts() __asm__("di")
 
 // **************************************************************************
 // Enable interrupts on the nabu
 // **************************************************************************
-inline void NABU_EnableInterrupts();
+#define NABU_EnableInterrupts() __asm__("ei")
 
 // **************************************************************************
 // Perform one NOP
 // **************************************************************************
-inline void nop();
+#define nop() __asm__("nop")
 
 // **************************************************************************
 // Shift an array (arr) of len to the right by N
 // **************************************************************************
-void RightShift(uint8_t *arr, uint16_t len, uint8_t n);
+void RightShift(uint8_t *arr, uint16_t len, uint8_t n) __z88dk_callee;
 
 
 
@@ -845,17 +853,21 @@ void initNABULIBAudio();
 // - Note: 0-71 (See note array above and use an index from it)
 // - DelayLength: 0-4096
 // **************************************************************************
-void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength);
+void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_callee;
 
 // **************************************************************************
-// Write VAL in REG to the AY IC
+// Write VAL in REG to the AY IC (macro, see NOTE ON MACROS)
 // **************************************************************************
-inline void ayWrite(uint8_t reg, uint8_t val);
+#define ayWrite(reg, val) \
+  do { \
+    IO_AYLATCH = (reg); \
+    IO_AYDATA  = (val); \
+  } while (0)
 
 // **************************************************************************
-// Read from the REG of AY IC
+// Read from the REG of AY IC (macro, see NOTE ON MACROS)
 // **************************************************************************
-inline uint8_t ayRead(uint8_t reg);
+#define ayRead(reg) (IO_AYLATCH = (reg), IO_AYDATA)
 
 
 
@@ -897,7 +909,7 @@ inline uint8_t ayRead(uint8_t reg);
   // 
   // Returns the length of data entered by the user. 
   // **************************************************************************
-  uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen);
+  uint8_t readLine(uint8_t* buffer, uint8_t maxInputLen) __z88dk_callee;
 
   // **************************************************************************
   // Returns the status of the joystick at the specified index (0 - 3)
@@ -917,9 +929,10 @@ inline uint8_t ayRead(uint8_t reg);
   // or check a direction...
   //  
   //   if (getJoyStatus(0) & Joy_Up)
-  //  
+  //
+  // (macro, see NOTE ON MACROS)
   // **************************************************************************
-  inline uint8_t getJoyStatus(uint8_t joyNum);
+  #define getJoyStatus(joyNum) (_joyStatus[(joyNum)])
 #endif
 
 #if BIN_TYPE == BIN_CPM
@@ -1049,8 +1062,9 @@ inline uint8_t ayRead(uint8_t reg);
 
   // **************************************************************************
   // Returns TRUE if there is data to be read from the hcca rx buffer (256 bytes)
+  // (macro, see NOTE ON MACROS)
   // **************************************************************************
-  inline bool hcca_isRxBufferAvailable();
+  #define hcca_isRxBufferAvailable() (_rxBufferWritePos != _rxBufferReadPos)
 
   // **************************************************************************
   // Returns how much data is currently in the RX buffer
@@ -1096,7 +1110,7 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   // Read bufferLen into buffer, starting at the offset
   // **************************************************************************
-  void hcca_readBytes(uint16_t offset, uint16_t bufferLen, uint8_t* buffer);
+  void hcca_readBytes(uint16_t offset, uint16_t bufferLen, uint8_t* buffer) __z88dk_callee;
 
 
 
@@ -1145,7 +1159,7 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   // Write to the HCCA
   // **************************************************************************
-  void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes);
+  void hcca_writeBytes(uint16_t offset, uint16_t length, uint8_t* bytes) __z88dk_callee;
 
 #endif
 
@@ -1164,10 +1178,18 @@ inline uint8_t ayRead(uint8_t reg);
 
   // **************************************************************************
   // For directly writing and reading from IO_VDPDATA and writing registers
+  //
+  // vdp_setRegister() is a macro (see NOTE ON MACROS).
+  // vdp_setReadAddress() returns late enough that you can read IO_VDPDATA right away.
   // **************************************************************************
-  inline void vdp_setRegister(uint8_t registerIndex, uint8_t value);
+  #define vdp_setRegister(registerIndex, value) \
+    do { \
+      IO_VDPLATCH = (value); \
+      IO_VDPLATCH = 0x80 | (registerIndex); \
+    } while (0)
+
   inline void vdp_setWriteAddress(uint16_t address);
-  inline void vdp_setReadAddress(uint16_t address);
+  void vdp_setReadAddress(uint16_t address) __z88dk_fastcall;
 
   // **************************************************************************
   // Enable the interrupt that will set the variables so you can time your game with
@@ -1227,8 +1249,35 @@ inline uint8_t ayRead(uint8_t reg);
   //
   // **************************************************************************
   void vdp_enableVDPReadyInt();
-  inline void vdp_waitVDPReadyInt();
   void vdp_disableVDPReadyInt();
+
+  // vdp_waitVDPReadyInt() is a macro (see NOTE ON MACROS). It clears the flag and spins on it.
+  //
+  // uncomment DEBUG_VDP_INT to enable debugging for the VDP to see if the vdpIsReady flag was
+  // set prior to your program calling vdp_waitVDPReadyInt(). That means your program took
+  // too long and missed the vertical screen refresh.
+  // If you're using a frame buffer, it's okay if the program is taking too long because
+  // you could use this function to wait for the vdp to be ready before updating the
+  // frame buffer.
+  #ifdef DEBUG_VDP_INT
+
+    #define vdp_waitVDPReadyInt() \
+      do { \
+        if (vdpIsReady) \
+          IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF | CONTROL_LED_ALERT; \
+        else \
+          IO_CONTROL = CONTROL_ROMSEL | CONTROL_VDOBUF; \
+        vdpIsReady = false; \
+        while (!vdpIsReady); \
+      } while (0)
+  #else
+
+    #define vdp_waitVDPReadyInt() \
+      do { \
+        vdpIsReady = false; \
+        while (!vdpIsReady); \
+      } while (0)
+  #endif
 
   // **************************************************************************
   // Add a function to the VDP frame sync interrupt.
@@ -1281,7 +1330,7 @@ inline uint8_t ayRead(uint8_t reg);
   // }
   //
   // **************************************************************************
-  void vdp_addISR(void (*isr)());
+  void vdp_addISR(void (*isr)()) __z88dk_fastcall;
 
   // **************************************************************************
   // Removes and stops the VDP interrupt after calling vdp_addISR();
@@ -1297,7 +1346,7 @@ inline uint8_t ayRead(uint8_t reg);
   // - autoscoll: Will the text scroll when it reaches bottom of the screen
   // 
   // **************************************************************************
-  void vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll);
+  void vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll) __z88dk_callee;
 
   // **************************************************************************
   // Initializes the VDP in text mode with 80 column using the f18a
@@ -1307,7 +1356,7 @@ inline uint8_t ayRead(uint8_t reg);
   // - autoscoll: Will the text scroll when it reaches bottom of the screen
   // 
   // **************************************************************************
-  void vdp_initTextMode80(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll);
+  void vdp_initTextMode80(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll) __z88dk_callee;
 
   // **************************************************************************
   // Initializes the VDP in Graphic Mode 2
@@ -1323,7 +1372,7 @@ inline uint8_t ayRead(uint8_t reg);
   //               Otherwise, set this to FALSE because you don't need it
   // 
   // **************************************************************************
-  void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds);
+  void vdp_initG2Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds) __z88dk_callee;
 
   // **************************************************************************
   // Initializes the VDP in Graphic Mode 1 (32x24 tiles, 256 patterns, one color
@@ -1342,7 +1391,7 @@ inline uint8_t ayRead(uint8_t reg);
   //               Kept so the parameters match vdp_initG2Mode()
   //
   // **************************************************************************
-  void vdp_initG1Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds);
+  void vdp_initG1Mode(uint8_t bgColor, bool bigSprites, bool scaleSprites, bool autoScroll, bool splitThirds) __z88dk_callee;
 
   // **************************************************************************
   // Initializes the VDP in 64x48 Multicolor Mode. Not really useful if more than 4k Video ram is available
@@ -1359,7 +1408,7 @@ inline uint8_t ayRead(uint8_t reg);
   // sprite and VDP interrupt functions can be used afterwards.
   //
   // **************************************************************************
-  void vdp_initMSXMode(uint8_t bgColor);
+  void vdp_initMSXMode(uint8_t bgColor) __z88dk_fastcall;
 
   // **************************************************************************
   // 
@@ -1396,7 +1445,7 @@ inline uint8_t ayRead(uint8_t reg);
   // Clear the rows with 0x20 between topRow and bottomRow
   // (topRow up to but not including bottomRow, so 0, 24 clears the whole screen)
   // **************************************************************************
-  void vdp_clearRows(uint8_t topRow, uint8_t bottomRow);
+  void vdp_clearRows(uint8_t topRow, uint8_t bottomRow) __z88dk_callee;
 
   // **************************************************************************
   // This will update the vram to the specified font.
@@ -1436,7 +1485,7 @@ inline uint8_t ayRead(uint8_t reg);
   // **************************************************************************
   // Initialize vdp with a single 8 byte pattern to the specified pattern id
   // **************************************************************************
-  void vdp_loadPatternToId(uint8_t patternId, uint8_t *pattern);
+  void vdp_loadPatternToId(uint8_t patternId, uint8_t *pattern) __z88dk_callee;
 
   // **************************************************************************
   // Initialize vdp with the pattern table with an array of data. 
@@ -1446,12 +1495,12 @@ inline uint8_t ayRead(uint8_t reg);
   // *Note: your first pattern should be completely blank because it will be the
   //        default pattern that is displayed on a clear screen (id 0)
   // **************************************************************************
-  void vdp_loadPatternTable(uint8_t *patternTable, uint16_t len);
+  void vdp_loadPatternTable(uint8_t *patternTable, uint16_t len) __z88dk_callee;
 
   // **************************************************************************
   // Initialize vdp with a single 8 byte color to the specified pattern id
   // **************************************************************************
-  void vdp_loadColorToId(uint8_t patternId,  uint8_t *color);
+  void vdp_loadColorToId(uint8_t patternId,  uint8_t *color) __z88dk_callee;
 
   // **************************************************************************
   // Initialize the vdp with the color table. 
@@ -1460,7 +1509,7 @@ inline uint8_t ayRead(uint8_t reg);
   //        want the screen background to be. Because the clear screen would have
   //        a pattern value of 0, which will use its matching color pattern
   // **************************************************************************
-  void vdp_loadColorTable(uint8_t *colorTable, uint16_t len);
+  void vdp_loadColorTable(uint8_t *colorTable, uint16_t len) __z88dk_callee;
 
   // **************************************************************************
   // Set foreground and background color of the pattern at the specified location
@@ -1472,7 +1521,7 @@ inline uint8_t ayRead(uint8_t reg);
   // - fgcolor Foreground color
   // - bgcolor Background color
   // **************************************************************************
-  void vdp_colorizePattern(uint8_t patternId, uint8_t fg, uint8_t bg);
+  void vdp_colorizePattern(uint8_t patternId, uint8_t fg, uint8_t bg) __z88dk_callee;
 
   // **************************************************************************
   // Place a pattern by the ID on X and Y in G2 mode. Also saves the pattern into
@@ -1482,7 +1531,7 @@ inline uint8_t ayRead(uint8_t reg);
   // y:         y coordinate
   // patternId: the # (id) of the pattern from the pattern generator table
   // **************************************************************************
-  void vdp_putPattern(uint8_t x, uint8_t y, uint8_t patternId);
+  void vdp_putPattern(uint8_t x, uint8_t y, uint8_t patternId) __z88dk_callee;
 
   // **************************************************************************
   // Plot a point at position (x,y), where x <= 255. The full resolution of 256 by 192 is available.
@@ -1496,7 +1545,7 @@ inline uint8_t ayRead(uint8_t reg);
   //
   // *NOTE: This requires SPLIT THIRDS to be specified in init_gtMode() 
   // **************************************************************************
-  void vdp_plotHires(uint8_t x, uint8_t y, uint8_t color1, uint8_t color2);
+  void vdp_plotHires(uint8_t x, uint8_t y, uint8_t color1, uint8_t color2) __z88dk_callee;
 
   // **************************************************************************
   // Plot a point at position (x,y), where x <= 64. In Graphics mode2, the resolution is 64 by 192 pixels, neighboring pixels can have different colors.
@@ -1508,7 +1557,7 @@ inline uint8_t ayRead(uint8_t reg);
   //
   // *NOTE: This requires SPLIT THIRDS to be specified in init_gtMode() 
   // **************************************************************************
-  void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color);
+  void vdp_plotColor(uint8_t x, uint8_t y, uint8_t color) __z88dk_callee;
 
   // **************************************************************************
   // Print null terminated string at the current cursor position.
@@ -1523,7 +1572,7 @@ inline uint8_t ayRead(uint8_t reg);
   //
   // - text Text to print
   // **************************************************************************
-  void vdp_printJustified(uint8_t *text, uint8_t leftMargin, uint8_t rightMargin);
+  void vdp_printJustified(uint8_t *text, uint8_t leftMargin, uint8_t rightMargin) __z88dk_callee;
 
   // **************************************************************************
   // Print null terminated string at the current cursor position and change the
@@ -1532,17 +1581,17 @@ inline uint8_t ayRead(uint8_t reg);
   // *Note: This only works on graphic mode G2 and will change the color of
   // each character - so be careful how you use this!
   // **************************************************************************
-  void vdp_printColorized(uint8_t* text, uint8_t fgColor, uint8_t bgColor);
+  void vdp_printColorized(uint8_t* text, uint8_t fgColor, uint8_t bgColor) __z88dk_callee;
 
   // **************************************************************************
   // Print the specified portion of the string at the current cursor position
   // **************************************************************************
-  void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text);
+  void vdp_printPart(uint16_t offset, uint16_t textLength, uint8_t* text) __z88dk_callee;
     
   // **************************************************************************
-  // Set backdrop border color
+  // Set backdrop border color (macro, see NOTE ON MACROS)
   // **************************************************************************
-  inline void vdp_setBackDropColor(uint8_t);
+  #define vdp_setBackDropColor(color) vdp_setRegister(7, (color))
 
   // **************************************************************************
   //  Position the cursor at the specified position
@@ -1550,14 +1599,14 @@ inline uint8_t ayRead(uint8_t reg);
   // - col column
   // - row row
   // **************************************************************************
-  void vdp_setCursor2(uint8_t col, uint8_t row);
+  void vdp_setCursor2(uint8_t col, uint8_t row) __z88dk_callee;
 
   // **************************************************************************
   //  Move the cursor along the specified direction
   //
   // - direction {VDP_CURSOR_UP|VDP_CURSOR_DOWN|VDP_CURSOR_LEFT|VDP_CURSOR_RIGHT}
   // </summary
-  void vdp_setCursor(uint8_t direction);
+  void vdp_setCursor(uint8_t direction) __z88dk_fastcall;
 
   // **************************************************************************
   //  set foreground and background color of the characters printed after this function has been called.
@@ -1567,7 +1616,7 @@ inline uint8_t ayRead(uint8_t reg);
   // - fg Foreground color
   // - bg Background color
   // **************************************************************************
-  void vdp_setTextColor(uint8_t fgcolor, uint8_t bgcolor);
+  void vdp_setTextColor(uint8_t fgcolor, uint8_t bgcolor) __z88dk_callee;
 
   // **************************************************************************
   //  Write ASCII character at current cursor position and advances forward
@@ -1598,7 +1647,7 @@ inline uint8_t ayRead(uint8_t reg);
   //  5) You can disable sprites that you don't shown with vdp_disableSprite()
   //
   // **************************************************************************
-  void vdp_loadSpritePatternNameTable(uint16_t numSprites, uint8_t* sprite);
+  void vdp_loadSpritePatternNameTable(uint16_t numSprites, uint8_t* sprite) __z88dk_callee;
 
   // **************************************************************************
   //  Initialize a sprite by the ID
@@ -1632,7 +1681,7 @@ inline uint8_t ayRead(uint8_t reg);
   //
   //  Returns the sprite ID (the id that was passed as a parameter)
   // **************************************************************************
-  uint8_t vdp_spriteInit(uint8_t id, uint8_t spritePatternNameId, uint8_t x, uint8_t y, uint8_t color);
+  uint8_t vdp_spriteInit(uint8_t id, uint8_t spritePatternNameId, uint8_t x, uint8_t y, uint8_t color) __z88dk_callee;
 
   // **************************************************************************
   //  Set the sprite color by id
@@ -1640,7 +1689,7 @@ inline uint8_t ayRead(uint8_t reg);
   // - id of sprite
   // - color
   // **************************************************************************
-  void vdp_setSpriteColor(uint8_t id, uint8_t color);
+  void vdp_setSpriteColor(uint8_t id, uint8_t color) __z88dk_callee;
 
   // **************************************************************************
   //  Set position of a sprite
@@ -1649,7 +1698,7 @@ inline uint8_t ayRead(uint8_t reg);
   // - x
   // - y
   // **************************************************************************
-  void vdp_setSpritePosition(uint8_t id, uint8_t x, uint8_t y);
+  void vdp_setSpritePosition(uint8_t id, uint8_t x, uint8_t y) __z88dk_callee;
 
   // **************************************************************************
   //  Set position and color of a sprite
@@ -1659,7 +1708,7 @@ inline uint8_t ayRead(uint8_t reg);
   // - y
   // - color
   // **************************************************************************
-  void vdp_setSpritePositionAndColor(uint8_t id, uint8_t x, uint8_t y, uint8_t color);
+  void vdp_setSpritePositionAndColor(uint8_t id, uint8_t x, uint8_t y, uint8_t color) __z88dk_callee;
 
   // **************************************************************************
   //  Get the current position of a sprite
@@ -1668,7 +1717,7 @@ inline uint8_t ayRead(uint8_t reg);
   // - xpos Reference to x-position
   // - ypos Reference to y-position
   // **************************************************************************
-  void vdp_getSpritePosition(uint8_t id, uint8_t * xpos, uint8_t * ypos);
+  void vdp_getSpritePosition(uint8_t id, uint8_t * xpos, uint8_t * ypos) __z88dk_callee;
 
   // **************************************************************************
   // Add a new line (move down and to line start)
@@ -1680,33 +1729,33 @@ inline uint8_t ayRead(uint8_t reg);
   // You should use vdp_getCharAtLocationVRAM(), which will get the character from the double
   // buffer without accessing VRAM.
   // **************************************************************************
-  inline uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y);
+  uint8_t vdp_getCharAtLocationVRAM(uint8_t x, uint8_t y) __z88dk_callee;
 
   // **************************************************************************
-  // In text mode, there is a buffer copy of the screen
+  // In text mode, there is a buffer copy of the screen (macro, see NOTE ON MACROS)
   // **************************************************************************
-  inline uint8_t vdp_getCharAtLocationBuf(uint8_t x, uint8_t y);
+  #define vdp_getCharAtLocationBuf(x, y) (_vdp_textBuffer[_vdpRowOffset[(y)] + (x)])
 
   // **************************************************************************
   // Set the character in memory buffer at location. This does not update the screen!
   // It is used by the text scroll methods
   // </summary
-  void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c);
+  void vdp_setCharAtLocationBuf(uint8_t x, uint8_t y, uint8_t c) __z88dk_callee;
 
   // **************************************************************************
   // Scroll all lines up between topRow and bottomRow (both inclusive)
   // **************************************************************************
-  void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow);
+  void vdp_scrollTextUp(uint8_t topRow, uint8_t bottomRow) __z88dk_callee;
 
   // **************************************************************************
   // Scroll all lines down between topRow and bottomRow (both inclusive)
   // **************************************************************************
-//  void vdp_scrollTextDown(uint8_t topRow, uint8_t bottomRow);
+  void vdp_scrollTextDown(uint8_t topRow, uint8_t bottomRow) __z88dk_callee;
 
   // **************************************************************************
   // Write a character at the specified location
   // **************************************************************************
-  void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c);
+  void vdp_writeCharAtLocation(uint8_t x, uint8_t y, uint8_t c) __z88dk_callee;
 
   // **************************************************************************
   // Display the binary value of the variable
