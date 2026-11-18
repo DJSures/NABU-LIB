@@ -645,6 +645,13 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_
   // ayWrite(toneReg + 1, _NOTES_COURSE[note]);
   //
   // ayWrite(13, 0b00000000);
+  //
+  // playNoteEnvelope() is the same code (an alias label) with one difference: only the
+  // selected channel's amplitude register is written, so the other two channels keep
+  // playing (e.g. NabuTracker music). Same arguments, same sound on the selected channel.
+  //
+  // // playNoteEnvelope() instead of the three amplitude writes above:
+  // ayWrite(8 + channel, 0b00010000);
   __asm
 
       pop hl
@@ -654,6 +661,23 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_
 
     ; internal entry: e = channel, d = note, bc = delayLength
     nl_playNote:
+
+      ld h, 1                 ; h != 0 : silence the other two channels
+      jr nl_pnStart
+
+    _playNoteEnvelope:
+
+      pop hl
+      pop de                  ; e = channel, d = note
+      pop bc                  ; bc = delayLength
+      push hl
+
+    ; internal entry (used by NabuTracker): e = channel, d = note, bc = delayLength
+    nl_playNoteEnv:
+
+      ld h, 0               ; h == 0 : leave the other two channels alone
+
+    nl_pnStart:
 
       ld a, 11
       out (_IO_AYLATCH), a
@@ -668,6 +692,20 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_
       ld a, e
       cp 3
       ret nc
+
+      ld a, h
+      or a
+      jr nz, nl_pnAll
+
+      ; playNoteEnvelope: only amplitude register 8 + channel = 0x10 (envelope)
+      ld a, e
+      add a, 8
+      out (_IO_AYLATCH), a
+      ld a, 0x10
+      out (_IO_AYDATA), a
+      jr nl_pnTone
+
+    nl_pnAll:
 
       ; volume registers 8, 9, 10: 0x10 (envelope) for the selected channel, 0 for the rest
       ld b, 8
@@ -689,6 +727,8 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_
       ld a, b
       cp 11
       jr nz, nl_pnVolume
+
+    nl_pnTone:
 
       ; tone register = channel * 2
       ld a, e
@@ -2252,14 +2292,37 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_
       ld c, 3
       call nl_vregInc
 
+      ; R5: sprite attribute table at 0x1B00 in the graphic modes. The text modes put it
+      ; at 0x1C00 instead: 0x1B00 is inside the 40 column name table (0x1800 - 0x1BBF),
+      ; and an F18A or PICO9918 shows sprites even in text mode, so the bottom rows of
+      ; text would turn into sprites.
       ld c, 5
+      ld hl, 0x1b00
+      ld a, (__vdpMode)
+      sub 3                   ; VDP_MODE_TEXT40 = 3, VDP_MODE_TEXT80 = 4
+      cp 2
       ld a, 0x36
+      jr nc, nl_viR5
+
+      ld a, 0x38
+      ld h, 0x1c
+
+    nl_viR5:
+
       call nl_vregInc
+
+      ; R6: sprite pattern table at 0x3800
       ld a, 0x07
       call nl_vregInc
 
-      ld hl, 0x1b00
       ld (__vdpSpriteAttributeTableAddr), hl
+
+      ; End the sprite list (0xD0) so whatever the ROM or the last program left there
+      ; can't show up (a TMS9918A hides sprites in text mode, an F18A doesn't)
+      call nl_wrAddr
+      ld a, 0xd0
+      out (_IO_VDPDATA), a
+
       ld hl, 0x3800
       ld (__vdpSpriteGeneratorTableAddr), hl
 
@@ -2325,7 +2388,7 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_
       defb 0x07, 0x02, 0xC0, 0x06, 0x00, 0x18, 0x00, 32   ; G2
       defb 0x03, 0x00, 0xC8, 0x06, 0x00, 0x18, 0x00, 32   ; MULTICOLOR
       defb 0x00, 0x00, 0xD2, 0x06, 0x00, 0x18, 0x00, 40   ; TEXT40
-      defb 0x00, 0x04, 0xD2, 0x07, 0x00, 0x10, 0x00, 80   ; TEXT80
+      defb 0x00, 0x04, 0xD2, 0x04, 0x00, 0x10, 0x00, 80   ; TEXT80 (R2 0x04: see vdp_initTextMode80)
       defb 0x0B, 0x00, 0xC0, 0x05, 0x01, 0x14, 0x08, 32   ; G1
 
     __endasm;
@@ -2375,6 +2438,176 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_
       ld (__vdpSpriteSizeSelected), a
       ld e, a
       jp nl_vdpInit
+
+    __endasm;
+  }
+
+  // VRAM 0x3F00 - 0x3F05, kept while vdp_detectF18A() borrows it for the GPU test
+  uint8_t _nl_f18aSaved[6] = { 0 };
+
+  uint8_t vdp_detectF18A() __naked {
+
+    // Returns l = VDP_CHIP_TMS9918A (0), VDP_CHIP_F18A (1) or VDP_CHIP_PICO9918 (2).
+    // See the notes at the declaration in NABU-LIB.h.
+    __asm
+
+      di
+
+      ; Save VRAM 0x3F00 - 0x3F05 (read address 0x3F00; the nops give the VDP time to
+      ; fetch the first byte)
+      ld a, 0x00
+      out (_IO_VDPLATCH), a
+      ld a, 0x3F
+      out (_IO_VDPLATCH), a
+
+      nop
+      nop
+      nop
+      nop
+
+      ld hl, __nl_f18aSaved
+      ld b, 6
+
+    nl_f18Save:
+
+      in a, (_IO_VDPDATA)
+      ld (hl), a
+      inc hl
+      nop
+      nop
+      djnz nl_f18Save
+
+      ; Unlock the F18A: register 57 = 0x1C, twice (on a TMS9918A this lands on R1)
+      ld a, 0x1C
+      out (_IO_VDPLATCH), a
+      ld a, 0xB9
+      out (_IO_VDPLATCH), a
+
+      ld a, 0x1C
+      out (_IO_VDPLATCH), a
+      ld a, 0xB9
+      out (_IO_VDPLATCH), a
+
+      ; R1: 16K, display and interrupts off until a mode is set up
+      ld a, 0x80
+      out (_IO_VDPLATCH), a
+      ld a, 0x81
+      out (_IO_VDPLATCH), a
+
+      ; The GPU program at 0x3F00: CLR @>3F00 (04E0 3F00), IDLE (0340)
+      ld a, 0x00
+      out (_IO_VDPLATCH), a
+      ld a, 0x7F
+      out (_IO_VDPLATCH), a
+
+      ld hl, nl_f18Gpu
+      ld b, 6
+
+    nl_f18Write:
+
+      ld a, (hl)
+      out (_IO_VDPDATA), a
+      inc hl
+      djnz nl_f18Write
+
+      ; GPU address: register 54 = 0x3F, register 55 = 0x00 (writing it starts the GPU;
+      ; on a TMS9918A these land on R6 and R7)
+      ld a, 0x3F
+      out (_IO_VDPLATCH), a
+      ld a, 0xB6
+      out (_IO_VDPLATCH), a
+
+      ld a, 0x00
+      out (_IO_VDPLATCH), a
+      ld a, 0xB7
+      out (_IO_VDPLATCH), a
+
+      ; Give the GPU time to run
+      ld bc, 0x0800
+
+    nl_f18Wait:
+
+      dec bc
+      ld a, b
+      or c
+      jr nz, nl_f18Wait
+
+      ; Did it clear its first instruction?
+      ld a, 0x00
+      out (_IO_VDPLATCH), a
+      ld a, 0x3F
+      out (_IO_VDPLATCH), a
+
+      nop
+      nop
+      nop
+      nop
+
+      in a, (_IO_VDPDATA)
+
+      ld l, 0
+      or a
+      jr nz, nl_f18Restore
+
+      ld l, 1
+
+      ; F18A or PICO9918? Status register 1 (register 15 = 1): a PICO9918 reads 0xE8
+      ; in the top 5 bits. Then back to status register 0.
+      ld a, 0x01
+      out (_IO_VDPLATCH), a
+      ld a, 0x8F
+      out (_IO_VDPLATCH), a
+
+      nop
+      nop
+
+      in a, (_IO_VDPLATCH)
+
+      ld e, a
+
+      ld a, 0x00
+      out (_IO_VDPLATCH), a
+      ld a, 0x8F
+      out (_IO_VDPLATCH), a
+
+      ld a, e
+      and 0xF8
+      cp 0xE8
+      jr nz, nl_f18Restore
+
+      ld l, 2
+
+    nl_f18Restore:
+
+      ; Put the six bytes back
+      ld a, 0x00
+      out (_IO_VDPLATCH), a
+      ld a, 0x7F
+      out (_IO_VDPLATCH), a
+
+      ld de, __nl_f18aSaved
+      ld b, 6
+
+    nl_f18Put:
+
+      ld a, (de)
+      out (_IO_VDPDATA), a
+      inc de
+      djnz nl_f18Put
+
+      ; Lock the F18A again: register 57 = 0x00 (on a TMS9918A this lands on R1, which
+      ; the next mode set up writes again)
+      ld a, 0x00
+      out (_IO_VDPLATCH), a
+      ld a, 0xB9
+      out (_IO_VDPLATCH), a
+
+      ei
+      ret
+
+    nl_f18Gpu:
+
+      defb 0x04, 0xE0, 0x3F, 0x00, 0x03, 0x40
 
     __endasm;
   }

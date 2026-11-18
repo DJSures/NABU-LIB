@@ -3,7 +3,8 @@
 // DJ Sures (c) 2026
 // https://nabu.ca
 // 
-// Last updated on 2026.11.13.00
+// Last updated on 2026.11.14.01 (vdp_detectF18A, sprite table out of the text mode name table,
+// 80 column R2 = 0x04 so it works on an unlocked F18A / PICO9918)
 // 
 // Get latest copy and examples from: https://github.com/DJSures/NABU-LIB
 // 
@@ -856,6 +857,31 @@ void initNABULIBAudio();
 void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_callee;
 
 // **************************************************************************
+// Play a note with delay envelope, leaving the other channels alone
+//
+// Same arguments and same sound as playNoteDelay(), but playNoteDelay() also
+// silences the other two channels, which cuts off any music playing on them
+// (e.g. NabuTracker) until their next note. This one only touches the
+// selected channel, so the music keeps playing on the other two.
+//
+// - Channel: 0, 1, 2
+// - Note: 0-71 (See note array above and use an index from it)
+// - DelayLength: 0-4096. Values below 256 give a decay of roughly
+//   delayLength * 37ms (e.g. 10 = about 0.37 seconds)
+//
+// Things to know, because the AY has only one of each:
+// - The envelope generator (R11-R13) is shared by all channels. Starting a
+//   note restarts the envelope of any other channel still in envelope mode.
+// - The mixer (R7) is not changed. If the channel has its tone disabled
+//   (e.g. NabuTracker NT_SND_CHNG 0 turned channel 0 into noise), you hear
+//   that instead. The NabuTracker nt_sfxNote() handles this for you.
+// - When the envelope ends the channel stays silent in envelope mode until
+//   something writes its amplitude register again. If NabuTracker music is
+//   playing, use nt_sfxNote() instead so the music comes back on its own.
+// **************************************************************************
+void playNoteEnvelope(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_callee;
+
+// **************************************************************************
 // Write VAL in REG to the AY IC (macro, see NOTE ON MACROS)
 // **************************************************************************
 #define ayWrite(reg, val) \
@@ -1340,23 +1366,70 @@ void playNoteDelay(uint8_t channel, uint8_t note, uint16_t delayLength) __z88dk_
 
   // **************************************************************************
   // Initializes the VDP in text mode
-  // 
-  // - fgcolor:   Text color 
-  // - bgcolor:   Background 
+  //
+  // - fgcolor:   Text color
+  // - bgcolor:   Background
   // - autoscoll: Will the text scroll when it reaches bottom of the screen
-  // 
+  //
+  // Memory map: patterns 0x0000, name table 0x1800 - 0x1BBF, sprite attributes 0x1C00
+  // (see SPRITES IN TEXT MODE below).
   // **************************************************************************
   void vdp_initTextMode(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll) __z88dk_callee;
 
   // **************************************************************************
   // Initializes the VDP in text mode with 80 column using the f18a
-  // 
-  // - fgcolor:   Text color 
-  // - bgcolor:   Background 
+  //
+  // - fgcolor:   Text color
+  // - bgcolor:   Background
   // - autoscoll: Will the text scroll when it reaches bottom of the screen
-  // 
+  //
+  // Needs an F18A or PICO9918. Use vdp_detectF18A() first to find out, and fall back to
+  // vdp_initTextMode() on a stock TMS9918A, which can't do 80 columns.
+  // R0 = 0x04, R1 = 0xD2, R2 = 0x04: name table 0x1000 - 0x177F, patterns 0x0000, sprite
+  // attributes 0x1C00.
+  //
+  // REGISTER 2 IN 80 COLUMNS: until 2026.11.14 this used R2 = 0x07 (as the Cloud CP/M
+  // BIOS still does). 0x07 only means 0x1000 under the V9938 rule (address bits from
+  // R2 & 0x7C, the low bits set), which a LOCKED F18A follows. An UNLOCKED F18A, and a
+  // v1.2 PICO9918 (which stays unlocked even when told to lock), read R2 the TMS9918 way:
+  // 0x07 * 0x400 = 0x1C00, so the screen showed unused memory instead of the text.
+  // R2 = 0x04 is 0x1000 under both rules: locked, unlocked, F18A, PICO9918 and MAME all
+  // agree. (Found by a NABU-86 user on a PICO9918, 2026.11.14.)
+  //
+  // SPRITES IN TEXT MODE
+  // A TMS9918A never shows sprites in its text modes. An F18A and a PICO9918 do. The
+  // text modes therefore put the sprite attribute table at 0x1C00, clear of the name
+  // table (until 2026.11.14 it was at 0x1B00, inside the 40 column name table, so text
+  // on the bottom rows turned into sprites on those chips), and end it with 0xD0. If you
+  // write your own VRAM layout for text mode, keep R5 pointing at a table that starts
+  // with 0xD0.
   // **************************************************************************
   void vdp_initTextMode80(uint8_t fgcolor, uint8_t bgcolor, bool autoScroll) __z88dk_callee;
+
+  // **************************************************************************
+  // Finds out which video chip the NABU has. Call it BEFORE vdp_init / vdp_initXXXMode:
+  // on a TMS9918A the test writes land on R1, R6 and R7, and the mode you set up next
+  // writes them all again.
+  //
+  // Returns VDP_CHIP_TMS9918A, VDP_CHIP_F18A or VDP_CHIP_PICO9918.
+  //
+  // How: unlocks the F18A (register 57 = 0x1C, twice), has its GPU run a two instruction
+  // program at VRAM 0x3F00 that clears its own first word, and checks whether it did.
+  // A PICO9918 is F18A compatible; it's told apart by status register 1 (selected with
+  // register 15 = 1), which reads 0xE8 in its top 5 bits. VRAM 0x3F00 - 0x3F05 is put
+  // back afterwards.
+  //
+  // The F18A is LOCKED again at the end (register 57 = 0x00), so it behaves as it did
+  // before the test. (A v1.2 PICO9918 stays unlocked regardless.) Since vdp_initTextMode80
+  // uses R2 = 0x04, which works locked or unlocked, the lock no longer matters for 80
+  // columns. If you need the F18A's enhanced registers, unlock it again yourself after
+  // setting up the mode.
+  // **************************************************************************
+  #define VDP_CHIP_TMS9918A 0
+  #define VDP_CHIP_F18A     1
+  #define VDP_CHIP_PICO9918 2
+
+  uint8_t vdp_detectF18A();
 
   // **************************************************************************
   // Initializes the VDP in Graphic Mode 2

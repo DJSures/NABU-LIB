@@ -164,6 +164,87 @@ void hcca_DiReadBytes(uint16_t offset, uint16_t bufferLen, uint8_t *buffer) {
   }
 }
 
+// The length header of the last _rn_readHeaderAndData() reply (little-endian, zero filled)
+uint8_t _rn_hdr[4] = { 0 };
+
+// Reads a reply that is a little-endian length (hdrLen = 1, 2 or 4 bytes) followed by that
+// many data bytes. The length lands in _rn_hdr and the data at dest.
+//
+// Why this is one asm loop: the HCCA UART holds a single received byte. The IA sends the
+// data right behind the length, so the next byte arrives about 320 cycles after the last
+// length byte and overwrites the first data byte if it wasn't read yet. Reading the length
+// with hcca_DiReadInt32() and then calling hcca_DiReadBytes() (return, 32-bit compare, a new
+// IX frame) took longer than that, so the first data byte was lost and the read then waited
+// forever for a byte that never came. MAME shows it every time (RShell 1.1 / 1.2 hung on
+// the first shell output); here there are about 70 cycles between the two.
+//
+// A negative 4 byte length (an error) reads no data. Only the low 16 bits count.
+void _rn_readHeaderAndData(uint8_t *dest, uint8_t hdrLen) __z88dk_callee __naked {
+
+  // see NOTE ON (void) PARAMETERS
+  (void)dest;
+  (void)hdrLen;
+
+  __asm
+
+    pop de                  ; return address
+    pop hl                  ; dest
+    dec sp
+    pop bc                  ; b = hdrLen
+    push de
+
+    ld a, IOPORTB
+    out (_IO_AYLATCH), a
+
+    ; zero the header so 1 and 2 byte lengths read back as 16 / 32 bit values
+    xor a
+    ld (__rn_hdr + 1), a
+    ld (__rn_hdr + 2), a
+    ld (__rn_hdr + 3), a
+
+    ld de, __rn_hdr
+
+  rn_rhHeader:
+
+    in a, (_IO_AYDATA)
+    bit 1, a
+    jr nz, rn_rhHeader
+
+    in a, (_IO_HCCA)
+    ld (de), a
+    inc de
+    djnz rn_rhHeader
+
+    ; negative (error): no data
+    ld a, (__rn_hdr + 3)
+    or a
+    ret m
+
+    ld bc, (__rn_hdr)
+    ld a, b
+    or c
+    ret z
+
+  rn_rhData:
+
+    in a, (_IO_AYDATA)
+    bit 1, a
+    jr nz, rn_rhData
+
+    in a, (_IO_HCCA)
+    ld (hl), a
+    inc hl
+
+    dec bc
+    ld a, b
+    or c
+    jr nz, rn_rhData
+
+    ret
+
+  __endasm;
+}
+
 // Reads the 83 byte file details reply straight into the struct, then fills in the
 // two flags that are not part of the reply.
 //
@@ -268,9 +349,10 @@ uint16_t rn_FileRead(uint8_t filenameLen, uint8_t* filename, uint8_t* buffer, ui
 
   hcca_DiWriteUInt16(readLength);
 
-  uint16_t toRead = hcca_DiReadUInt16();
+  // length and data in one tight read (see _rn_readHeaderAndData)
+  _rn_readHeaderAndData(buffer + bufferOffset, 2);
 
-  hcca_DiReadBytes(bufferOffset, toRead, buffer);
+  uint16_t toRead = *(uint16_t *)_rn_hdr;
 
   hcca_DiRestoreInterrupts();
 
@@ -328,9 +410,10 @@ uint16_t rn_fileHandleRead(uint8_t fileHandle, uint8_t* buffer, uint16_t bufferO
 
   hcca_DiWriteUInt16(readLength);
 
-  uint16_t toRead = hcca_DiReadUInt16();
+  // length and data in one tight read (see _rn_readHeaderAndData)
+  _rn_readHeaderAndData(buffer + bufferOffset, 2);
 
-  hcca_DiReadBytes(bufferOffset, toRead, buffer);
+  uint16_t toRead = *(uint16_t *)_rn_hdr;
 
   hcca_DiRestoreInterrupts();
 
@@ -529,9 +612,10 @@ uint16_t rn_fileHandleReadSeq(uint8_t fileHandle, uint8_t* buffer, uint16_t buff
 
   hcca_DiWriteUInt16(readLength);
 
-  uint16_t toRead = hcca_DiReadUInt16();
+  // length and data in one tight read (see _rn_readHeaderAndData)
+  _rn_readHeaderAndData(buffer + bufferOffset, 2);
 
-  hcca_DiReadBytes(bufferOffset, toRead, buffer);
+  uint16_t toRead = *(uint16_t *)_rn_hdr;
 
   hcca_DiRestoreInterrupts();
 
@@ -589,9 +673,10 @@ uint16_t rn_fileHandleGetLine(uint8_t fileHandle, uint16_t lineNumber, uint8_t *
 
   hcca_DiWriteUInt16(lineNumber);
 
-  uint16_t toRead = hcca_DiReadUInt16();
+  // length and data in one tight read (see _rn_readHeaderAndData)
+  _rn_readHeaderAndData(buffer, 2);
 
-  hcca_DiReadBytes(0, toRead, buffer);
+  uint16_t toRead = *(uint16_t *)_rn_hdr;
 
   hcca_DiRestoreInterrupts();
 
@@ -722,13 +807,13 @@ int32_t rn_TCPHandleRead(uint8_t tcpHandle, uint8_t* buffer, uint16_t bufferOffs
 
   hcca_DiWriteUInt16(readLength);
 
-  int32_t toRead = hcca_DiReadInt32();
+  // The data is read directly from the HCCA port, right behind its length (see
+  // _rn_readHeaderAndData). This loop also used to advance _rxBufferReadPos once per
+  // byte, which corrupted the interrupt receive ring buffer (hcca_readByte() would then
+  // return up to 255 bytes of garbage).
+  _rn_readHeaderAndData(buffer + bufferOffset, 4);
 
-  // The data is read directly from the HCCA port. This loop also used to advance
-  // _rxBufferReadPos once per byte, which corrupted the interrupt receive ring buffer
-  // (hcca_readByte() would then return up to 255 bytes of garbage).
-  if (toRead > 0)
-    hcca_DiReadBytes(bufferOffset, (uint16_t)toRead, buffer);
+  int32_t toRead = *(int32_t *)_rn_hdr;
 
   hcca_DiRestoreInterrupts();
 
@@ -826,12 +911,12 @@ int32_t rn_ShellRead(uint8_t shellHandle, uint8_t* buffer, uint16_t bufferOffset
 
   hcca_DiWriteUInt16(readLength);
 
-  int32_t toRead = hcca_DiReadInt32();
+  // Read directly from the HCCA port, right behind its length (see
+  // _rn_readHeaderAndData). (No longer advances _rxBufferReadPos, which corrupted the
+  // interrupt receive ring buffer. See rn_TCPHandleRead.)
+  _rn_readHeaderAndData(buffer + bufferOffset, 4);
 
-  // Read directly from the HCCA port. (No longer advances _rxBufferReadPos, which
-  // corrupted the interrupt receive ring buffer. See rn_TCPHandleRead.)
-  if (toRead > 0)
-    hcca_DiReadBytes(bufferOffset, (uint16_t)toRead, buffer);
+  int32_t toRead = *(int32_t *)_rn_hdr;
 
   hcca_DiRestoreInterrupts();
 
@@ -900,10 +985,10 @@ uint8_t rn_DnsLookup(uint8_t hostLen, uint8_t* host, uint8_t *outBuffer) {
 
   hcca_DiWriteBytes(0, hostLen, host);
 
-  uint8_t respLen = hcca_DiReadByte();
+  // length and data in one tight read (see _rn_readHeaderAndData)
+  _rn_readHeaderAndData(outBuffer, 1);
 
-  // (hcca_DiReadBytes() reads nothing for a length of 0)
-  hcca_DiReadBytes(0, respLen, outBuffer);
+  uint8_t respLen = _rn_hdr[0];
 
   // Always NUL-terminate so callers can treat outBuffer as a C string.
   outBuffer[respLen] = 0;
@@ -987,11 +1072,12 @@ uint8_t rn_TCPServerRead(uint8_t* buffer, uint16_t bufferOffset, uint8_t readLen
 
   hcca_DiWriteByte(readLength);
 
-  uint8_t toRead = hcca_DiReadByte();
+  // Read directly from the HCCA port, right behind its length (see
+  // _rn_readHeaderAndData). (No longer advances _rxBufferReadPos, which corrupted the
+  // interrupt receive ring buffer. See rn_TCPHandleRead.)
+  _rn_readHeaderAndData(buffer + bufferOffset, 1);
 
-  // Read directly from the HCCA port. (No longer advances _rxBufferReadPos, which
-  // corrupted the interrupt receive ring buffer. See rn_TCPHandleRead.)
-  hcca_DiReadBytes(bufferOffset, toRead, buffer);
+  uint8_t toRead = _rn_hdr[0];
 
   hcca_DiRestoreInterrupts();
 
